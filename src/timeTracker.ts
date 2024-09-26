@@ -103,14 +103,14 @@ export class TimeTracker implements vscode.Disposable {
 
     getAllTimeTotal(): number {
         return this.database.getEntries()
-            .reduce((sum, entry) => sum + entry.timeSpent, 0);
+            .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
     }
 
     private getTotalSince(date: Date): number {
         const dateString = date.toISOString().split('T')[0];
         return this.database.getEntries()
-            .filter(entry => entry.date >= dateString)
-            .reduce((sum, entry) => sum + entry.timeSpent, 0);
+            .filter((entry: TimeEntry) => entry.date >= dateString)
+            .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
     }
 
     dispose() {

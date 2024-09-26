@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Database, SummaryData } from './database';
+import { Database, SummaryData, TimeEntry } from './database';
 
 export class SummaryView {
     private panel: vscode.WebviewPanel | undefined;
@@ -28,9 +28,14 @@ export class SummaryView {
             this.panel.webview.html = this.getHtmlForWebview();
 
             this.panel.webview.onDidReceiveMessage(
-                message => {
+                async message => {
                     if (message.command === 'refresh') {
                         this.updateContent();
+                    } else if (message.command === 'search') {
+                        const searchResults = await this.database.searchEntries(message.date, message.project);
+                        if (this.panel) {
+                            this.panel.webview.postMessage({ command: 'searchResult', data: searchResults });
+                        }
                     }
                 },
                 undefined,
@@ -106,10 +111,22 @@ export class SummaryView {
                         background-color: var(--header-background);
                         color: var(--header-foreground);
                     }
+                    .search-form {
+                        margin-bottom: 20px;
+                    }
+                    .search-form input, .search-form button {
+                        margin-right: 10px;
+                        padding: 5px;
+                    }
                 </style>
             </head>
             <body>
                 <h1>Coding Time Summary</h1>
+                <div class="search-form">
+                    <input type="date" id="date-search" name="date-search">
+                    <input type="text" id="project-search" name="project-search" placeholder="Project name">
+                    <button id="search-button">Search</button>
+                </div>
                 <div id="content">Loading...</div>
                 <script>
                     const vscode = acquireVsCodeApi();
@@ -118,17 +135,25 @@ export class SummaryView {
                         const message = event.data;
                         if (message.command === 'update') {
                             updateContent(message.data);
+                        } else if (message.command === 'searchResult') {
+                            displaySearchResult(message.data);
                         }
+                    });
+
+                    document.getElementById('search-button').addEventListener('click', () => {
+                        const date = document.getElementById('date-search').value;
+                        const project = document.getElementById('project-search').value;
+                        vscode.postMessage({ command: 'search', date, project });
                     });
 
                     function updateContent(data) {
                         const content = document.getElementById('content');
                         content.innerHTML = \`
-                            <h2>Total Time: \${formatTime(data.totalTime)}</h2>
+                            <h2>Total Coding Time: \${formatTime(data.totalTime)}</h2>
                             
                             <h2>Project Summary</h2>
                             <table>
-                                <tr><th>Project</th><th>Time</th></tr>
+                                <tr><th>Project</th><th>Coding Time</th></tr>
                                 \${Object.entries(data.projectSummary)
                                     .map(([project, time]) => \`<tr><td>\${project}</td><td>\${formatTime(time)}</td></tr>\`)
                                     .join('')}
@@ -136,12 +161,35 @@ export class SummaryView {
 
                             <h2>Daily Summary (Last 7 Days)</h2>
                             <table>
-                                <tr><th>Date</th><th>Time</th></tr>
+                                <tr><th>Date</th><th>Coding Time</th></tr>
                                 \${Object.entries(data.dailySummary)
                                     .sort((a, b) => b[0].localeCompare(a[0]))
                                     .slice(0, 7)
                                     .map(([date, time]) => \`<tr><td>\${date}</td><td>\${formatTime(time)}</td></tr>\`)
                                     .join('')}
+                            </table>
+                        \`;
+                    }
+
+                    function displaySearchResult(entries) {
+                        const content = document.getElementById('content');
+                        if (entries.length === 0) {
+                            content.innerHTML = '<p>No results found.</p>';
+                            return;
+                        }
+
+                        let totalTime = 0;
+                        const tableRows = entries.map(entry => {
+                            totalTime += entry.timeSpent;
+                            return \`<tr><td>\${entry.date}</td><td>\${entry.project}</td><td>\${formatTime(entry.timeSpent)}</td></tr>\`;
+                        }).join('');
+
+                        content.innerHTML = \`
+                            <h2>Search Results</h2>
+                            <p>Total Time: \${formatTime(totalTime)}</p>
+                            <table>
+                                <tr><th>Date</th><th>Project</th><th>Coding Time</th></tr>
+                                \${tableRows}
                             </table>
                         \`;
                     }
