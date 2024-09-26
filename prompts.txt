@@ -1,0 +1,27 @@
+I want to create a VS Code extension that tracks my coding time. 
+There will be a status bar that shows the total time spent on the current project today. Hovering that bar will show a hover card with the total time spent on the current project on weekly, monthly, and all time basis.
+Clicking on the status bar will open a summary view of the time I spend on each project on a daily, weekly, monthly, or custom range basis.
+The status bar will show when the vs code is opened but start tracking only when the vs code is in focus a a file is opened.
+
+It will track the time I spend on each project.
+I want to see a intuitive and aesthetically pleasing summary report on the time I spend on each project on a daily, weekly, monthly, or custom range basis.
+The backend database should be easy to query so I can add custom metrics like most productive days, longest coding session, etc.
+The extension should be lightweight and not affect the performance of VS Code.
+
+The backend data structure should be as follows:
+Date | Project | Time Spent (in minutes)
+
+e.g.
+2024-02-20 | Project 1 | 30
+2024-02-20 | Project 2 | 20
+2024-02-21 | Project 1 | 40
+2024-02-21 | Project 2 | 10
+
+Store all the data locally for vscode plugins
+
+
+## Features
+- Real-time tracking of coding time
+- Status bar display of todays total coding time across all project and on the current project.
+e.g. [Icon of timer ] Today: 2h 30m | Current Project: 1h 30m 
+
