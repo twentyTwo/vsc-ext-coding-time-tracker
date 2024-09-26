@@ -11,6 +11,7 @@ export class StatusBar implements vscode.Disposable {
         this.timeTracker = timeTracker;
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
         this.statusBarItem.command = 'codingTimeTracker.showSummary';
+        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         this.statusBarItem.show();
         this.updateStatusBar();
         this.updateInterval = setInterval(() => this.updateStatusBar(), 1000); // Update every second
