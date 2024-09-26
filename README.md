@@ -29,6 +29,3 @@ We welcome feedback and contributions! If you encounter any issues or have sugge
 
 For developers interested in contributing to the project, please check out our [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines and instructions.
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

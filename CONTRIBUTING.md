@@ -20,7 +20,6 @@ vscode-time-tracker/
 ├── README.md               # Project readme
 ├── CONTRIBUTING.md         # This file
 ├── LICENSE                 # License information
-└── prompts.txt             # Prompts for AI assistance (if applicable)
 
 ## Setting Up the Development Environment
 
