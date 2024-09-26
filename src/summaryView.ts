@@ -61,12 +61,51 @@ export class SummaryView {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Coding Time Summary</title>
                 <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-                    h1 { font-size: 24px; margin-bottom: 20px; }
-                    h2 { font-size: 20px; margin-top: 30px; margin-bottom: 10px; }
-                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
-                    th { font-weight: bold; }
+                    :root {
+                        --background-color: var(--vscode-editor-background);
+                        --text-color: var(--vscode-editor-foreground);
+                        --border-color: var(--vscode-panel-border);
+                        --header-background: var(--vscode-titleBar-activeBackground);
+                        --header-foreground: var(--vscode-titleBar-activeForeground);
+                    }
+                    body {
+                        font-family: var(--vscode-font-family);
+                        background-color: var(--background-color);
+                        color: var(--text-color);
+                        line-height: 1.6;
+                        max-width: 800px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }
+                    h1 {
+                        font-size: 24px;
+                        margin-bottom: 20px;
+                        background-color: var(--header-background);
+                        color: var(--header-foreground);
+                        padding: 10px;
+                    }
+                    h2 {
+                        font-size: 20px;
+                        margin-top: 30px;
+                        margin-bottom: 10px;
+                        border-bottom: 1px solid var(--border-color);
+                        padding-bottom: 5px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 30px;
+                    }
+                    th, td {
+                        text-align: left;
+                        padding: 8px;
+                        border-bottom: 1px solid var(--border-color);
+                    }
+                    th {
+                        font-weight: bold;
+                        background-color: var(--header-background);
+                        color: var(--header-foreground);
+                    }
                 </style>
             </head>
             <body>
