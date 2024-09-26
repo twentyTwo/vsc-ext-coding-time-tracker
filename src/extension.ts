@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 import { TimeTracker } from './timeTracker';
 import { StatusBar } from './statusBar';
 import { Database } from './database';
-import { SummaryView } from './summaryView';
+import { SummaryViewProvider } from './summaryView';
 
 export function activate(context: vscode.ExtensionContext) {
     const database = new Database(context);
     const timeTracker = new TimeTracker(database);
     const statusBar = new StatusBar(timeTracker);
-    const summaryView = new SummaryView(context, database);
+    const summaryView = new SummaryViewProvider(context, database);
 
     let disposable = vscode.commands.registerCommand('codingTimeTracker.showSummary', () => {
         summaryView.show();

@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { Database, SummaryData, TimeEntry } from './database';
+import { ThemeIcon } from 'vscode';
 
-export class SummaryView {
+export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private panel: vscode.WebviewPanel | undefined;
     private context: vscode.ExtensionContext;
     private database: Database;
@@ -11,9 +12,43 @@ export class SummaryView {
         this.database = database;
     }
 
-    async show() {
-        if (this.panel) {
+    resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        token: vscode.CancellationToken
+    ): void | Thenable<void> {
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [this.context.extensionUri]
+        };
+
+        webviewView.webview.onDidReceiveMessage(
+            async message => {
+                if (message.command === 'refresh') {
+                    await this.show(webviewView.webview);
+                } else if (message.command === 'search') {
+                    const searchResults = await this.database.searchEntries(message.date, message.project);
+                    webviewView.webview.postMessage({ command: 'searchResult', data: searchResults });
+                }
+            },
+            undefined,
+            this.context.subscriptions
+        );
+
+        this.show(webviewView.webview);
+    }
+
+    async show(webview?: vscode.Webview) {
+        const summaryData = await this.database.getSummaryData();
+        const projects = await this.getUniqueProjects();
+
+        if (webview) {
+            webview.html = this.getHtmlForWebview(projects);
+            webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+        } else if (this.panel) {
             this.panel.reveal();
+            this.panel.webview.html = this.getHtmlForWebview(projects);
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
@@ -25,18 +60,15 @@ export class SummaryView {
                 }
             );
 
-            const projects = await this.getUniqueProjects();
             this.panel.webview.html = this.getHtmlForWebview(projects);
 
             this.panel.webview.onDidReceiveMessage(
                 async message => {
                     if (message.command === 'refresh') {
-                        this.updateContent();
+                        await this.show(this.panel?.webview);
                     } else if (message.command === 'search') {
                         const searchResults = await this.database.searchEntries(message.date, message.project);
-                        if (this.panel) {
-                            this.panel.webview.postMessage({ command: 'searchResult', data: searchResults });
-                        }
+                        this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });
                     }
                 },
                 undefined,
@@ -46,15 +78,21 @@ export class SummaryView {
             this.panel.onDidDispose(() => {
                 this.panel = undefined;
             });
-        }
 
-        await this.updateContent();
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+        }
     }
 
-    private async updateContent() {
-        if (this.panel) {
-            const summaryData = await this.database.getSummaryData();
-            const projects = await this.getUniqueProjects();
+    // Modify the updateContent method to accept a webview parameter
+    private async updateContent(webview?: vscode.Webview) {
+        const summaryData = await this.database.getSummaryData();
+        const projects = await this.getUniqueProjects();
+        
+        if (webview) {
+            webview.html = this.getHtmlForWebview(projects);
+            webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+        } else if (this.panel) {
+            this.panel.webview.html = this.getHtmlForWebview(projects);
             this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
         }
     }
@@ -128,10 +166,40 @@ export class SummaryView {
                         margin-right: 10px;
                         padding: 5px;
                     }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        background-color: var(--header-background);
+                        padding: 10px;
+                    }
+                    .header h1 {
+                        margin: 0;
+                        padding: 0;
+                        background-color: transparent;
+                    }
+                    .reload-button {
+                        background: none;
+                        border: none;
+                        cursor: pointer;
+                        padding: 5px;
+                        color: var(--header-foreground);
+                        font-size: 16px;
+                    }
+                    .reload-button:hover {
+                        background-color: rgba(255, 255, 255, 0.1);
+                    }
+                    .reload-button::before {
+                        content: "↻";
+                        margin-right: 5px;
+                    }
                 </style>
             </head>
             <body>
-                <h1>Coding Time Summary</h1>
+                <div class="header">
+                    <h1>Coding Time Summary</h1>
+                    <button class="reload-button" onclick="vscode.postMessage({command: 'refresh'})">Reload</button>
+                </div>
                 <div class="search-form">
                     <input type="date" id="date-search" name="date-search">
                     <select id="project-search" name="project-search">
