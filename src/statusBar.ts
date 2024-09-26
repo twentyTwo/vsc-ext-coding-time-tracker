@@ -21,7 +21,7 @@ export class StatusBar implements vscode.Disposable {
         const todayTotal = this.timeTracker.getTodayTotal();
         const currentProjectTime = this.timeTracker.getCurrentProjectTime();
         
-        this.statusBarItem.text = `$(timer) Coding Time: ${this.formatTime(todayTotal)}`;
+        this.statusBarItem.text = `$(clock) Coding Time: ${this.formatTime(todayTotal)}`;
         this.statusBarItem.tooltip = this.getTooltipText();
     }
 
@@ -37,7 +37,7 @@ export class StatusBar implements vscode.Disposable {
         const monthlyTotal = this.timeTracker.getMonthlyTotal();
         const allTimeTotal = this.timeTracker.getAllTimeTotal();
 
-        return `Weekly: ${this.formatTime(weeklyTotal)}\nMonthly: ${this.formatTime(monthlyTotal)}\nAll Time: ${this.formatTime(allTimeTotal)}`;
+        return `Total Coding Time:\nThis week: ${this.formatTime(weeklyTotal)}\nThis month: ${this.formatTime(monthlyTotal)}\nAll Time: ${this.formatTime(allTimeTotal)}\nClick to show summary`;
     }
 
     onDidClick(listener: () => void): vscode.Disposable {
