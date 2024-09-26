@@ -6,21 +6,22 @@ We're excited that you're interested in contributing to VSCode Time Tracker! Thi
 
 The project is organized as follows:
 
+```bash
 vscode-time-tracker/
-├── .vscode/                # VSCode-specific settings
-├── src/                    # Source code
-│   ├── extension.ts        # Main extension file
-│   ├── statusBar.ts        # Status bar functionality
-│   ├── summaryView.ts      # Summary view implementation
-│   ├── timeTracker.ts      # Time tracking logic
-│   ├── database.ts         # Database operations
-│   └── readme.md           # Source code documentation
-├── .gitignore              # Git ignore file
-├── package.json            # Project metadata and dependencies
-├── README.md               # Project readme
-├── CONTRIBUTING.md         # This file
-├── LICENSE                 # License information
-└── prompts.txt             # Prompts for AI assistance (if applicable)
+├── .vscode/               # VSCode-specific settings
+├── src/                   # Source code
+│   ├── extension.ts       # Main extension file
+│   ├── statusBar.ts       # Status bar functionality
+│   ├── summaryView.ts     # Summary view implementation
+│   ├── timeTracker.ts     # Time tracking logic
+│   ├── database.ts        # Database operations
+│   └── readme.md          # Source code documentation
+├── .gitignore             # Git ignore file
+├── package.json           # Project metadata and dependencies
+├── README.md              # Project readme
+├── CONTRIBUTING.md        # Contributing guidelines
+└── LICENSE                # License information
+```
 
 ## Setting Up the Development Environment
 
