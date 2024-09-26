@@ -25,7 +25,8 @@ export class SummaryView {
                 }
             );
 
-            this.panel.webview.html = this.getHtmlForWebview();
+            const projects = await this.getUniqueProjects();
+            this.panel.webview.html = this.getHtmlForWebview(projects);
 
             this.panel.webview.onDidReceiveMessage(
                 async message => {
@@ -53,12 +54,21 @@ export class SummaryView {
     private async updateContent() {
         if (this.panel) {
             const summaryData = await this.database.getSummaryData();
-            this.panel.webview.postMessage({ command: 'update', data: summaryData });
+            const projects = await this.getUniqueProjects();
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
         }
     }
 
-    private getHtmlForWebview(): string {
-        return /*html*/`
+    private async getUniqueProjects(): Promise<string[]> {
+        const entries = await this.database.getEntries();
+        const projectSet = new Set(entries.map(entry => entry.project));
+        return Array.from(projectSet).sort();
+    }
+
+    private getHtmlForWebview(projects: string[]): string {
+        const projectOptions = projects.map(project => `<option value="${project}">${project}</option>`).join('');
+        
+        return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -114,7 +124,7 @@ export class SummaryView {
                     .search-form {
                         margin-bottom: 20px;
                     }
-                    .search-form input, .search-form button {
+                    .search-form select {
                         margin-right: 10px;
                         padding: 5px;
                     }
@@ -124,7 +134,10 @@ export class SummaryView {
                 <h1>Coding Time Summary</h1>
                 <div class="search-form">
                     <input type="date" id="date-search" name="date-search">
-                    <input type="text" id="project-search" name="project-search" placeholder="Project name">
+                    <select id="project-search" name="project-search">
+                        <option value="">All Projects</option>
+                        ${projectOptions}
+                    </select>
                     <button id="search-button">Search</button>
                 </div>
                 <div id="content">Loading...</div>
@@ -135,6 +148,7 @@ export class SummaryView {
                         const message = event.data;
                         if (message.command === 'update') {
                             updateContent(message.data);
+                            updateProjectDropdown(message.projects);
                         } else if (message.command === 'searchResult') {
                             displaySearchResult(message.data);
                         }
@@ -145,6 +159,12 @@ export class SummaryView {
                         const project = document.getElementById('project-search').value;
                         vscode.postMessage({ command: 'search', date, project });
                     });
+
+                    function updateProjectDropdown(projects) {
+                        const dropdown = document.getElementById('project-search');
+                        dropdown.innerHTML = '<option value="">All Projects</option>' +
+                            projects.map(project => \`<option value="\${project}">\${project}</option>\`).join('');
+                    }
 
                     function updateContent(data) {
                         const content = document.getElementById('content');
