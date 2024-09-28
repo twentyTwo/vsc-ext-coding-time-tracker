@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "noorashuvo",
   "icon": "icon-sctt.png",
   "engines": {
