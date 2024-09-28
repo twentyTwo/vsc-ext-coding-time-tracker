@@ -10,7 +10,7 @@ export class StatusBar implements vscode.Disposable {
     constructor(timeTracker: TimeTracker) {
         this.timeTracker = timeTracker;
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        this.statusBarItem.command = 'codingTimeTracker.showSummary';
+        this.statusBarItem.command = 'noorashuvo.codingTimeTracker.showSummary';
         this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         this.statusBarItem.show();
         this.updateStatusBar();

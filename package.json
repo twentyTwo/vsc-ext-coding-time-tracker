@@ -1,8 +1,10 @@
 {
-  "name": "coding-time-tracker",
-  "displayName": "Coding Time Tracker",
+  "name": "simple-coding-time-tracker",
+  "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.0.1",
+  "version": "0.1.1",
+  "publisher": "noorashuvo",
+  "icon": "icon-sctt.png",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -16,7 +18,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "codingTimeTracker.showSummary",
+        "command": "noorashuvo.codingTimeTracker.showSummary",
         "title": "Show Coding Time Summary"
       }
     ]
