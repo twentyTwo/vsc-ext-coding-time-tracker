@@ -21,7 +21,7 @@ export class StatusBar implements vscode.Disposable {
         const todayTotal = this.timeTracker.getTodayTotal();
         const currentProjectTime = this.timeTracker.getCurrentProjectTime();
         
-        this.statusBarItem.text = `$(clock) Coding Time: ${this.formatTime(todayTotal)}`;
+        this.statusBarItem.text = `💻 ${this.formatTime(todayTotal)}`;
         this.statusBarItem.tooltip = this.getTooltipText();
     }
 
