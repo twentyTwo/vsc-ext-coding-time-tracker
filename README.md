@@ -3,7 +3,7 @@
     <h1>Simple Coding Time Tracker: A Visual Studio Code Extension</h1>
 </div>
 
-Simple Coding Time Tracker is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time. If you are curious about your coding habits, this extension covers you!
+Simple Coding Time Tracker is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time. If you are curious about your coding habits, this extension covers you.
 
 ## Features
 
