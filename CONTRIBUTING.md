@@ -1,4 +1,4 @@
-# Contributing to VSCode Time Tracker
+# Contributing to Simple Coding Time Tracker
 
 We're excited that you're interested in contributing to VSCode Time Tracker! This document will guide you through the process of setting up the project, making changes, and submitting your contributions.
 
@@ -28,11 +28,11 @@ vscode-time-tracker/
 1. Fork the repository on GitHub.
 2. Clone your fork locally:
    ```
-   git clone https://github.com/your-username/vscode-time-tracker.git
+   git clone https://github.com/your-username/vsc-ext-coding-time-tracker.git
    ```
 3. Navigate to the project directory:
    ```
-   cd vscode-time-tracker
+   cd vsc-ext-coding-time-tracker
    ```
 4. Install dependencies:
    ```
@@ -100,4 +100,4 @@ This will create a `.vsix` file that can be installed in VSCode.
 
 If you have any questions or need assistance, please open an issue on the GitHub repository, and we'll be happy to help!
 
-Thank you for contributing to VSCode Time Tracker!
+Thank you for contributing to Simple Coding Time Tracker!
