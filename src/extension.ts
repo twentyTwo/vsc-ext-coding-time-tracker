@@ -10,7 +10,8 @@ export function activate(context: vscode.ExtensionContext) {
     const statusBar = new StatusBar(timeTracker);
     const summaryView = new SummaryViewProvider(context, database);
 
-    let disposable = vscode.commands.registerCommand('codingTimeTracker.showSummary', () => {
+    // Register the command
+    let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
     });
 

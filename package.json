@@ -18,7 +18,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "noorashuvo.codingTimeTracker.showSummary",
+        "command": "simpleCodingTimeTracker.showSummary",
         "title": "Show Coding Time Summary"
       }
     ]
