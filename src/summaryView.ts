@@ -159,12 +159,47 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         background-color: var(--header-background);
                         color: var(--header-foreground);
                     }
+                    .container {
+                        padding: 20px;
+                    }
                     .search-form {
+                        margin-top: 20px;
                         margin-bottom: 20px;
+                        display: flex;
+                        align-items: center;
+                    }
+                    .search-form input,
+                    .search-form select,
+                    .search-form button {
+                        height: 32px;
+                        padding: 0 8px;
+                        margin-right: 10px;
+                        border: 1px solid var(--vscode-input-border);
+                        background-color: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        font-size: 13px;
+                        border-radius: 2px;
+                    }
+                    .search-form input[type="date"] {
+                        padding: 0 4px;
                     }
                     .search-form select {
-                        margin-right: 10px;
-                        padding: 5px;
+                        padding-right: 24px;
+                        appearance: none;
+                        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+                        background-repeat: no-repeat;
+                        background-position: right 8px top 50%;
+                        background-size: 10px auto;
+                    }
+                    .search-form button {
+                        cursor: pointer;
+                        background-color: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        padding: 0 12px;
+                    }
+                    .search-form button:hover {
+                        background-color: var(--vscode-button-hoverBackground);
                     }
                     .header {
                         display: flex;
@@ -200,15 +235,17 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     <h1>Coding Time Summary</h1>
                     <button class="reload-button" onclick="vscode.postMessage({command: 'refresh'})">Reload</button>
                 </div>
-                <div class="search-form">
-                    <input type="date" id="date-search" name="date-search">
-                    <select id="project-search" name="project-search">
-                        <option value="">All Projects</option>
-                        ${projectOptions}
-                    </select>
-                    <button id="search-button">Search</button>
+                <div class="container">
+                    <div class="search-form">
+                        <input type="date" id="date-search" name="date-search">
+                        <select id="project-search" name="project-search">
+                            <option value="">All Projects</option>
+                            ${projectOptions}
+                        </select>
+                        <button id="search-button">Search</button>
+                    </div>
+                    <div id="content">Loading...</div>
                 </div>
-                <div id="content">Loading...</div>
                 <script>
                     const vscode = acquireVsCodeApi();
                     
