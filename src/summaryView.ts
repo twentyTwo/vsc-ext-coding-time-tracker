@@ -285,7 +285,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="total-time-item">
                             <h3>This Year</h3>
                             <p id="yearly-total">Loading...</p>
-                             <small>From January 1st to today</small>
+                             <small>January 1st - today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>All Time</h3>
