@@ -28,6 +28,7 @@ You can search your total time on a particular day or project.
 ![Summary page](./images/summarypage.png)
 
 ### Summary page with date range search - new feature from [0.2.0]
+Newly added feature to search coding time on a particular date range and for a particular project.
 ![Summary page with date range search](./images/new_summarypage.png)
 
 ## Installation
