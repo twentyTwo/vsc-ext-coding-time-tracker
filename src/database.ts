@@ -58,10 +58,10 @@ export class Database {
         };
     }
 
-    async searchEntries(date?: string, project?: string): Promise<TimeEntry[]> {
+    async searchEntries(startDate?: string, endDate?: string, project?: string): Promise<TimeEntry[]> {
         const entries = this.getEntries();
         return entries.filter(entry => {
-            const dateMatch = !date || entry.date === date;
+            const dateMatch = (!startDate || entry.date >= startDate) && (!endDate || entry.date <= endDate);
             const projectMatch = !project || entry.project.toLowerCase().includes(project.toLowerCase());
             return dateMatch && projectMatch;
         });

@@ -31,7 +31,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 if (message.command === 'refresh') {
                     await this.show(webviewView.webview);
                 } else if (message.command === 'search') {
-                    const searchResults = await this.database.searchEntries(message.date, message.project);
+                    const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
                     webviewView.webview.postMessage({ command: 'searchResult', data: searchResults });
                 }
             },
@@ -78,7 +78,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     if (message.command === 'refresh') {
                         await this.show(this.panel?.webview);
                     } else if (message.command === 'search') {
-                        const searchResults = await this.database.searchEntries(message.date, message.project);
+                        const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
                         this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });
                     }
                 },
@@ -174,17 +174,17 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         padding: 0px;
                     }
                     .search-form {
-                        margin-top: 20px;
-                        margin-bottom: 20px;
                         display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
                         align-items: center;
+                        margin-bottom: 20px;
                     }
                     .search-form input,
                     .search-form select,
                     .search-form button {
                         height: 32px;
                         padding: 0 8px;
-                        margin-right: 10px;
                         border: 1px solid var(--vscode-input-border);
                         background-color: var(--vscode-input-background);
                         color: var(--vscode-input-foreground);
@@ -196,11 +196,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .search-form select {
                         padding-right: 24px;
-                        appearance: none;
-                        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-                        background-repeat: no-repeat;
-                        background-position: right 8px top 50%;
-                        background-size: 10px auto;
                     }
                     .search-form button {
                         cursor: pointer;
@@ -285,12 +280,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="total-time-item">
                             <h3>This Month</h3>
                             <p id="monthly-total">Loading...</p>
-                            <small><span id="month-start"></span> - today</small>
+                             <small><span id="month-start"></span> - today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>This Year</h3>
                             <p id="yearly-total">Loading...</p>
-                            <small>From January 1st to today</small>
+                             <small>From January 1st to today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>All Time</h3>
@@ -298,7 +293,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
                     <div class="search-form">
-                        <input type="date" id="date-search" name="date-search">
+                        <input type="date" id="start-date-search" name="start-date-search">
+                        <input type="date" id="end-date-search" name="end-date-search">
                         <select id="project-search" name="project-search">
                             <option value="">All Projects</option>
                             ${projectOptions}
@@ -322,9 +318,10 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     });
 
                     document.getElementById('search-button').addEventListener('click', () => {
-                        const date = document.getElementById('date-search').value;
+                        const startDate = document.getElementById('start-date-search').value;
+                        const endDate = document.getElementById('end-date-search').value;
                         const project = document.getElementById('project-search').value;
-                        vscode.postMessage({ command: 'search', date, project });
+                        vscode.postMessage({ command: 'search', startDate, endDate, project });
                     });
 
                     function updateProjectDropdown(projects) {
@@ -395,7 +392,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
                     function formatTime(minutes) {
                         const hours = Math.floor(minutes / 60);
-                        const mins = Math.floor(minutes % 60);
+                        const mins = Math.round(minutes % 60);
                         return \`\${hours}h \${mins}m\`;
                     }
 
