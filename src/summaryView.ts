@@ -263,7 +263,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             <body>
                 <div class="header">
                     <h1>Coding Time Summary</h1>
-                    <button class="reload-button" onclick="vscode.postMessage({command: 'refresh'})">Reload</button>
+                    <button class="reload-button" id="reload-button">Reload</button>
                 </div>
                 <div class="container">
                     <h2>Total Coding Time</h2>
@@ -324,6 +324,17 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         vscode.postMessage({ command: 'search', startDate, endDate, project });
                     });
 
+                    // Add event listener for the reload button
+                    document.getElementById('reload-button').addEventListener('click', () => {
+                        // Reset date fields
+                        document.getElementById('start-date-search').value = '';
+                        document.getElementById('end-date-search').value = '';
+                        // Reset project dropdown
+                        document.getElementById('project-search').value = '';
+                        // Send refresh command
+                        vscode.postMessage({ command: 'refresh' });
+                    });
+
                     function updateProjectDropdown(projects) {
                         const dropdown = document.getElementById('project-search');
                         dropdown.innerHTML = '<option value="">All Projects</option>' +
@@ -381,8 +392,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }).join('');
 
                         content.innerHTML = \`
-                            <h2>Search Results</h2>
-                            <p>Total Time: \${formatTime(totalTime)}</p>
+                            <h2>Search Results: (Coding Time is \${formatTime(totalTime)})</h2>
                             <table>
                                 <tr><th>Date</th><th>Project</th><th>Coding Time</th></tr>
                                 \${tableRows}
