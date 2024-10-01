@@ -280,15 +280,17 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="total-time-item">
                             <h3>This Week</h3>
                             <p id="weekly-total">Loading...</p>
-                            <small>From Sunday to today</small>
+                            <small>Sunday - today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>This Month</h3>
                             <p id="monthly-total">Loading...</p>
+                            <small><span id="month-start"></span> - today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>This Year</h3>
                             <p id="yearly-total">Loading...</p>
+                            <small>From January 1st to today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>All Time</h3>
@@ -335,8 +337,14 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         document.getElementById('today-total').textContent = totalTime.today;
                         document.getElementById('weekly-total').textContent = totalTime.weekly;
                         document.getElementById('monthly-total').textContent = totalTime.monthly;
-                        document.getElementById('yearly-total').textContent = totalTime.yearly; // Add this line
+                        document.getElementById('yearly-total').textContent = totalTime.yearly;
                         document.getElementById('all-time-total').textContent = totalTime.allTime;
+
+                        // Set the start of the current month
+                        const now = new Date();
+                        const monthNames = ["January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December"];
+                        document.getElementById('month-start').textContent = \`\${monthNames[now.getMonth()]} 1st\`;
                     }
 
                     function updateContent(data) {
