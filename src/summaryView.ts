@@ -1,15 +1,19 @@
 import * as vscode from 'vscode';
 import { Database, SummaryData, TimeEntry } from './database';
 import { ThemeIcon } from 'vscode';
+import { formatTime } from './utils';
+import { TimeTracker } from './timeTracker';
 
 export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private panel: vscode.WebviewPanel | undefined;
     private context: vscode.ExtensionContext;
     private database: Database;
+    private timeTracker: TimeTracker;
 
-    constructor(context: vscode.ExtensionContext, database: Database) {
+    constructor(context: vscode.ExtensionContext, database: Database, timeTracker: TimeTracker) {
         this.context = context;
         this.database = database;
+        this.timeTracker = timeTracker;
     }
 
     resolveWebviewView(
@@ -41,14 +45,20 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     async show(webview?: vscode.Webview) {
         const summaryData = await this.database.getSummaryData();
         const projects = await this.getUniqueProjects();
+        const totalTime = {
+            today: formatTime(this.timeTracker.getTodayTotal()),
+            weekly: formatTime(this.timeTracker.getWeeklyTotal()),
+            monthly: formatTime(this.timeTracker.getMonthlyTotal()),
+            allTime: formatTime(this.timeTracker.getAllTimeTotal())
+        };
 
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
-            webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+            webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
         } else if (this.panel) {
             this.panel.reveal();
             this.panel.webview.html = this.getHtmlForWebview(projects);
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
@@ -79,7 +89,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 this.panel = undefined;
             });
 
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
         }
     }
 
@@ -228,6 +238,30 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         content: "↻";
                         margin-right: 5px;
                     }
+                    .total-time-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 20px;
+                        margin-bottom: 30px;
+                    }
+                    .total-time-item {
+                        background-color: var(--vscode-editor-background);
+                        border: 1px solid var(--vscode-panel-border);
+                        padding: 15px;
+                        text-align: center;
+                        border-radius: 5px;
+                    }
+                    .total-time-item h3 {
+                        margin-top: 0;
+                        font-size: 16px;
+                        color: var(--vscode-foreground);
+                    }
+                    .total-time-item p {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin: 10px 0 0;
+                        color: var(--vscode-textLink-foreground);
+                    }
                 </style>
             </head>
             <body>
@@ -236,6 +270,25 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     <button class="reload-button" onclick="vscode.postMessage({command: 'refresh'})">Reload</button>
                 </div>
                 <div class="container">
+                    <h2>Total Coding Time</h2>
+                    <div class="total-time-grid">
+                        <div class="total-time-item">
+                            <h3>Today</h3>
+                            <p id="today-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>This Week</h3>
+                            <p id="weekly-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>This Month</h3>
+                            <p id="monthly-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>All Time</h3>
+                            <p id="all-time-total">Loading...</p>
+                        </div>
+                    </div>
                     <div class="search-form">
                         <input type="date" id="date-search" name="date-search">
                         <select id="project-search" name="project-search">
@@ -254,6 +307,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         if (message.command === 'update') {
                             updateContent(message.data);
                             updateProjectDropdown(message.projects);
+                            updateTotalTimeSection(message.totalTime);
                         } else if (message.command === 'searchResult') {
                             displaySearchResult(message.data);
                         }
@@ -271,11 +325,16 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             projects.map(project => \`<option value="\${project}">\${project}</option>\`).join('');
                     }
 
+                    function updateTotalTimeSection(totalTime) {
+                        document.getElementById('today-total').textContent = totalTime.today;
+                        document.getElementById('weekly-total').textContent = totalTime.weekly;
+                        document.getElementById('monthly-total').textContent = totalTime.monthly;
+                        document.getElementById('all-time-total').textContent = totalTime.allTime;
+                    }
+
                     function updateContent(data) {
                         const content = document.getElementById('content');
                         content.innerHTML = \`
-                            <h2>Total Coding Time: \${formatTime(data.totalTime)}</h2>
-                            
                             <h2>Project Summary</h2>
                             <table>
                                 <tr><th>Project</th><th>Coding Time</th></tr>

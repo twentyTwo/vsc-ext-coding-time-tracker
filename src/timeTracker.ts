@@ -90,27 +90,48 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     getWeeklyTotal(): number {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        return this.getTotalSince(oneWeekAgo);
+        const now = new Date();
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        return this.getTotalSince(startOfWeek);
     }
 
     getMonthlyTotal(): number {
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        return this.getTotalSince(oneMonthAgo);
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return this.getTotalSince(startOfMonth);
     }
 
     getAllTimeTotal(): number {
-        return this.database.getEntries()
+        const total = this.database.getEntries()
             .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
+
+        // Add current session if tracking is active
+        if (this.isTracking) {
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return total + currentSessionTime;
+        }
+
+        return total;
     }
 
-    private getTotalSince(date: Date): number {
-        const dateString = date.toISOString().split('T')[0];
-        return this.database.getEntries()
-            .filter((entry: TimeEntry) => entry.date >= dateString)
-            .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
+    private getTotalSince(startDate: Date): number {
+        const entries = this.database.getEntries();
+        const startDateString = startDate.toISOString().split('T')[0];
+        const now = new Date().toISOString().split('T')[0];
+        
+        const filteredEntries = entries.filter(entry => 
+            entry.date >= startDateString && entry.date <= now
+        );
+
+        const total = filteredEntries.reduce((sum, entry) => sum + entry.timeSpent, 0);
+
+        // Add current session if tracking is active
+        if (this.isTracking) {
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return total + currentSessionTime;
+        }
+
+        return total;
     }
 
     dispose() {

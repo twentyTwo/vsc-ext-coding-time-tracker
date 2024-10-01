@@ -8,7 +8,7 @@ export function activate(context: vscode.ExtensionContext) {
     const database = new Database(context);
     const timeTracker = new TimeTracker(database);
     const statusBar = new StatusBar(timeTracker);
-    const summaryView = new SummaryViewProvider(context, database);
+    const summaryView = new SummaryViewProvider(context, database, timeTracker);
 
     // Register the command
     let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
