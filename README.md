@@ -50,7 +50,7 @@ The Simple Coding Time Tracker saves your coding time data to the background sto
 
 ## Changelog
 
-### [0.2.0] - 2024-10-02
+### [0.2.1] - 2024-10-02
 - Enhanced the UI of the summary view for a more professional look
 - Implemented date range search functionality
 - Added a reload button to reset search fields and refresh data
