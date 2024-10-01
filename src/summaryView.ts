@@ -49,6 +49,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             today: formatTime(this.timeTracker.getTodayTotal()),
             weekly: formatTime(this.timeTracker.getWeeklyTotal()),
             monthly: formatTime(this.timeTracker.getMonthlyTotal()),
+            yearly: formatTime(this.timeTracker.getYearlyTotal()), // Add this line
             allTime: formatTime(this.timeTracker.getAllTimeTotal())
         };
 
@@ -170,7 +171,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         color: var(--header-foreground);
                     }
                     .container {
-                        padding: 20px;
+                        padding: 0px;
                     }
                     .search-form {
                         margin-top: 20px;
@@ -240,7 +241,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .total-time-grid {
                         display: grid;
-                        grid-template-columns: repeat(4, 1fr);
+                        grid-template-columns: repeat(5, 1fr); /* Change to 5 columns */
                         gap: 20px;
                         margin-bottom: 30px;
                     }
@@ -279,10 +280,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="total-time-item">
                             <h3>This Week</h3>
                             <p id="weekly-total">Loading...</p>
+                            <small>From Sunday to today</small>
                         </div>
                         <div class="total-time-item">
                             <h3>This Month</h3>
                             <p id="monthly-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>This Year</h3>
+                            <p id="yearly-total">Loading...</p>
                         </div>
                         <div class="total-time-item">
                             <h3>All Time</h3>
@@ -329,6 +335,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         document.getElementById('today-total').textContent = totalTime.today;
                         document.getElementById('weekly-total').textContent = totalTime.weekly;
                         document.getElementById('monthly-total').textContent = totalTime.monthly;
+                        document.getElementById('yearly-total').textContent = totalTime.yearly; // Add this line
                         document.getElementById('all-time-total').textContent = totalTime.allTime;
                     }
 

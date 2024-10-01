@@ -134,6 +134,12 @@ export class TimeTracker implements vscode.Disposable {
         return total;
     }
 
+    getYearlyTotal(): number {
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1); // January 1st of current year
+        return this.getTotalSince(startOfYear);
+    }
+
     dispose() {
         this.stopTracking();
     }
