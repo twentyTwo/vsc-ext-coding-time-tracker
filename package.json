@@ -19,7 +19,15 @@
     "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
-        "title": "Show Coding Time Summary"
+        "title": "Time Tracker: Show Summary"
+      },
+      {
+        "command": "simpleCodingTimeTracker.resetTimer",
+        "title": "Time Tracker: Reset Coding Timer for Today"
+      },
+      {
+        "command": "simpleCodingTimeTracker.resetAllTimers",
+        "title": "Time Tracker: Reset All Coding Timers"
       }
     ]
   },

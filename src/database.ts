@@ -66,4 +66,15 @@ export class Database {
             return dateMatch && projectMatch;
         });
     }
+
+    async resetTodayTime(): Promise<void> {
+        const today = new Date().toISOString().split('T')[0];
+        const entries = this.getEntries();
+        const updatedEntries = entries.filter(entry => entry.date !== today);
+        await this.context.globalState.update('timeEntries', updatedEntries);
+    }
+
+    async resetAllTime(): Promise<void> {
+        await this.context.globalState.update('timeEntries', []);
+    }
 }

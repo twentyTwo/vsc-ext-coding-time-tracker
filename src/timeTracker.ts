@@ -143,4 +143,16 @@ export class TimeTracker implements vscode.Disposable {
     dispose() {
         this.stopTracking();
     }
+
+    resetTimer(): void {
+        this.stopTracking();
+        this.startTime = 0;
+        this.database.resetTodayTime();
+    }
+
+    resetAllTimers(): void {
+        this.stopTracking();
+        this.startTime = 0;
+        this.database.resetAllTime();
+    }
 }
