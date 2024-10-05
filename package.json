@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "noorashuvo",
   "icon": "icon-sctt.png",
   "engines": {
@@ -19,15 +19,15 @@
     "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
-        "title": "Time Tracker: Show Summary"
+        "title": "SCTT: Show Coding Time Summary"
       },
       {
         "command": "simpleCodingTimeTracker.resetTimer",
-        "title": "Time Tracker: Reset Coding Timer for Today"
+        "title": "SCTT: Reset Coding Timer for Today"
       },
       {
         "command": "simpleCodingTimeTracker.resetAllTimers",
-        "title": "Time Tracker: Reset All Coding Timers"
+        "title": "SCTT: Reset All Coding Timers"
       }
     ]
   },
