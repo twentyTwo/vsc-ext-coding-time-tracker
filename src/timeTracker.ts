@@ -217,8 +217,14 @@ export class TimeTracker implements vscode.Disposable {
         return 'Other';
     }
 
+    private getLocalDateString(date: Date): string {
+        return new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
+            .toISOString()
+            .split('T')[0];
+    }
+
     getTodayTotal(): number {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString(new Date());
         const entries = this.database.getEntries();
         const todayTotal = entries
             .filter((entry: TimeEntry) => entry.date === today)
@@ -238,7 +244,7 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     getCurrentProjectTime(): number {
-        const today = new Date().toISOString().split('T')[0];
+        const today = this.getLocalDateString(new Date());
         const currentProject = this.getCurrentProject();
         const entries = this.database.getEntries();
         const currentProjectTime = entries
@@ -287,8 +293,8 @@ export class TimeTracker implements vscode.Disposable {
 
     private getTotalSince(startDate: Date): number {
         const entries = this.database.getEntries();
-        const startDateString = startDate.toISOString().split('T')[0];
-        const now = new Date().toISOString().split('T')[0];
+        const startDateString = this.getLocalDateString(startDate);
+        const now = this.getLocalDateString(new Date());
         
         const filteredEntries = entries.filter(entry => 
             entry.date >= startDateString && entry.date <= now
