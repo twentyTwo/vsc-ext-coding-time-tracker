@@ -19,19 +19,27 @@
   "contributes": {
     "configuration": {
       "title": "Simple Coding Time Tracker",
-      "properties": {        "simpleCodingTimeTracker.saveInterval": {
+      "properties": {
+        "simpleCodingTimeTracker.saveInterval": {
           "type": "number",
           "default": 5,
-          "description": "How often to save coding time data (in seconds)"
-        },        "simpleCodingTimeTracker.inactivityTimeout": {
+          "description": "Interval in seconds to save the current coding session"
+        },
+        "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
-          "default": 150,
-          "description": "Stop tracking after no keyboard/mouse activity (in seconds)"
+          "default": 300,
+          "description": "Time in seconds of inactivity before tracking stops"
         },
         "simpleCodingTimeTracker.focusTimeout": {
           "type": "number",
-          "default": 180,
-          "description": "Continue tracking when switching apps (in seconds)"
+          "default": 60,
+          "description": "Time in seconds to continue tracking after VS Code loses focus"
+        },
+        "simpleCodingTimeTracker.timeEntries": {
+          "type": "array",
+          "default": [],
+          "description": "Coding time entries data",
+          "scope": "application"
         }
       }
     },

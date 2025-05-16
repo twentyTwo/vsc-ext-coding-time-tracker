@@ -15,15 +15,57 @@ export interface SummaryData {
 export class Database {
     private context: vscode.ExtensionContext;
     private entries: TimeEntry[] | null = null;
+    private readonly STORAGE_KEY = 'timeEntries';
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
-        // Initialize storage if empty
-        if (!this.context.globalState.get('timeEntries')) {
-            this.context.globalState.update('timeEntries', []);
+        this.migrateToSyncedStorage();
+    }
+
+    private async migrateToSyncedStorage() {
+        // Check if we have data in the old storage
+        const oldData = this.context.globalState.get<TimeEntry[]>(this.STORAGE_KEY);
+        
+        if (oldData && oldData.length > 0) {
+            // Get current synced data
+            const syncedData = await this.getSyncedEntries();
+            
+            // Merge old and new data, taking the highest timeSpent for each date/project
+            const mergedData = this.mergeTimeEntries(oldData, syncedData);
+            
+            // Save to synced storage
+            await this.updateSyncedEntries(mergedData);
+            
+            // Clear old storage
+            await this.context.globalState.update(this.STORAGE_KEY, []);
         }
-        // Load entries into memory
-        this.entries = this.context.globalState.get<TimeEntry[]>('timeEntries', []);
+        
+        // Load entries from synced storage
+        this.entries = await this.getSyncedEntries();
+    }
+
+    private mergeTimeEntries(entries1: TimeEntry[], entries2: TimeEntry[]): TimeEntry[] {
+        const mergedMap = new Map<string, TimeEntry>();
+        
+        // Helper function to add entries to the map
+        const addToMap = (entry: TimeEntry) => {
+            const key = `${entry.date}-${entry.project}`;
+            if (!mergedMap.has(key)) {
+                mergedMap.set(key, { ...entry });
+            } else {
+                // Take the higher timeSpent value
+                const existing = mergedMap.get(key)!;
+                if (entry.timeSpent > existing.timeSpent) {
+                    existing.timeSpent = entry.timeSpent;
+                }
+            }
+        };
+
+        // Add entries from both sources
+        entries1.forEach(addToMap);
+        entries2.forEach(addToMap);
+
+        return Array.from(mergedMap.values());
     }
 
     private getLocalDateString(date: Date): string {
@@ -32,9 +74,19 @@ export class Database {
             .split('T')[0];
     }
 
+    private async getSyncedEntries(): Promise<TimeEntry[]> {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        return config.get<TimeEntry[]>(this.STORAGE_KEY, []);
+    }
+
+    private async updateSyncedEntries(entries: TimeEntry[]): Promise<void> {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        await config.update(this.STORAGE_KEY, entries, vscode.ConfigurationTarget.Global);
+    }
+
     async addEntry(date: Date, project: string, timeSpent: number) {
         const dateString = this.getLocalDateString(date);
-        const entries = this.getEntries();
+        const entries = await this.getSyncedEntries();
         
         const existingEntryIndex = entries.findIndex(entry => entry.date === dateString && entry.project === project);
 
@@ -45,7 +97,8 @@ export class Database {
         }
 
         try {
-            await this.updateEntries(entries);
+            await this.updateSyncedEntries(entries);
+            this.entries = entries;
         } catch (error) {
             console.error('Error saving entry:', error);
             vscode.window.showErrorMessage('Failed to save time entry');
@@ -53,15 +106,7 @@ export class Database {
     }
 
     getEntries(): TimeEntry[] {
-        if (!this.entries) {
-            this.entries = this.context.globalState.get<TimeEntry[]>('timeEntries', []);
-        }
-        return this.entries;
-    }
-
-    private async updateEntries(entries: TimeEntry[]): Promise<void> {
-        this.entries = entries;
-        await this.context.globalState.update('timeEntries', entries);
+        return this.entries || [];
     }
 
     async getSummaryData(): Promise<SummaryData> {
@@ -96,10 +141,10 @@ export class Database {
         const today = this.getLocalDateString(new Date());
         const entries = this.getEntries();
         const updatedEntries = entries.filter(entry => entry.date !== today);
-        await this.updateEntries(updatedEntries);
+        await this.updateSyncedEntries(updatedEntries);
     }
 
     async resetAllTime(): Promise<void> {
-        await this.updateEntries([]);
+        await this.updateSyncedEntries([]);
     }
 }
