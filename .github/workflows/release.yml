@@ -56,3 +56,17 @@ jobs:
             
             For a full list of changes, please see the [CHANGELOG](CHANGELOG.md).
           token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Post to LinkedIn
+        uses: garygrossgarten/github-action-linkedin@v1
+        with:
+          clientId: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          clientSecret: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          accessToken: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          message: |
+            🚀 New release published: v${{ steps.get_version.outputs.VERSION }}
+            👉 Check it out on GitHub: https://github.com/twentyTwo/vsc-ext-coding-time-tracker/releases/tag/v${{ steps.get_version.outputs.VERSION }}
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
