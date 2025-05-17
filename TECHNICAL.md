@@ -12,19 +12,23 @@ This document contains technical details about the Simple Coding Time Tracker VS
 ### Project Structure
 ```
 vsc-ext-coding-time-tracker/
-├── src/                   # Source code
-│   ├── extension.ts       # Main extension file
-│   ├── statusBar.ts       # Status bar functionality
-│   ├── summaryView.ts     # Summary view implementation
-│   ├── timeTracker.ts     # Time tracking logic
-│   ├── database.ts        # Database operations
-│   └── utils.ts          # Utility functions
-├── scripts/              # Development scripts
+├── dist/                 # Production build output
+│   └── extension.js      # Bundled extension code
+├── src/                  # Source code
+│   ├── extension.ts      # Main extension file
+│   ├── statusBar.ts      # Status bar functionality
+│   ├── summaryView.ts    # Summary view implementation
+│   ├── timeTracker.ts    # Time tracking logic
+│   ├── database.ts       # Database operations
+│   └── utils.ts         # Utility functions
+├── scripts/             # Development scripts
 │   └── generate-test-data.js  # Test data generation
-├── .github/workflows/    # GitHub Actions workflows
-│   ├── release.yml      # Release automation
-│   └── publish.yml      # Marketplace publishing
-└── images/              # Documentation images
+├── .github/workflows/   # GitHub Actions workflows
+│   ├── release.yml     # Release automation
+│   └── publish.yml     # Marketplace publishing
+├── images/             # Documentation images
+├── webpack.config.js   # Webpack configuration
+└── .vscodeignore      # Extension package exclusions
 ```
 
 ## Release Process
@@ -76,7 +80,8 @@ When a tag is pushed, the following automated actions are performed:
    - Checks out the code
    - Sets up Node.js environment
    - Installs dependencies
-   - Compiles the TypeScript code
+   - Bundles the code using webpack
+   - Optimizes and minifies for production
    - Packages the VS Code extension (.vsix file)
 
 2. **Release Creation**:
@@ -206,3 +211,76 @@ Before submitting a pull request:
 5. Check summary view visualizations
 6. Test search and filtering
 7. Verify theme compatibility
+
+## Build and Optimization
+
+### Bundling with Webpack
+
+The extension uses Webpack for bundling and optimization. This significantly reduces the extension size and improves load time.
+
+#### Build Configuration
+
+The build process is configured in `webpack.config.js`:
+```javascript
+{
+  target: 'node',
+  entry: './src/extension.ts',
+  output: {
+    path: './dist',
+    filename: 'extension.js',
+    libraryTarget: 'commonjs2'
+  },
+  externals: {
+    vscode: 'commonjs vscode'
+  }
+}
+```
+
+#### Build Scripts
+
+Available npm scripts:
+```bash
+# Development build with watch mode
+npm run watch
+
+# Production build
+npm run package
+
+# Clean and rebuild
+npm run compile
+```
+
+### File Exclusions
+
+The `.vscodeignore` file is configured to exclude unnecessary files from the final extension package:
+
+```plaintext
+.vscode/**
+.vscode-test/**
+out/**
+src/**
+scripts/**
+node_modules/**
+.gitignore
+.yarnrc
+webpack.config.js
+**/tsconfig.json
+**/.eslintrc.json
+**/*.map
+**/*.ts
+```
+
+### Release Package Optimization
+
+The production build process:
+1. Bundles all TypeScript files into a single JavaScript file
+2. Removes development-only code
+3. Minifies the output
+4. Generates source maps for debugging
+5. Excludes unnecessary files via .vscodeignore
+
+This results in:
+- Smaller extension size
+- Faster load times
+- Reduced memory usage
+- Improved maintainability
