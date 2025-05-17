@@ -16,6 +16,11 @@ export class Database {
     private context: vscode.ExtensionContext;
     private entries: TimeEntry[] | null = null;
     private readonly STORAGE_KEY = 'timeEntries';
+    private syncInterval: NodeJS.Timeout | null = null;
+    private readonly SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+    private hasUnsyncedChanges = false;
+    private readonly MAX_RETRY_INTERVAL = 30 * 60 * 1000; // 30 minutes
+    private retryCount = 0;
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
@@ -42,6 +47,60 @@ export class Database {
         
         // Load entries from synced storage
         this.entries = await this.getSyncedEntries();
+
+        // Start periodic sync
+        this.startPeriodicSync();
+    }
+
+    async syncNow(): Promise<void> {
+        if (!this.entries) return;
+        
+        try {
+            const currentEntries = await this.getSyncedEntries();
+            const mergedEntries = this.mergeTimeEntries(currentEntries, this.entries);
+            await this.updateSyncedEntries(mergedEntries);
+            this.hasUnsyncedChanges = false;
+            this.retryCount = 0;
+        } catch (error) {
+            console.error('Error during manual sync:', error);
+            throw error;
+        }
+    }
+
+    private startPeriodicSync() {
+        // Clear any existing interval
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+        }
+
+        // Initial sync on startup
+        this.syncNow().catch(error => {
+            console.error('Error during initial sync:', error);
+        });
+
+        // Set up new interval with exponential backoff
+        this.scheduleNextSync();
+    }
+
+    private scheduleNextSync() {
+        const interval = Math.min(
+            this.SYNC_INTERVAL * Math.pow(2, this.retryCount),
+            this.MAX_RETRY_INTERVAL
+        );
+
+        this.syncInterval = setInterval(async () => {
+            if (this.hasUnsyncedChanges && this.entries) {
+                try {
+                    await this.syncNow();
+                } catch (error) {
+                    console.error('Error during periodic sync:', error);
+                    this.retryCount++;
+                    // Reschedule with increased interval
+                    clearInterval(this.syncInterval!);
+                    this.scheduleNextSync();
+                }
+            }
+        }, interval);
     }
 
     private mergeTimeEntries(entries1: TimeEntry[], entries2: TimeEntry[]): TimeEntry[] {
@@ -86,7 +145,7 @@ export class Database {
 
     async addEntry(date: Date, project: string, timeSpent: number) {
         const dateString = this.getLocalDateString(date);
-        const entries = await this.getSyncedEntries();
+        const entries = this.entries || await this.getSyncedEntries();
         
         const existingEntryIndex = entries.findIndex(entry => entry.date === dateString && entry.project === project);
 
@@ -97,11 +156,27 @@ export class Database {
         }
 
         try {
-            await this.updateSyncedEntries(entries);
+            // Update local entries
             this.entries = entries;
+            this.hasUnsyncedChanges = true;
+            
+            // Store in local state as backup
+            await this.context.globalState.update(this.STORAGE_KEY, entries);
         } catch (error) {
             console.error('Error saving entry:', error);
             vscode.window.showErrorMessage('Failed to save time entry');
+        }
+    }
+
+    dispose() {
+        if (this.syncInterval) {
+            clearInterval(this.syncInterval);
+        }
+        // Final sync before disposal if there are unsaved changes
+        if (this.hasUnsyncedChanges && this.entries) {
+            this.updateSyncedEntries(this.entries).catch(error => {
+                console.error('Error during final sync:', error);
+            });
         }
     }
 

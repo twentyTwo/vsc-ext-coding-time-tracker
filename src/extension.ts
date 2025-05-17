@@ -10,19 +10,25 @@ export function activate(context: vscode.ExtensionContext) {
     const statusBar = new StatusBar(timeTracker);
     const summaryView = new SummaryViewProvider(context, database, timeTracker);
 
-    // Register cursor tracking
-    context.subscriptions.push(
-        vscode.window.onDidChangeTextEditorSelection(() => {
-            timeTracker.updateCursorActivity();
-        })
-    );
+    // Initialize configuration
+    let focusTimeoutSeconds = vscode.workspace.getConfiguration('simpleCodingTimeTracker')
+        .get('focusTimeout', 60);
 
     // Register configuration change listener
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('simpleCodingTimeTracker')) {
                 timeTracker.updateConfiguration();
+                focusTimeoutSeconds = vscode.workspace.getConfiguration('simpleCodingTimeTracker')
+                    .get('focusTimeout', 60);
             }
+        })
+    );
+
+    // Register cursor tracking
+    context.subscriptions.push(
+        vscode.window.onDidChangeTextEditorSelection(() => {
+            timeTracker.updateCursorActivity();
         })
     );
 
@@ -46,11 +52,25 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.window.showInformationMessage('All coding time trackers have been reset.');
                 }
             });
+    });    // Register sync command
+    let syncDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.syncNow', async () => {
+        try {
+            const startTime = Date.now();
+            await database.syncNow();
+            const syncTime = Date.now() - startTime;
+            vscode.window.showInformationMessage(`Time entries synced successfully (${syncTime}ms)`);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error('Sync error:', error);
+            vscode.window.showErrorMessage(`Failed to sync time entries: ${errorMessage}. Check the developer tools console for more details.`);
+        }
     });
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(resetTimerDisposable);
     context.subscriptions.push(resetAllTimersDisposable);
+    context.subscriptions.push(syncDisposable);
+    context.subscriptions.push(database);
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
 
@@ -70,9 +90,6 @@ export function activate(context: vscode.ExtensionContext) {
             }
             timeTracker.startTracking();
         } else {
-            const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-            const focusTimeoutSeconds = config.get('focusTimeout', 60);
-
             // Only stop tracking after the focus timeout
             if (focusTimeoutHandle) {
                 clearTimeout(focusTimeoutHandle);
