@@ -549,27 +549,35 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
                     });
 
-                    document.getElementById('search-button').addEventListener('click', () => {
-                        const startDate = document.getElementById('start-date-search').value;
-                        const endDate = document.getElementById('end-date-search').value;
-                        const project = document.getElementById('project-search').value;
+                    const startDateElem = document.getElementById('start-date-search');
+                    const endDateElem = document.getElementById('end-date-search');
+                    const projectSearchElem = document.getElementById('project-search');
+
+                    function changeSearchSelection() {
+                        const startDate = startDateElem.value;
+                        const endDate = endDateElem.value;
+                        const project = projectSearchElem.value;
                         vscode.postMessage({ command: 'search', startDate, endDate, project });
-                    });
+                    };
+
+                    startDateElem.addEventListener('input', changeSearchSelection);
+                    endDateElem.addEventListener('input', changeSearchSelection);
+                    projectSearchElem.addEventListener('change', changeSearchSelection);
+                    document.getElementById('search-button').addEventListener('click', changeSearchSelection);
 
                     // Add event listener for the reload button
                     document.getElementById('reload-button').addEventListener('click', () => {
                         // Reset date fields
-                        document.getElementById('start-date-search').value = '';
-                        document.getElementById('end-date-search').value = '';
+                        startDateSearch.value = '';
+                        endDateSearch.value = '';
                         // Reset project dropdown
-                        document.getElementById('project-search').value = '';
+                        projectSearch.value = '';
                         // Send refresh command
                         vscode.postMessage({ command: 'refresh' });
                     });
 
                     function updateProjectDropdown(projects) {
-                        const dropdown = document.getElementById('project-search');
-                        dropdown.innerHTML = '<option value="">All Projects</option>' +
+                        projectSearch.innerHTML = '<option value="">All Projects</option>' +
                             projects.map(project => \`<option value="\${project}">\${project}</option>\`).join('');
                     }
 
