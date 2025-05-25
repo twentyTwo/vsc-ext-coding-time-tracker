@@ -243,6 +243,16 @@ export class TimeTracker implements vscode.Disposable {
         return todayTotal;
     }
 
+    getYesterdayTotal(): number {
+        const yesterday = this.getLocalDateString( new Date(Date.now() - 24 * 60 * 60 * 1000));
+        const entries = this.database.getEntries();
+        const yesterdayTotal = entries
+            .filter((entry: TimeEntry) => entry.date === yesterday)
+            .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
+
+        return yesterdayTotal;
+    }
+
     getCurrentProjectTime(): number {
         const today = this.getLocalDateString(new Date());
         const currentProject = this.getCurrentProject();

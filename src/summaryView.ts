@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import { Database, SummaryData, TimeEntry } from './database';
-import { ThemeIcon } from 'vscode';
-import { formatTime } from './utils';
-import { TimeTracker } from './timeTracker';
+import * as vscode from "vscode";
+import { Database, SummaryData, TimeEntry } from "./database";
+import { ThemeIcon } from "vscode";
+import { formatTime } from "./utils";
+import { TimeTracker } from "./timeTracker";
 
 export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private panel: vscode.WebviewPanel | undefined;
@@ -10,7 +10,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private database: Database;
     private timeTracker: TimeTracker;
 
-    constructor(context: vscode.ExtensionContext, database: Database, timeTracker: TimeTracker) {
+    constructor(
+        context: vscode.ExtensionContext,
+        database: Database,
+        timeTracker: TimeTracker
+    ) {
         this.context = context;
         this.database = database;
         this.timeTracker = timeTracker;
@@ -23,16 +27,23 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     ): void | Thenable<void> {
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this.context.extensionUri]
+            localResourceRoots: [this.context.extensionUri],
         };
 
         webviewView.webview.onDidReceiveMessage(
-            async message => {
-                if (message.command === 'refresh') {
+            async (message) => {
+                if (message.command === "refresh") {
                     await this.show(webviewView.webview);
-                } else if (message.command === 'search') {
-                    const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
-                    webviewView.webview.postMessage({ command: 'searchResult', data: searchResults });
+                } else if (message.command === "search") {
+                    const searchResults = await this.database.searchEntries(
+                        message.startDate,
+                        message.endDate,
+                        message.project
+                    );
+                    webviewView.webview.postMessage({
+                        command: "searchResult",
+                        data: searchResults,
+                    });
                 }
             },
             undefined,
@@ -47,39 +58,57 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         const projects = await this.getUniqueProjects();
         const totalTime = {
             today: formatTime(this.timeTracker.getTodayTotal()),
+            yesterday: formatTime(this.timeTracker.getYesterdayTotal()),
             weekly: formatTime(this.timeTracker.getWeeklyTotal()),
             monthly: formatTime(this.timeTracker.getMonthlyTotal()),
             yearly: formatTime(this.timeTracker.getYearlyTotal()), // Add this line
-            allTime: formatTime(this.timeTracker.getAllTimeTotal())
+            allTime: formatTime(this.timeTracker.getAllTimeTotal()),
         };
 
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
-            webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            webview.postMessage({
+                command: "update",
+                data: summaryData,
+                projects: projects,
+                totalTime: totalTime,
+            });
         } else if (this.panel) {
             this.panel.reveal();
             this.panel.webview.html = this.getHtmlForWebview(projects);
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            this.panel.webview.postMessage({
+                command: "update",
+                data: summaryData,
+                projects: projects,
+                totalTime: totalTime,
+            });
         } else {
             this.panel = vscode.window.createWebviewPanel(
-                'codingTimeSummary',
-                'Coding Time Summary',
+                "codingTimeSummary",
+                "Coding Time Summary",
                 vscode.ViewColumn.One,
                 {
                     enableScripts: true,
-                    retainContextWhenHidden: true
+                    retainContextWhenHidden: true,
                 }
             );
 
             this.panel.webview.html = this.getHtmlForWebview(projects);
 
             this.panel.webview.onDidReceiveMessage(
-                async message => {
-                    if (message.command === 'refresh') {
+                async (message) => {
+                    if (message.command === "refresh") {
                         await this.show(this.panel?.webview);
-                    } else if (message.command === 'search') {
-                        const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
-                        this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });
+                    } else if (message.command === "search") {
+                        const searchResults = await this.database.searchEntries(
+                            message.startDate,
+                            message.endDate,
+                            message.project
+                        );
+                        this.panel?.webview.postMessage({
+                            command: "searchResult",
+                            data: searchResults,
+                        });
                     }
                 },
                 undefined,
@@ -90,7 +119,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 this.panel = undefined;
             });
 
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            this.panel.webview.postMessage({
+                command: "update",
+                data: summaryData,
+                projects: projects,
+                totalTime: totalTime,
+            });
         }
     }
 
@@ -98,25 +132,35 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private async updateContent(webview?: vscode.Webview) {
         const summaryData = await this.database.getSummaryData();
         const projects = await this.getUniqueProjects();
-        
+
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
-            webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+            webview.postMessage({
+                command: "update",
+                data: summaryData,
+                projects: projects,
+            });
         } else if (this.panel) {
             this.panel.webview.html = this.getHtmlForWebview(projects);
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects });
+            this.panel.webview.postMessage({
+                command: "update",
+                data: summaryData,
+                projects: projects,
+            });
         }
     }
 
     private async getUniqueProjects(): Promise<string[]> {
         const entries = await this.database.getEntries();
-        const projectSet = new Set(entries.map(entry => entry.project));
+        const projectSet = new Set(entries.map((entry) => entry.project));
         return Array.from(projectSet).sort();
     }
 
     private getHtmlForWebview(projects: string[]): string {
-        const projectOptions = projects.map(project => `<option value="${project}">${project}</option>`).join('');
-        
+        const projectOptions = projects
+            .map((project) => `<option value="${project}">${project}</option>`)
+            .join("");
+
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -389,6 +433,10 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             <p id="today-total">Loading...</p>
                         </div>
                         <div class="total-time-item">
+                            <h3>Yesterday</h3>
+                            <p id="yesterday-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
                             <h3>This Week</h3>
                             <p id="weekly-total">Loading...</p>
                             <small>Sunday - today</small>
@@ -575,6 +623,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
                     function updateTotalTimeSection(totalTime) {
                         document.getElementById('today-total').textContent = totalTime.today;
+                        document.getElementById('yesterday-total').textContent = totalTime.yesterday;
                         document.getElementById('weekly-total').textContent = totalTime.weekly;
                         document.getElementById('monthly-total').textContent = totalTime.monthly;
                         document.getElementById('yearly-total').textContent = totalTime.yearly;
