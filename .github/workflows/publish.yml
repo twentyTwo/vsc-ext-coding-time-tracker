@@ -81,17 +81,24 @@ jobs:
       - name: Install vsce
         run: npm install -g @vscode/vsce
         
+      - name: Clean existing VSIX files
+        run: rm -f *.vsix
+
       - name: Package Extension
         run: vsce package
         
       - name: Get Package Info
         id: package
         run: |
-          VSIX_PATH=$(ls *.vsix)
+          VERSION=$(node -p "require('./package.json').version")
+          VSIX_PATH="simple-coding-time-tracker-${VERSION}.vsix"
+          if [ ! -f "$VSIX_PATH" ]; then
+            echo "Error: Expected VSIX file $VSIX_PATH not found"
+            exit 1
+          fi
           echo "Package created: $VSIX_PATH"
           echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           
       - name: Upload VSIX as artifact
@@ -99,7 +106,7 @@ jobs:
         with:
           name: extension-release-v${{ steps.package.outputs.version }}-${{ steps.package.outputs.date }}
           path: "*.vsix"
-          retention-days: 400  # Maximum retention period allowed by GitHub
+          retention-days: 99  # Maximum retention period allowed by GitHub
           
       - name: Publish to Visual Studio Marketplace
         run: vsce publish -p "${{ secrets.VSC_PAT }}"

@@ -7,17 +7,16 @@ export class TimeTracker implements vscode.Disposable {
     private currentProject: string = '';
     private database: Database;
     private updateInterval: NodeJS.Timeout | null = null;
-    private saveInterval: NodeJS.Timeout | null = null;
-    private saveIntervalSeconds: number;
+    private saveInterval: NodeJS.Timeout | null = null;    private saveIntervalSeconds: number = 5;
     private lastCursorActivity: number = Date.now();
     private cursorInactivityTimeout: NodeJS.Timeout | null = null;
-    private inactivityTimeoutSeconds: number;
+    private inactivityTimeoutSeconds: number = 300;
+    private focusTimeoutHandle: NodeJS.Timeout | null = null;
+    private focusTimeoutSeconds: number = 60;
 
     constructor(database: Database) {
         this.database = database;
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        this.saveIntervalSeconds = config.get('saveInterval', 5);
-        this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 300); // Default 5 minutes in seconds
+        this.updateConfiguration();
 
         // Track cursor movements
         vscode.window.onDidChangeTextEditorSelection(() => {
@@ -61,9 +60,31 @@ export class TimeTracker implements vscode.Disposable {
         // Track when VS Code window gains focus
         vscode.window.onDidChangeWindowState((e) => {
             if (e.focused) {
-                this.updateCursorActivity();
+                // Clear any pending timeout when focus returns
+                if (this.focusTimeoutHandle) {
+                    clearTimeout(this.focusTimeoutHandle);
+                    this.focusTimeoutHandle = null;
+                }
+                this.startTracking();
+            } else {
+                // Set timeout when focus is lost
+                if (this.focusTimeoutHandle) {
+                    clearTimeout(this.focusTimeoutHandle);
+                }
+                this.focusTimeoutHandle = setTimeout(() => {
+                    if (this.isTracking) {
+                        this.stopTracking();
+                    }
+                }, this.focusTimeoutSeconds * 1000);
             }
         });
+    }
+
+    public updateConfiguration() {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        this.saveIntervalSeconds = config.get('saveInterval', 5);
+        this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 300); // Default 5 minutes in seconds
+        this.focusTimeoutSeconds = config.get('focusTimeout', 60);
     }
 
     private setupCursorTracking() {
@@ -297,22 +318,8 @@ export class TimeTracker implements vscode.Disposable {
         const now = new Date();
         const startOfYear = new Date(now.getFullYear(), 0, 1); // January 1st of current year
         return this.getTotalSince(startOfYear);
-    }
-
-    dispose() {
+    }    dispose() {
         this.stopTracking();
-    }
-
-    resetTimer(): void {
-        this.stopTracking();
-        this.startTime = 0;
-        this.database.resetTodayTime();
-    }
-
-    resetAllTimers(): void {
-        this.stopTracking();
-        this.startTime = 0;
-        this.database.resetAllTime();
     }
 
     isActive(): boolean {

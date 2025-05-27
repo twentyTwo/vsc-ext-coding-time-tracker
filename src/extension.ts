@@ -17,31 +17,19 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
-    // Register the existing command
+    // Register configuration change listener
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('simpleCodingTimeTracker')) {
+                timeTracker.updateConfiguration();
+            }
+        })
+    );    // Register the show summary command
     let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
     });
 
-    // Register the new reset timer command
-    let resetTimerDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.resetTimer', () => {
-        timeTracker.resetTimer();
-        vscode.window.showInformationMessage('Coding time tracker has been reset for today.');
-    });
-
-    // Register the new reset all timers command
-    let resetAllTimersDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.resetAllTimers', () => {
-        vscode.window.showWarningMessage('Are you sure you want to reset all timers? This action cannot be undone.', 'Yes', 'No')
-            .then(selection => {
-                if (selection === 'Yes') {
-                    timeTracker.resetAllTimers();
-                    vscode.window.showInformationMessage('All coding time trackers have been reset.');
-                }
-            });
-    });
-
     context.subscriptions.push(disposable);
-    context.subscriptions.push(resetTimerDisposable);
-    context.subscriptions.push(resetAllTimersDisposable);
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
 
@@ -50,11 +38,28 @@ export function activate(context: vscode.ExtensionContext) {
         timeTracker.startTracking();
     }
 
+    // Variable to store the focus timeout handle
+    let focusTimeoutHandle: NodeJS.Timeout | null = null;
+
     vscode.window.onDidChangeWindowState((e: vscode.WindowState) => {
         if (e.focused) {
+            if (focusTimeoutHandle) {
+                clearTimeout(focusTimeoutHandle);
+                focusTimeoutHandle = null;
+            }
             timeTracker.startTracking();
         } else {
-            timeTracker.stopTracking();
+            const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+            const focusTimeoutSeconds = config.get('focusTimeout', 60);
+
+            // Only stop tracking after the focus timeout
+            if (focusTimeoutHandle) {
+                clearTimeout(focusTimeoutHandle);
+            }
+            
+            focusTimeoutHandle = setTimeout(() => {
+                timeTracker.stopTracking();
+            }, focusTimeoutSeconds * 1000);
         }
     });
 

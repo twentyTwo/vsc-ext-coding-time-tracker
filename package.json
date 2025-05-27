@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.3.5",
+  "version": "0.3.9",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -15,7 +15,7 @@
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
       "title": "Simple Coding Time Tracker",
@@ -23,34 +23,30 @@
         "simpleCodingTimeTracker.saveInterval": {
           "type": "number",
           "default": 5,
-          "description": "Interval in seconds to save the current coding session"
+          "description": "How often to save coding time data (in seconds)"
         },
         "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
-          "default": 300,
-          "description": "Time in seconds of inactivity before tracking stops (default: 300 seconds = 5 minutes)"
+          "default": 150,
+          "description": "Pause tracking if there is no keyboard or mouse activity in VS Code for this many seconds."
+        },
+        "simpleCodingTimeTracker.focusTimeout": {
+          "type": "number",
+          "default": 180,
+          "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
         }
       }
-    },
-    "commands": [
+    },    "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
         "title": "SCTT: Show Coding Time Summary"
-      },
-      {
-        "command": "simpleCodingTimeTracker.resetTimer",
-        "title": "SCTT: Reset Coding Timer for Today"
-      },
-      {
-        "command": "simpleCodingTimeTracker.resetAllTimers",
-        "title": "SCTT: Reset All Coding Timers"
       }
     ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+  },  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
@@ -58,14 +54,16 @@
     "refresh-extension": "code --uninstall-extension noorashuvo.simple-coding-time-tracker && vsce package && code --install-extension $(npm pack --quiet)"
   },
   "devDependencies": {
-    "@types/vscode": "^1.60.0",
     "@types/node": "^14.14.37",
+    "@types/vscode": "^1.60.0",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
     "eslint": "^7.25.0",
-    "typescript": "^4.2.4"
+    "ts-loader": "^9.5.2",
+    "typescript": "^4.2.4",
+    "webpack": "^5.99.8",
+    "webpack-cli": "^6.0.1"
   },
-  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/twentyTwo/vsc-ext-coding-time-tracker.git"
