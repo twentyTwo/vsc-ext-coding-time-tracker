@@ -1,0 +1,29 @@
+name: Repository Statistics
+run-name: 📊 Collect Repository Metrics
+
+on:
+  schedule:
+    # Runs every 2nd day at 02:00 UTC (less busy time)
+    - cron: '0 2 */2 * *'
+  workflow_dispatch:  # Allow manual trigger for testing
+
+permissions:
+  contents: write    # Needed to write stats data
+  pull-requests: read
+  issues: read
+
+jobs:
+  repo-stats:
+    name: Generate Repository Statistics
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Generate repository statistics
+        uses: jgehrcke/github-repo-stats@RELEASE
+        with:
+          repository: ${{ github.repository }}
+          ghtoken: ${{ secrets.REPO_STATS_TOKEN }}  # Use custom PAT instead
+          databranch: stats-data
