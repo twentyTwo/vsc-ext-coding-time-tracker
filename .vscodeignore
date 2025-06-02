@@ -11,6 +11,7 @@ tsconfig.json
 .eslintrc.json
 **/*.map
 **/*.ts
+**/*.code-workspace
 CONTRIBUTING.md
 TECHNICAL.md
 .github/**
