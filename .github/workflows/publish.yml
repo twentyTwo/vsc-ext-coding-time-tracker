@@ -141,17 +141,13 @@ jobs:
         with:
           name: extension-v${{ needs.validate.outputs.version }}
 
-      - name:  Downloaded package
-        run: |
-          echo "📦 Downloaded artifact contents:"
-          ls -lh
-          echo "Current directory: $(pwd)"
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
       - name: Install vsce
         run: |
-          echo "🔧 Installing vsce..."
           npm install -g @vscode/vsce
-          echo "VSCE version: $(vsce --version)"
+          vsce --version
 
       - name: Diagnostic check
         run: |
