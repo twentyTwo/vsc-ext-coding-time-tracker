@@ -22,7 +22,7 @@
       "properties": {
         "simpleCodingTimeTracker.saveInterval": {
           "type": "number",
-          "default": 5,
+          "default": 30,
           "description": "How often to save coding time data (in seconds)"
         },
         "simpleCodingTimeTracker.inactivityTimeout": {
@@ -36,13 +36,23 @@
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
         }
       }
-    },    "commands": [
+    },
+    "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
         "title": "SCTT: Show Coding Time Summary"
+      },
+      {
+        "command": "simpleCodingTimeTracker.viewStorageData",
+        "title": "SCTT: View Time Tracking Data"
+      },
+      {
+        "command": "coding-time-tracker.clearAllData",
+        "title": "Clear All Time Tracking Data"
       }
     ]
-  },  "scripts": {
+  },
+  "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",
@@ -63,6 +73,9 @@
     "typescript": "^4.2.4",
     "webpack": "^5.99.8",
     "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "simple-git": "^3.27.0"
   },
   "repository": {
     "type": "git",
