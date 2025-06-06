@@ -1,21 +1,38 @@
+# Development directories
 .vscode/**
 .vscode-test/**
 src/**
 out/test/**
 test/**
 scripts/**
-images/**
+
+# Source control
+.git/**
+.github/**
 .gitignore
+
+# Configuration files
 .yarnrc
 tsconfig.json
 .eslintrc.json
+webpack.config.js
+
+# Build artifacts
 **/*.map
 **/*.ts
-**/*.code-workspace
+**/*.vsix
+
+# Documentation (except README)
 CONTRIBUTING.md
 TECHNICAL.md
-.github/**
-**/*.vsix
-webpack.config.js
+
+# Dependencies (except type definitions)
 node_modules/**
 !node_modules/@types/
+
+# Keep these files
+!LICENSE
+!README.md
+!package.json
+!icon-sctt.png
+!out/src/**/*.js
