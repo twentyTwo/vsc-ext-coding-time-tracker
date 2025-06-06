@@ -31,8 +31,10 @@ export class StatusBar implements vscode.Disposable {
         const weeklyTotal = await this.timeTracker.getWeeklyTotal();
         const monthlyTotal = await this.timeTracker.getMonthlyTotal();
         const allTimeTotal = await this.timeTracker.getAllTimeTotal();
+        const currentBranch = this.timeTracker.getCurrentBranch();
 
-        return `${isActive ? 'Active' : 'Paused'} - Total Coding Time:
+        return `${isActive ? 'Active' : 'Paused'} - Total Coding Time
+Branch: ${currentBranch}
 This week: ${formatTime(weeklyTotal)}
 This month: ${formatTime(monthlyTotal)}
 All Time: ${formatTime(allTimeTotal)}

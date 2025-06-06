@@ -22,7 +22,7 @@
       "properties": {
         "simpleCodingTimeTracker.saveInterval": {
           "type": "number",
-          "default": 5,
+          "default": 30,
           "description": "How often to save coding time data (in seconds)"
         },
         "simpleCodingTimeTracker.inactivityTimeout": {

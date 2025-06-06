@@ -2,6 +2,11 @@ import * as vscode from 'vscode';
 import { Database, TimeEntry } from './database';
 import { simpleGit, SimpleGit } from 'simple-git';
 
+type GitWatcher = {
+    git: SimpleGit;
+    lastKnownBranch: string;
+};
+
 export class TimeTracker implements vscode.Disposable {
     private isTracking: boolean = false;
     private startTime: number = 0;
@@ -16,6 +21,8 @@ export class TimeTracker implements vscode.Disposable {
     private inactivityTimeoutSeconds: number = 300;
     private focusTimeoutHandle: NodeJS.Timeout | null = null;
     private focusTimeoutSeconds: number = 60;
+    private gitWatcher: GitWatcher | null = null;
+    private branchCheckInterval: NodeJS.Timeout | null = null;
 
     constructor(database: Database) {
         this.database = database;
@@ -154,6 +161,7 @@ export class TimeTracker implements vscode.Disposable {
             this.updateInterval = setInterval(() => this.updateCurrentSession(), 1000);
             this.saveInterval = setInterval(() => this.saveCurrentSession(), this.saveIntervalSeconds * 1000);
             this.setupCursorTracking();
+            await this.setupGitWatcher(); // Set up real-time branch monitoring
         }
     }
 
@@ -173,6 +181,7 @@ export class TimeTracker implements vscode.Disposable {
                 this.cursorInactivityTimeout = null;
             }
             this.saveCurrentSession();
+            this.stopGitWatcher(); // Clean up branch monitoring
         }
     }
 
@@ -342,5 +351,69 @@ export class TimeTracker implements vscode.Disposable {
 
     getCurrentBranch(): string {
         return this.currentBranch;
+    }
+
+    private async setupGitWatcher() {
+        try {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                return;
+            }
+
+            const git = simpleGit(workspaceFolder.uri.fsPath);
+            const isGitRepo = await git.checkIsRepo();
+            
+            if (!isGitRepo) {
+                return;
+            }
+
+            const branchInfo = await git.branch();
+            this.gitWatcher = {
+                git,
+                lastKnownBranch: branchInfo.current || 'unknown'
+            };
+
+            // Check for branch changes every second
+            this.branchCheckInterval = setInterval(async () => {
+                await this.checkBranchChanges();
+            }, 1000);
+
+        } catch (error) {
+            console.error('Error setting up git watcher:', error);
+        }
+    }
+
+    private async checkBranchChanges() {
+        if (!this.gitWatcher || !this.isTracking) {
+            return;
+        }
+
+        try {
+            const branchInfo = await this.gitWatcher.git.branch();
+            const currentBranch = branchInfo.current || 'unknown';
+
+            // If branch has changed
+            if (currentBranch !== this.gitWatcher.lastKnownBranch) {
+                // Save the current session with the old branch
+                await this.saveCurrentSession();
+
+                // Update branch tracking
+                this.gitWatcher.lastKnownBranch = currentBranch;
+                this.currentBranch = currentBranch;
+
+                // Start a new session
+                this.startTime = Date.now();
+            }
+        } catch (error) {
+            console.error('Error checking branch changes:', error);
+        }
+    }
+
+    private stopGitWatcher() {
+        if (this.branchCheckInterval) {
+            clearInterval(this.branchCheckInterval);
+            this.branchCheckInterval = null;
+        }
+        this.gitWatcher = null;
     }
 }

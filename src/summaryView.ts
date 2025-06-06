@@ -42,15 +42,14 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         this.show(webviewView.webview);
     }
 
-    async show(webview?: vscode.Webview) {
-        const summaryData = await this.database.getSummaryData();
+    async show(webview?: vscode.Webview) {        const summaryData = await this.database.getSummaryData();
         const projects = await this.getUniqueProjects();
         const totalTime = {
-            today: formatTime(this.timeTracker.getTodayTotal()),
-            weekly: formatTime(this.timeTracker.getWeeklyTotal()),
-            monthly: formatTime(this.timeTracker.getMonthlyTotal()),
-            yearly: formatTime(this.timeTracker.getYearlyTotal()), // Add this line
-            allTime: formatTime(this.timeTracker.getAllTimeTotal())
+            today: formatTime(await this.timeTracker.getTodayTotal()),
+            weekly: formatTime(await this.timeTracker.getWeeklyTotal()),
+            monthly: formatTime(await this.timeTracker.getMonthlyTotal()),
+            yearly: formatTime(await this.timeTracker.getYearlyTotal()),
+            allTime: formatTime(await this.timeTracker.getAllTimeTotal())
         };
 
         if (webview) {
