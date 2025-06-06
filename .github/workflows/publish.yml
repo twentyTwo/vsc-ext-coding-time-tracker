@@ -1,112 +1,231 @@
 name: Publish Extension to Visual Studio Marketplace
+run-name: ${{ inputs.dry_run && '🧪 Test publish workflow' || format('Validate, 🚀 Publish and Post-Process triggered from `{0}` branch', github.ref_name) }}
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/workflows/**'  # Ignore changes to workflow files
-  workflow_dispatch:  # Allow manual trigger
+    branches: [pipeline, main]
+    paths-ignore: ['.github/workflows/**']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in test mode (no actual publish)'
+        type: boolean
+        default: false
 
 jobs:
-  verify-changes:
+  validate:
     runs-on: ubuntu-latest
     outputs:
-      should_publish: ${{ steps.check-changes.outputs.should_publish }}
-    
+      should_publish: ${{ steps.changes.outputs.should_publish }}
+      version: ${{ steps.version.outputs.current }}
+      skip_reason: ${{ steps.changes.outputs.skip_reason }}
+      has_code_changes: ${{ steps.changes.outputs.has_code_changes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for all tags and branches
-          
-      - name: Get changed files
-        id: changed-files
+          fetch-depth: 2  # For version diff check
+
+      - name: Get version info
+        id: version
         run: |
-          echo "files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
-          
-      - name: Check version change and file types
-        id: check-changes
+          CURRENT=$(node -p "require('./package.json').version")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "✨ Current version: $CURRENT"
+
+      - name: Analyze changes
+        id: changes
         run: |
-          # Check if package.json version changed
-          VERSION_CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} package.json | grep '+\s*"version"')
+          # Get the version change status
+          VERSION_UPDATED=$(git diff HEAD^ HEAD -- package.json | grep -q '"version":' && echo "true" || echo "false")
           
-          # Get list of changed files
-          CHANGED_FILES="${{ steps.changed-files.outputs.files }}"
+          # Get code changes (excluding docs and configuration)
+          CODE_CHANGES=$(git diff --name-only HEAD^ HEAD | \
+            grep -vE '\.(md|txt)$|^docs/|^\.github/|^\.vscode/|package\.json$' || echo "")
           
-          # Check if only documentation files were changed
-          DOCS_ONLY=true
-          for file in $CHANGED_FILES; do
-            if [[ ! $file =~ \.(md|txt|doc|docx)$ ]] && [[ ! $file =~ ^docs/ ]]; then
-              DOCS_ONLY=false
-              break
+          # Get documentation changes
+          DOC_CHANGES=$(git diff --name-only HEAD^ HEAD | \
+            grep -E '\.(md|txt)$|^docs/' || echo "")
+          
+          # Output change detection results
+          echo "has_code_changes=${CODE_CHANGES:+true}" >> $GITHUB_OUTPUT
+          echo "has_doc_changes=${DOC_CHANGES:+true}" >> $GITHUB_OUTPUT
+          
+          # Determine workflow action based on changes
+          if [[ "$VERSION_UPDATED" == "true" ]]; then
+            if [[ -n "$CODE_CHANGES" ]]; then
+              # Version bump with code changes - proceed with publish
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+              echo "skip_reason=" >> $GITHUB_OUTPUT
+              echo "✅ Publishing needed: Version update detected with code changes"
+            else
+              # Version bump without code changes - skip but warn
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+              echo "skip_reason=Version update without code changes" >> $GITHUB_OUTPUT
+              echo "⚠️ Version update detected but no code changes found"
             fi
-          done
-          
-          # Initialize should_publish as false
-          echo "should_publish=false" >> $GITHUB_OUTPUT
-          
-          if [[ "$DOCS_ONLY" == "true" ]]; then
-            echo "ℹ️ Only documentation files were changed"
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-          elif [[ -z "$VERSION_CHANGED" ]]; then
-            echo "❌ Version in package.json was not updated"
-            echo "should_publish=false" >> $GITHUB_OUTPUT
           else
-            echo "✅ Version changed and non-documentation files modified"
-            echo "should_publish=true" >> $GITHUB_OUTPUT
+            if [[ -n "$CODE_CHANGES" ]]; then
+              # Code changes without version bump - fail
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+              echo "skip_reason=Code changes without version update" >> $GITHUB_OUTPUT
+              echo "❌ Code changes detected without version update"
+              exit 1
+            else
+              # No relevant changes - skip
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+              if [[ -n "$DOC_CHANGES" ]]; then
+                echo "skip_reason=Documentation only changes" >> $GITHUB_OUTPUT
+                echo "ℹ️ Documentation only changes detected"
+              else
+                echo "skip_reason=No significant changes" >> $GITHUB_OUTPUT
+                echo "ℹ️ No significant changes detected"
+              fi
+            fi
           fi
 
-  publish:
-    needs: verify-changes
-    if: needs.verify-changes.outputs.should_publish == 'true'
+  build-and-package:
+    needs: validate
+    if: needs.validate.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
-    environment: VSC EXT
-    
+    outputs:
+      vsix_path: ${{ steps.package.outputs.path }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Compile
-        run: npm run compile
-        
-      - name: Install vsce
-        run: npm install -g @vscode/vsce
-        
-      - name: Clean existing VSIX files
-        run: rm -f *.vsix
-
-      - name: Package Extension
-        run: vsce package
-        
-      - name: Get Package Info
+      
+      - name: Install and build
+        run: |
+          npm ci
+          npm run compile
+          npm install -g @vscode/vsce
+      
+      - name: Package extension
         id: package
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          VSIX_PATH="simple-coding-time-tracker-${VERSION}.vsix"
-          if [ ! -f "$VSIX_PATH" ]; then
-            echo "Error: Expected VSIX file $VSIX_PATH not found"
+          VERSION="${{ needs.validate.outputs.version }}"
+          VSIX_NAME="simple-coding-time-tracker-${VERSION}.vsix"
+          
+          rm -f *.vsix
+          vsce package
+          
+          if [ ! -f "$VSIX_NAME" ]; then
+            echo "::error::Failed to create VSIX package"
             exit 1
           fi
-          echo "Package created: $VSIX_PATH"
-          echo "vsix_path=$VSIX_PATH" >> $GITHUB_OUTPUT
-          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
           
-      - name: Upload VSIX as artifact
+          echo "path=$VSIX_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Package created: $VSIX_NAME"
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-release-v${{ steps.package.outputs.version }}-${{ steps.package.outputs.date }}
-          path: "*.vsix"
-          retention-days: 99  # Maximum retention period allowed by GitHub
+          name: extension-v${{ needs.validate.outputs.version }}
+          path: ${{ steps.package.outputs.path }}
+          retention-days: 90
+
+  publish:
+    needs: [validate, build-and-package]
+    runs-on: ubuntu-latest
+    environment: VSC EXT
+    outputs:
+      status: ${{ steps.publish.outputs.status }}
+      error_detail: ${{ steps.publish.outputs.error_detail }}
+    steps:      
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-v${{ needs.validate.outputs.version }}
+      
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+      
+      - name: Publish to marketplace
+        id: publish
+        continue-on-error: true
+        env:
+          VSC_PAT: ${{ secrets.VSC_PAT }}
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
           
-      - name: Publish to Visual Studio Marketplace
-        run: vsce publish -p "${{ secrets.VSC_PAT }}"
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            echo "✨ Dry run mode - simulating publish of v${VERSION}"
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "This is a dry run - skipping actual publish" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          
+          # Attempt to publish and capture output
+          OUTPUT=$(vsce publish -p "$VSC_PAT" 2>&1)
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            # Check specific error cases
+            if [[ "$OUTPUT" == *"already exists"* ]]; then
+              echo "status=exists" >> $GITHUB_OUTPUT
+            else
+              echo "status=failed" >> $GITHUB_OUTPUT
+              ERROR_DETAIL=$(echo "$OUTPUT" | grep -v "error" | tail -n 1)
+              echo "error_detail=$ERROR_DETAIL" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Create and push Git tag
+        if: steps.publish.outputs.status == 'success'
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+  # Wrote this to update the run-name dynamically based on the publish status, but it is not supported in GitHub Actions now.
+  # We can post the new extension publish in linked or comment on the PR.
+  # https://github.com/orgs/community/discussions/69476
+  post-process:
+    needs: [validate, publish]
+    if: always()
+    runs-on: ubuntu-latest
+    name: ${{ needs.validate.outputs.should_publish == 'false' 
+      && format('{0} {1}', 
+          needs.validate.outputs.has_code_changes == 'true' && '⚠️' || 'ℹ️',
+          needs.validate.outputs.skip_reason) || needs.publish.result == 'success' 
+      && needs.publish.outputs.status == 'success' 
+      && format('✅ Published v{0} successfully', needs.validate.outputs.version) || needs.publish.outputs.status == 'exists' 
+      && format('ℹ️ v{0} already exists', needs.validate.outputs.version) || format('❌ Failed to publish v{0}', needs.validate.outputs.version) }}
+    steps:
+      - name: Set status summary
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          
+          # Set step summary only
+          if [[ "${{ needs.validate.outputs.should_publish }}" == "false" ]]; then
+            if [[ "${{ needs.validate.outputs.has_code_changes }}" == "true" ]]; then
+              echo "### ⚠️ Version update needed for code changes" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "### ℹ️ Documentation update only" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "${{ needs.validate.outputs.skip_reason }}" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.publish.result }}" == "success" ]]; then
+            case "${{ needs.publish.outputs.status }}" in
+              "success")
+                echo "### ✅ Published v${VERSION} successfully" >> $GITHUB_STEP_SUMMARY
+                echo "Extension successfully published to VS Code Marketplace" >> $GITHUB_STEP_SUMMARY
+                ;;
+              "exists")
+                echo "### ℹ️ v${VERSION} already exists" >> $GITHUB_STEP_SUMMARY
+                echo "Version already exists in VS Code Marketplace" >> $GITHUB_STEP_SUMMARY
+                ;;
+              *)
+                echo "### ❌ Failed to publish v${VERSION}" >> $GITHUB_STEP_SUMMARY
+                echo "${{ needs.publish.outputs.error_detail }}" >> $GITHUB_STEP_SUMMARY
+                ;;
+            esac
+          else
+            echo "### ❌ Failed to publish v${VERSION}" >> $GITHUB_STEP_SUMMARY
+            echo "Workflow failed during publish stage" >> $GITHUB_STEP_SUMMARY
+          fi
