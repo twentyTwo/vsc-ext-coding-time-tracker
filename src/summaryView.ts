@@ -24,15 +24,24 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this.context.extensionUri]
-        };
-
-        webviewView.webview.onDidReceiveMessage(
-            async message => {
+        };        webviewView.webview.onDidReceiveMessage(
+            async message => {                
                 if (message.command === 'refresh') {
                     await this.show(webviewView.webview);
                 } else if (message.command === 'search') {
-                    const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
+                    const searchResults = await this.database.searchEntries(
+                        message.startDate, 
+                        message.endDate, 
+                        message.project,
+                        message.branch
+                    );
                     webviewView.webview.postMessage({ command: 'searchResult', data: searchResults });
+                } else if (message.command === 'projectChanged') {
+                    // If project is empty, show all branches, otherwise show only branches for selected project
+                    const branches = message.project 
+                        ? await this.database.getBranchesByProject(message.project)
+                        : await this.getUniqueBranches();
+                    webviewView.webview.postMessage({ command: 'updateBranches', branches });
                 }
             },
             undefined,
@@ -42,8 +51,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         this.show(webviewView.webview);
     }
 
-    async show(webview?: vscode.Webview) {        const summaryData = await this.database.getSummaryData();
+    // Add this method to get branches for a specific project
+    private async getBranchesByProject(project: string): Promise<string[]> {
+        return await this.database.getBranchesByProject(project);
+    }
+
+    async show(webview?: vscode.Webview) {
+        const summaryData = await this.database.getSummaryData();
         const projects = await this.getUniqueProjects();
+        const branches = await this.getUniqueBranches();
         const totalTime = {
             today: formatTime(await this.timeTracker.getTodayTotal()),
             weekly: formatTime(await this.timeTracker.getWeeklyTotal()),
@@ -54,7 +70,13 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
-            webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            webview.postMessage({ 
+                command: 'update', 
+                data: summaryData, 
+                projects, 
+                branches,
+                totalTime 
+            });
         } else if (this.panel) {
             this.panel.reveal();
             this.panel.webview.html = this.getHtmlForWebview(projects);
@@ -78,18 +100,21 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         await this.show(this.panel?.webview);
                     } else if (message.command === 'search') {
                         const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
-                        this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });
+                        this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });                    } else if (message.command === 'projectChanged') {
+                        // Update branches for selected project
+                        const branches = message.project 
+                            ? await this.database.getBranchesByProject(message.project)
+                            : await this.getUniqueBranches();
+                        this.panel?.webview.postMessage({ command: 'updateBranches', branches });
                     }
                 },
                 undefined,
                 this.context.subscriptions
-            );
-
-            this.panel.onDidDispose(() => {
+            );            this.panel.onDidDispose(() => {
                 this.panel = undefined;
             });
 
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, branches, totalTime });
         }
     }
 
@@ -111,6 +136,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         const entries = await this.database.getEntries();
         const projectSet = new Set(entries.map(entry => entry.project));
         return Array.from(projectSet).sort();
+    }
+
+    private async getUniqueBranches(): Promise<string[]> {
+        const entries = await this.database.getEntries();
+        const branchSet = new Set(entries.map(entry => entry.branch));
+        return Array.from(branchSet).sort();
     }
 
     private getHtmlForWebview(projects: string[]): string {
@@ -412,13 +443,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="heatmap-wrapper">
                             <div class="months-container"></div>
                         </div>
-                    </div>
-                    <div class="search-form">
+                    </div>                    <div class="search-form">
                         <input type="date" id="start-date-search" name="start-date-search">
                         <input type="date" id="end-date-search" name="end-date-search">
                         <select id="project-search" name="project-search">
                             <option value="">All Projects</option>
                             ${projectOptions}
+                        </select>
+                        <select id="branch-search" name="branch-search">
+                            <option value="">All Branches</option>
                         </select>
                         <button id="search-button">Search</button>
                         <button id="reload-button" class="reset-button">Reset</button>
@@ -537,22 +570,46 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
                     };
                     
-                    window.addEventListener('message', event => {
-                        const message = event.data;
+                    window.addEventListener('message', event => {                        const message = event.data;
                         if (message.command === 'update') {
                             updateContent(message.data);
                             updateProjectDropdown(message.projects);
+                            if (message.branches) {
+                                updateBranchDropdown(message.branches);
+                            }
                             updateTotalTimeSection(message.totalTime);
                         } else if (message.command === 'searchResult') {
                             displaySearchResult(message.data);
+                        } else if (message.command === 'updateBranches') {
+                            updateBranchDropdown(message.branches);
                         }
+                    });                    // Add event listener for project change
+                    document.getElementById('project-search').addEventListener('change', (e) => {
+                        const project = e.target.value;
+                        vscode.postMessage({ command: 'projectChanged', project });
+                        
+                        // Also trigger search to update charts
+                        const startDate = document.getElementById('start-date-search').value;
+                        const endDate = document.getElementById('end-date-search').value;
+                        const branch = document.getElementById('branch-search').value;
+                        vscode.postMessage({ command: 'search', startDate, endDate, project, branch });
+                    });
+
+                    // Add event listener for branch change
+                    document.getElementById('branch-search').addEventListener('change', (e) => {
+                        const branch = e.target.value;
+                        const project = document.getElementById('project-search').value;
+                        const startDate = document.getElementById('start-date-search').value;
+                        const endDate = document.getElementById('end-date-search').value;
+                        vscode.postMessage({ command: 'search', startDate, endDate, project, branch });
                     });
 
                     document.getElementById('search-button').addEventListener('click', () => {
                         const startDate = document.getElementById('start-date-search').value;
                         const endDate = document.getElementById('end-date-search').value;
                         const project = document.getElementById('project-search').value;
-                        vscode.postMessage({ command: 'search', startDate, endDate, project });
+                        const branch = document.getElementById('branch-search').value;
+                        vscode.postMessage({ command: 'search', startDate, endDate, project, branch });
                     });
 
                     // Add event listener for the reload button
@@ -562,6 +619,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         document.getElementById('end-date-search').value = '';
                         // Reset project dropdown
                         document.getElementById('project-search').value = '';
+                        // Reset branch dropdown
+                        document.getElementById('branch-search').value = '';
                         // Send refresh command
                         vscode.postMessage({ command: 'refresh' });
                     });
@@ -570,6 +629,14 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const dropdown = document.getElementById('project-search');
                         dropdown.innerHTML = '<option value="">All Projects</option>' +
                             projects.map(project => \`<option value="\${project}">\${project}</option>\`).join('');
+                    }
+
+                    function updateBranchDropdown(branches) {
+                        const dropdown = document.getElementById('branch-search');
+                        if (dropdown) {
+                            dropdown.innerHTML = '<option value="">All Branches</option>' +
+                                branches.map(branch => '<option value="' + branch + '">' + branch + '</option>').join('');
+                        }
                     }
 
                     function updateTotalTimeSection(totalTime) {
@@ -784,10 +851,19 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         // Calculate data for all charts
                         let totalTime = 0;
                         const projectData = {};
-                        const dailyData = {};
-                    
-                        // Process entries for both project and daily summaries
-                        entries.forEach(entry => {
+                        const dailyData = {};                        // Process entries for both project and daily summaries
+                        const selectedProject = document.getElementById('project-search').value;
+                        const selectedBranch = document.getElementById('branch-search').value;
+
+                        // Filter entries based on selected project and branch
+                        const filteredEntries = entries.filter(entry => {
+                            const projectMatch = !selectedProject || entry.project === selectedProject;
+                            const branchMatch = !selectedBranch || entry.branch === selectedBranch;
+                            return projectMatch && branchMatch;
+                        });
+
+                        // Process filtered entries
+                        filteredEntries.forEach(entry => {
                             totalTime += entry.timeSpent;
                             
                             // Update project data

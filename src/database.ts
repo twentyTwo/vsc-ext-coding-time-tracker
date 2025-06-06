@@ -117,4 +117,14 @@ export class Database {
             return dateMatch && projectMatch && branchMatch;
         });
     }
+
+    async getBranchesByProject(project: string): Promise<string[]> {
+        const entries = await this.getEntries();
+        const branchSet = new Set(
+            entries
+                .filter(entry => entry.project === project)
+                .map(entry => entry.branch)
+        );
+        return Array.from(branchSet).sort();
+    }
 }

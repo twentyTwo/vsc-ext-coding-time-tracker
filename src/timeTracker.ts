@@ -36,10 +36,11 @@ export class TimeTracker implements vscode.Disposable {
         // Track text changes
         vscode.workspace.onDidChangeTextDocument(() => {
             this.updateCursorActivity();
-        });
-
-        // Track active editor changes
-        vscode.window.onDidChangeActiveTextEditor(() => {
+        });        // Track active editor changes
+        vscode.window.onDidChangeActiveTextEditor((editor) => {
+            if (editor) {
+                this.currentProject = this.getCurrentProject();
+            }
             this.updateCursorActivity();
         });
 
@@ -196,31 +197,36 @@ export class TimeTracker implements vscode.Disposable {
             await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch);
             this.startTime = Date.now();
         }
-    }
+    }    private getCurrentProject(): string {
+        // If we have a current project name, keep using it
+        if (this.currentProject && this.currentProject !== 'Unknown Project') {
+            return this.currentProject;
+        }
 
-    private getCurrentProject(): string {
         const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders) {
+        
+        // No workspace folders open
+        if (!workspaceFolders || workspaceFolders.length === 0) {
             return 'Unknown Project';
         }
 
-        const activeEditor = vscode.window.activeTextEditor;
-        if (!activeEditor) {
-            return 'No Active File';
+        // Single workspace
+        if (workspaceFolders.length === 1) {
+            return workspaceFolders[0].name;
         }
 
+        // Multi-root workspace
         const workspaceName = vscode.workspace.name || 'Default Workspace';
-        const workspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
-
-        if (!workspaceFolder) {
-            return `External/${this.getExternalProjectName(activeEditor.document.uri)}`;
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor) {
+            const workspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
+            if (workspaceFolder) {
+                return `${workspaceName}/${workspaceFolder.name}`;
+            }
         }
 
-        if (workspaceFolders.length > 1) {
-            return `${workspaceName}/${workspaceFolder.name}`;
-        }
-
-        return workspaceFolder.name;
+        // Default to first workspace if no active editor
+        return workspaceFolders[0].name;
     }
 
     private getExternalProjectName(uri: vscode.Uri): string {
