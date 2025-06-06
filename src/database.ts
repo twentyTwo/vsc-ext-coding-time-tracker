@@ -127,4 +127,26 @@ export class Database {
         );
         return Array.from(branchSet).sort();
     }
+
+    async clearAllData(): Promise<void> {
+        // Ask for explicit confirmation with a specific phrase to prevent accidental deletion
+        const response = await vscode.window.showInputBox({
+            prompt: 'This will permanently delete all time tracking data. Type "DELETE ALL DATA" to confirm.',
+            placeHolder: 'DELETE ALL DATA'
+        });
+
+        if (response !== 'DELETE ALL DATA') {
+            vscode.window.showInformationMessage('Data deletion cancelled.');
+            return;
+        }
+
+        try {
+            this.entries = [];
+            await this.context.globalState.update('timeEntries', []);
+            vscode.window.showInformationMessage('All time tracking data has been cleared.');
+        } catch (error) {
+            console.error('Error clearing data:', error);
+            vscode.window.showErrorMessage('Failed to clear time tracking data');
+        }
+    }
 }

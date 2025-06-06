@@ -60,6 +60,12 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // Register data management command (hidden from command palette)
+    let clearDataCommand = vscode.commands.registerCommand('coding-time-tracker.clearAllData', () => {
+        database.clearAllData();
+    });
+    context.subscriptions.push(clearDataCommand);
+
     context.subscriptions.push(disposable);
     context.subscriptions.push(viewStorageDisposable);
     context.subscriptions.push(timeTracker);
