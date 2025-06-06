@@ -8,7 +8,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 ## Features
 
 - **Automatic Time Tracking**: Seamlessly tracks your coding time in the background.
-- **Project-based Tracking**: Organizes time data by project for easy analysis.
+- **Project and Branch Tracking**: Organizes time data by project and Git branches for comprehensive analysis.
 - **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
 - **Interactive Data Visualization**:
@@ -37,9 +37,14 @@ Once installed, the extension will automatically start tracking your coding time
 
 1. In the summary view, locate the search form
 2. Select a date range using the date pickers
-3. Optionally choose a specific project from the dropdown
+3. Filter by project and/or branch:
+   - Choose a specific project to see all its branches
+   - Select a branch to see time data for that specific branch
+   - The branch dropdown automatically updates to show only branches from the selected project
 4. Click "Search" to apply filters
 5. Use "Reset" to clear all filters and refresh the view
+
+The charts and visualizations will automatically update to reflect your selected project and branch filters.
 
 ### Configuration Options
 
@@ -99,6 +104,13 @@ When the user is inactive for a period of time, the timer automatically pauses a
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.4.0] - 2025-06-06
+- Added Git branch tracking to monitor time spent on different branches
+- Enhanced project view with branch-specific time tracking
+- Implemented dynamic branch filtering based on selected project
+- Improved charts to show time distribution across branches
+- Added branch-specific data in search results and visualizations
 
 ### [0.3.9] - 2025-05-25
 - Added Focus Timeout setting to intelligently track time when VS Code loses focus
