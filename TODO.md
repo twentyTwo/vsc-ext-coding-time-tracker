@@ -4,13 +4,14 @@ Quick capture for ideas and tasks while coding.
 ## Guidelines
 - Use checkboxes `- [ ]` for actionable items
 - Use bullet points `-` for ideas and thoughts
+- Use green check `- [✅]` for completed tasks
 - Add date in parentheses (YYYY-MM-DD) when the task is done
 - Keep it simple and informal - this is your working todo list
 
 ## Immediate Tasks
-- [X] Listen for branch changes in real-time , save immediately when branch changes , start new session with new branch
-- [X] Add branch name to time entries
-- [ ] Update UI to show current branch in status bar
+- [✅] Listen for branch changes in real-time , save immediately when branch changes , start new session with new branch (2025-06-01)
+- [✅] Add branch name to time entries (2025-06-03)
+- [✅] Update UI to show current branch in status bar (2025-06-06)
 - [ ] Branch dropdown in summary view
 - [ ] Add branch filter in time tracking summary
 - [ ] Handle missing branch data in older time entries
