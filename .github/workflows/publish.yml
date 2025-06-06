@@ -140,19 +140,30 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: extension-v${{ needs.validate.outputs.version }}
+
+      - name:  Downloaded package
+        run: |
+          echo "📦 Downloaded artifact contents:"
+          ls -lh
+          echo "Current directory: $(pwd)"
+
       - name: Install vsce
-        run: npm install -g @vscode/vsce
+        run: |
+          echo "🔧 Installing vsce..."
+          npm install -g @vscode/vsce
+          echo "VSCE version: $(vsce --version)"
+
       - name: Diagnostic check
         run: |
           echo "🔍 Environment Information"
           echo "Node version: $(node -v)"
           echo "NPM version: $(npm -v)"
           echo "VSCE version: $(vsce --version)"
-          echo "Package.json version: $(node -p 'require(\'./package.json\').version')"
+          echo "Package.json version: $(node -p 'require(\'./package.json\').version' 2>/dev/null || echo 'Not found')"
           echo "Current directory: $(pwd)"
           ls -la
-      - name: Diagnostic check
-        run: echo "Diagnostic check complete."
+          echo "VSIX files:"
+          ls -lh *.vsix || echo "No VSIX file found"
 
       - name: Publish to marketplace
         id: publish
@@ -164,18 +175,29 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
             DRY_RUN="true"
           fi
+
           VERSION="${{ needs.validate.outputs.version }}"
           echo "🔍 Publish v${VERSION} (dry=${DRY_RUN})"
+          echo "VSC_PAT is ${VSC_PAT:+set}" # Will print 'set' if present
+
           if [[ "$DRY_RUN" == "true" ]]; then
             echo "✨ Dry run - skipping actual publish"
             echo "status=success" >> $GITHUB_OUTPUT
             exit 0
           fi
+
           echo "🚀 Running vsce publish..."
+          echo "VSIX files before publish:"
+          ls -lh *.vsix || echo "No VSIX file found"
+          echo "Package.json present: $(test -f package.json && echo yes || echo no)"
+
           OUTPUT=$(vsce publish -p "$VSC_PAT" 2>&1)
           EXIT_CODE=$?
+
           echo "📝 vsce publish output:"
           echo "$OUTPUT"
+          echo "Exit code: $EXIT_CODE"
+
           if [ $EXIT_CODE -eq 0 ]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ Publish succeeded."
@@ -188,7 +210,8 @@ jobs:
             echo "error_detail=$ERROR_DETAIL" >> $GITHUB_OUTPUT
             echo "❌ Publish failed: $ERROR_DETAIL"
           fi
-      - name: Publish step
+
+      - name: Publish step complete
         run: echo "Publish step complete."
 
       - name: Create and push Git tag
@@ -201,4 +224,8 @@ jobs:
           git tag -a "v${VERSION}" -m "Release v${VERSION}"
           git push origin "v${VERSION}"
           echo "✅ Git tag pushed."
+
+      - name: Tag step complete
+        if: steps.publish.outputs.status == 'success'
+        run: echo "Tag step complete."
 
