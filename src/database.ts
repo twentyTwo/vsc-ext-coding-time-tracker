@@ -81,25 +81,12 @@ export class Database {
             projectSummary,
             totalTime
         };
-    }
-
-    async searchEntries(startDate?: string, endDate?: string, project?: string): Promise<TimeEntry[]> {
+    }    async searchEntries(startDate?: string, endDate?: string, project?: string): Promise<TimeEntry[]> {
         const entries = this.getEntries();
         return entries.filter(entry => {
             const dateMatch = (!startDate || entry.date >= startDate) && (!endDate || entry.date <= endDate);
             const projectMatch = !project || entry.project.toLowerCase().includes(project.toLowerCase());
             return dateMatch && projectMatch;
         });
-    }
-
-    async resetTodayTime(): Promise<void> {
-        const today = this.getLocalDateString(new Date());
-        const entries = this.getEntries();
-        const updatedEntries = entries.filter(entry => entry.date !== today);
-        await this.updateEntries(updatedEntries);
-    }
-
-    async resetAllTime(): Promise<void> {
-        await this.updateEntries([]);
     }
 }

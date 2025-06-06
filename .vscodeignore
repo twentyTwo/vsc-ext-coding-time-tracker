@@ -1,10 +1,38 @@
+# Development directories
 .vscode/**
 .vscode-test/**
-out/test/**
 src/**
+out/test/**
+test/**
+scripts/**
+
+# Source control
+.git/**
+.github/**
 .gitignore
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/tslint.json
+
+# Configuration files
+.yarnrc
+tsconfig.json
+.eslintrc.json
+webpack.config.js
+
+# Build artifacts
 **/*.map
 **/*.ts
+**/*.vsix
+
+# Documentation (except README)
+CONTRIBUTING.md
+TECHNICAL.md
+
+# Dependencies (except type definitions)
+node_modules/**
+!node_modules/@types/
+
+# Keep these files
+!LICENSE
+!README.md
+!package.json
+!icon-sctt.png
+!out/src/**/*.js
