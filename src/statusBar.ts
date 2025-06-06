@@ -12,17 +12,14 @@ export class StatusBar implements vscode.Disposable {
         this.timeTracker = timeTracker;
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
         this.statusBarItem.command = 'simpleCodingTimeTracker.showSummary';
-        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-        this.statusBarItem.show();
-        this.updateStatusBar();
-        this.updateInterval = setInterval(() => this.updateStatusBar(), 1000); // Update every second
-    }
-
-    private updateStatusBar() {
-        const todayTotal = this.timeTracker.getTodayTotal();
+        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');        this.statusBarItem.show();
+        void this.updateStatusBar();
+        this.updateInterval = setInterval(() => void this.updateStatusBar(), 1000); // Update every second
+    }    private async updateStatusBar() {
+        const todayTotal = await this.timeTracker.getTodayTotal();
         const isActive = this.timeTracker.isActive();
         this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)}`;
-        this.statusBarItem.tooltip = this.getTooltipText(isActive);
+        this.statusBarItem.tooltip = await this.getTooltipText(isActive);
     }
 
     private formatTime(minutes: number): string {
@@ -30,12 +27,10 @@ export class StatusBar implements vscode.Disposable {
         const mins = Math.floor(minutes % 60);
         const secs = Math.floor((minutes * 60) % 60);
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    private getTooltipText(isActive: boolean): string {
-        const weeklyTotal = this.timeTracker.getWeeklyTotal();
-        const monthlyTotal = this.timeTracker.getMonthlyTotal();
-        const allTimeTotal = this.timeTracker.getAllTimeTotal();
+    }    private async getTooltipText(isActive: boolean): Promise<string> {
+        const weeklyTotal = await this.timeTracker.getWeeklyTotal();
+        const monthlyTotal = await this.timeTracker.getMonthlyTotal();
+        const allTimeTotal = await this.timeTracker.getAllTimeTotal();
 
         return `${isActive ? 'Active' : 'Paused'} - Total Coding Time:
 This week: ${formatTime(weeklyTotal)}

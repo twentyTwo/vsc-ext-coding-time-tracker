@@ -24,12 +24,44 @@ export function activate(context: vscode.ExtensionContext) {
                 timeTracker.updateConfiguration();
             }
         })
-    );    // Register the show summary command
+    );
+
+    // Register the show summary command
     let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
     });
 
+    // Register view storage command
+    let viewStorageDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.viewStorageData', async () => {
+        try {
+            const entries = await database.getEntries();
+            const processedData = {
+                totalEntries: entries.length,
+                exportDate: new Date().toISOString(),
+                entries: entries.map(entry => ({
+                    ...entry,
+                    timeSpentFormatted: `${Math.round(entry.timeSpent)} minutes`
+                }))
+            };
+            
+            // Create a temporary untitled document
+            const document = await vscode.workspace.openTextDocument({
+                content: JSON.stringify(processedData, null, 2),
+                language: 'json'
+            });
+            
+            await vscode.window.showTextDocument(document, {
+                preview: false,
+                viewColumn: vscode.ViewColumn.One
+            });
+            
+            vscode.window.showInformationMessage('Time tracking data loaded successfully');        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to view data: ${error?.message || 'Unknown error'}`);
+        }
+    });
+
     context.subscriptions.push(disposable);
+    context.subscriptions.push(viewStorageDisposable);
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
 

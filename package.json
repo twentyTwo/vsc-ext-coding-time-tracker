@@ -36,13 +36,19 @@
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
         }
       }
-    },    "commands": [
+    },
+    "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
         "title": "SCTT: Show Coding Time Summary"
+      },
+      {
+        "command": "simpleCodingTimeTracker.viewStorageData",
+        "title": "SCTT: View Time Tracking Data"
       }
     ]
-  },  "scripts": {
+  },
+  "scripts": {
     "vscode:prepublish": "npm run package",
     "compile": "webpack",
     "watch": "webpack --watch",
@@ -63,6 +69,9 @@
     "typescript": "^4.2.4",
     "webpack": "^5.99.8",
     "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "simple-git": "^3.27.0"
   },
   "repository": {
     "type": "git",
