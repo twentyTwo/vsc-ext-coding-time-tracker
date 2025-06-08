@@ -167,20 +167,9 @@ jobs:
         env:
           VSC_PAT: ${{ secrets.VSC_PAT }}
         run: |
-          DRY_RUN="false"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.dry_run }}" == "true" ]]; then
-            DRY_RUN="true"
-          fi
-
           VERSION="${{ needs.validate.outputs.version }}"
-          echo "🔍 Publish v${VERSION} (dry=${DRY_RUN})"
-          echo "VSC_PAT is ${VSC_PAT:+set}" # Will print 'set' if present
-
-          if [[ "$DRY_RUN" == "true" ]]; then
-            echo "✨ Dry run - skipping actual publish"
-            echo "status=success" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          echo "🔍 Publish v${VERSION}"
+          echo "VSC_PAT is ${VSC_PAT:+set}"
 
           echo "🚀 Running vsce publish..."
           echo "VSIX files before publish:"
