@@ -34,6 +34,20 @@
           "type": "number",
           "default": 180,
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
+        },
+        "simpleCodingTimeTracker.weekStartDay": {
+          "type": "string",
+          "default": "Sunday",
+          "enum": [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday"
+          ],
+          "description": "Day of the week to start the week."
         }
       }
     },
