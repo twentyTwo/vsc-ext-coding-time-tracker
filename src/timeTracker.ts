@@ -113,7 +113,7 @@ export class TimeTracker implements vscode.Disposable {
 
         // Map string to number for weekStartDay
         const weekStartDayStr = config.get<string>('weekStartDay', 'Sunday');
-        this.weekStartDay = TimeTracker.WEEKDAY_MAP[weekStartDayStr] ?? 0; 
+        this.weekStartDay = TimeTracker.WEEKDAY_MAP[weekStartDayStr] ?? 0;
     }
 
     private async updateCurrentBranch() {
@@ -148,7 +148,7 @@ export class TimeTracker implements vscode.Disposable {
             this.cursorInactivityTimeout = setTimeout(() => {
                 const now = Date.now();
                 const inactivityDuration = now - this.lastCursorActivity;
-                
+
                 if (this.isTracking && inactivityDuration >= this.inactivityTimeoutSeconds * 1000) {
                     this.stopTracking();
                     this.saveCurrentSession();
@@ -212,14 +212,16 @@ export class TimeTracker implements vscode.Disposable {
             await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch);
             this.startTime = Date.now();
         }
-    }    private getCurrentProject(): string {
+    }
+
+    private getCurrentProject(): string {
         // If we have a current project name, keep using it
         if (this.currentProject && this.currentProject !== 'Unknown Project') {
             return this.currentProject;
         }
 
         const workspaceFolders = vscode.workspace.workspaceFolders;
-        
+
         // No workspace folders open
         if (!workspaceFolders || workspaceFolders.length === 0) {
             return 'Unknown Project';
@@ -251,12 +253,12 @@ export class TimeTracker implements vscode.Disposable {
 
         const path = uri.fsPath;
         const parentFolder = path.split(/[\\/]/);
-        
+
         const folders = parentFolder.filter(Boolean);
         if (folders.length >= 2) {
             return `${folders[folders.length - 2]}/${folders[folders.length - 1]}`;
         }
-        
+
         return 'Other';
     }
 
@@ -266,36 +268,117 @@ export class TimeTracker implements vscode.Disposable {
             .split('T')[0];
     }
 
-    async getTodayTotal(): Promise<number> {
-        const today = this.getLocalDateString(new Date());
+    async getAllPeriodTotals(): Promise<{
+        today: number;
+        yesterday: number;
+        thisWeek: number;
+        lastWeek: number;
+        thisMonth: number;
+        lastMonth: number;
+        thisYear: number;
+        lastYear: number;
+        allTime: number;
+    }> {
+        const now = new Date();
+        const todayStr = this.getLocalDateString(now);
+        const yesterdayStr = this.getLocalDateString( new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+
+        // Week calculations
+        let diff = now.getDay() - this.weekStartDay;
+        if (diff < 0) diff += 7;
+        const startOfThisWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+        const startOfLastWeek = new Date(startOfThisWeek);
+        startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+        const endOfLastWeek = new Date(startOfThisWeek);
+        endOfLastWeek.setDate(startOfThisWeek.getDate() - 1);
+
+        // Month calculations
+        const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        // Year calculations
+        const startOfThisYear = new Date(now.getFullYear(), 0, 1);
+        const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
+        const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
+
+        // Date strings for range comparisons
+        const startOfThisWeekStr = this.getLocalDateString(startOfThisWeek);
+        const startOfLastWeekStr = this.getLocalDateString(startOfLastWeek);
+        const endOfLastWeekStr = this.getLocalDateString(endOfLastWeek);
+        const startOfThisMonthStr = this.getLocalDateString(startOfThisMonth);
+        const startOfLastMonthStr = this.getLocalDateString(startOfLastMonth);
+        const endOfLastMonthStr = this.getLocalDateString(endOfLastMonth);
+        const startOfThisYearStr = this.getLocalDateString(startOfThisYear);
+        const startOfLastYearStr = this.getLocalDateString(startOfLastYear);
+        const endOfLastYearStr = this.getLocalDateString(endOfLastYear);
+
         const entries = await this.database.getEntries();
-        const todayTotal = entries
-            .filter((entry: TimeEntry) => entry.date === today)
-            .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
-        
+
+        let today = 0, yesterday = 0, thisWeek = 0, lastWeek = 0, thisMonth = 0, lastMonth = 0, thisYear = 0, lastYear = 0, allTime = 0;
+
+        for (const entry of entries) {
+            allTime += entry.timeSpent;
+
+            if (entry.date === todayStr) today += entry.timeSpent;
+            if (entry.date === yesterdayStr) yesterday += entry.timeSpent;
+
+            if (entry.date >= startOfThisWeekStr && entry.date <= todayStr) thisWeek += entry.timeSpent;
+            if (entry.date >= startOfLastWeekStr && entry.date <= endOfLastWeekStr) lastWeek += entry.timeSpent;
+
+            if (entry.date >= startOfThisMonthStr && entry.date <= todayStr) thisMonth += entry.timeSpent;
+            if (entry.date >= startOfLastMonthStr && entry.date <= endOfLastMonthStr) lastMonth += entry.timeSpent;
+
+            if (entry.date >= startOfThisYearStr && entry.date <= todayStr) thisYear += entry.timeSpent;
+            if (entry.date >= startOfLastYearStr && entry.date <= endOfLastYearStr) lastYear += entry.timeSpent;
+        }
+
+        // Add current session time to today, weekly, monthly, yearly, allTime if tracking
         if (this.isTracking) {
             const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
             if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
                 const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return todayTotal + currentSessionTime;
+                today += currentSessionTime;
+                thisWeek += currentSessionTime;
+                thisMonth += currentSessionTime;
+                thisYear += currentSessionTime;
+                allTime += currentSessionTime;
             }
         }
-        
-        return todayTotal;
+
+        return { today, yesterday, thisWeek, lastWeek, thisMonth, lastMonth, thisYear, lastYear, allTime };
     }
+
+    // async getTodayTotal(): Promise<number> {
+    //     const today = this.getLocalDateString(new Date());
+    //     const entries = await this.database.getEntries();
+    //     const todayTotal = entries
+    //         .filter((entry: TimeEntry) => entry.date === today)
+    //         .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
+
+    //     if (this.isTracking) {
+    //         const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
+    //         if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
+    //             const currentSessionTime = (Date.now() - this.startTime) / 60000;
+    //             return todayTotal + currentSessionTime;
+    //         }
+    //     }
+
+    //     return todayTotal;
+    // }
 
     async getCurrentProjectTime(): Promise<number> {
         const today = this.getLocalDateString(new Date());
         const currentProject = this.getCurrentProject();
         const entries = await this.database.getEntries();
         const currentProjectTime = entries
-            .filter((entry: TimeEntry) => 
-                entry.date === today && 
-                entry.project === currentProject && 
+            .filter((entry: TimeEntry) =>
+                entry.date === today &&
+                entry.project === currentProject &&
                 entry.branch === this.currentBranch
             )
             .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
-        
+
         if (this.isTracking && this.currentProject === currentProject) {
             const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
             if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
@@ -303,67 +386,67 @@ export class TimeTracker implements vscode.Disposable {
                 return currentProjectTime + currentSessionTime;
             }
         }
-        
+
         return currentProjectTime;
     }
 
-    async getWeeklyTotal(): Promise<number> {
-        const now = new Date();
-        // Calculate difference between current day and weekStartDay
-        let diff = now.getDay() - this.weekStartDay;
-        if (diff < 0) diff += 7;
-        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
-        return this.getTotalSince(startOfWeek);
-    }
+    // async getWeeklyTotal(): Promise<number> {
+    //     const now = new Date();
+    //     // Calculate difference between current day and weekStartDay
+    //     let diff = now.getDay() - this.weekStartDay;
+    //     if (diff < 0) diff += 7;
+    //     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
+    //     return this.getTotalSince(startOfWeek);
+    // }
 
-    async getMonthlyTotal(): Promise<number> {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return this.getTotalSince(startOfMonth);
-    }
+    // async getMonthlyTotal(): Promise<number> {
+    //     const now = new Date();
+    //     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    //     return this.getTotalSince(startOfMonth);
+    // }
 
-    async getAllTimeTotal(): Promise<number> {
-        const entries = await this.database.getEntries();
-        const total = entries.reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
+    // async getAllTimeTotal(): Promise<number> {
+    //     const entries = await this.database.getEntries();
+    //     const total = entries.reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
 
-        if (this.isTracking) {
-            const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
-            if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-                const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return total + currentSessionTime;
-            }
-        }
+    //     if (this.isTracking) {
+    //         const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
+    //         if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
+    //             const currentSessionTime = (Date.now() - this.startTime) / 60000;
+    //             return total + currentSessionTime;
+    //         }
+    //     }
 
-        return total;
-    }
+    //     return total;
+    // }
 
-    private async getTotalSince(startDate: Date): Promise<number> {
-        const entries = await this.database.getEntries();
-        const startDateString = this.getLocalDateString(startDate);
-        const now = this.getLocalDateString(new Date());
-        
-        const filteredEntries = entries.filter(entry => 
-            entry.date >= startDateString && entry.date <= now
-        );
+    // private async getTotalSince(startDate: Date): Promise<number> {
+    //     const entries = await this.database.getEntries();
+    //     const startDateString = this.getLocalDateString(startDate);
+    //     const now = this.getLocalDateString(new Date());
 
-        const total = filteredEntries.reduce((sum, entry) => sum + entry.timeSpent, 0);
+    //     const filteredEntries = entries.filter(entry =>
+    //         entry.date >= startDateString && entry.date <= now
+    //     );
 
-        if (this.isTracking) {
-            const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
-            if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-                const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return total + currentSessionTime;
-            }
-        }
+    //     const total = filteredEntries.reduce((sum, entry) => sum + entry.timeSpent, 0);
 
-        return total;
-    }
+    //     if (this.isTracking) {
+    //         const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
+    //         if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
+    //             const currentSessionTime = (Date.now() - this.startTime) / 60000;
+    //             return total + currentSessionTime;
+    //         }
+    //     }
 
-    async getYearlyTotal(): Promise<number> {
-        const now = new Date();
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        return this.getTotalSince(startOfYear);
-    }
+    //     return total;
+    // }
+
+    // async getYearlyTotal(): Promise<number> {
+    //     const now = new Date();
+    //     const startOfYear = new Date(now.getFullYear(), 0, 1);
+    //     return this.getTotalSince(startOfYear);
+    // }
 
     dispose() {
         this.stopTracking();
@@ -386,7 +469,7 @@ export class TimeTracker implements vscode.Disposable {
 
             const git = simpleGit(workspaceFolder.uri.fsPath);
             const isGitRepo = await git.checkIsRepo();
-            
+
             if (!isGitRepo) {
                 return;
             }
