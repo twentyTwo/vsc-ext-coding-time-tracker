@@ -47,7 +47,7 @@
             "Friday",
             "Saturday"
           ],
-          "description": "Day of the week to start the week."
+          "description": "The first day of a week."
         }
       }
     },
