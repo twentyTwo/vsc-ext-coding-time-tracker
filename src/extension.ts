@@ -43,19 +43,20 @@ export function activate(context: vscode.ExtensionContext) {
                     timeSpentFormatted: `${Math.round(entry.timeSpent)} minutes`
                 }))
             };
-            
+
             // Create a temporary untitled document
             const document = await vscode.workspace.openTextDocument({
                 content: JSON.stringify(processedData, null, 2),
                 language: 'json'
             });
-            
+
             await vscode.window.showTextDocument(document, {
                 preview: false,
                 viewColumn: vscode.ViewColumn.One
             });
-            
-            vscode.window.showInformationMessage('Time tracking data loaded successfully');        } catch (error: any) {
+
+            vscode.window.showInformationMessage('Time tracking data loaded successfully');
+        } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to view data: ${error?.message || 'Unknown error'}`);
         }
     });
@@ -77,8 +78,9 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     // Variable to store the focus timeout handle
-    let focusTimeoutHandle: NodeJS.Timeout | null = null;
-
+    // let focusTimeoutHandle: NodeJS.Timeout | null = null;
+    let focusTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+    
     vscode.window.onDidChangeWindowState((e: vscode.WindowState) => {
         if (e.focused) {
             if (focusTimeoutHandle) {
@@ -94,7 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (focusTimeoutHandle) {
                 clearTimeout(focusTimeoutHandle);
             }
-            
+
             focusTimeoutHandle = setTimeout(() => {
                 timeTracker.stopTracking();
             }, focusTimeoutSeconds * 1000);
@@ -113,4 +115,4 @@ export function activate(context: vscode.ExtensionContext) {
     });
 }
 
-export function deactivate() {}
+export function deactivate() { }

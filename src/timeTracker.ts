@@ -13,16 +13,16 @@ export class TimeTracker implements vscode.Disposable {
     private currentProject: string = '';
     private currentBranch: string = 'unknown';
     private database: Database;
-    private updateInterval: NodeJS.Timeout | null = null;
-    private saveInterval: NodeJS.Timeout | null = null;
+    private updateInterval: ReturnType<typeof setTimeout> | null = null;
+    private saveInterval: ReturnType<typeof setTimeout> | null = null;
     private saveIntervalSeconds: number = 5;
     private lastCursorActivity: number = Date.now();
-    private cursorInactivityTimeout: NodeJS.Timeout | null = null;
+    private cursorInactivityTimeout: ReturnType<typeof setTimeout> | null = null;
     private inactivityTimeoutSeconds: number = 300;
-    private focusTimeoutHandle: NodeJS.Timeout | null = null;
+    private focusTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
     private focusTimeoutSeconds: number = 60;
     private gitWatcher: GitWatcher | null = null;
-    private branchCheckInterval: NodeJS.Timeout | null = null;
+    private branchCheckInterval: ReturnType<typeof setTimeout> | null = null;
     private weekStartDay: number = 0; // 0 = Sunday by default
 
     private static readonly WEEKDAY_MAP: Record<string, number> = {
