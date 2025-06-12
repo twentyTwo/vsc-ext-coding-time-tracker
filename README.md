@@ -11,6 +11,8 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Project and Branch Tracking**: Organizes time data by project and Git branches for comprehensive analysis.
 - **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
+- **Status Bar Display**: Shows your today's total coding time duration in real-time.
+- **Rich Status Bar Information**: Shows the total coding time on weekly, monthly and all-time basis via tooltip.
 - **Interactive Data Visualization**:
   - Project Summary Chart: Visual breakdown of time spent on each project
   - Daily Activity Timeline: Interactive line chart showing your coding patterns
@@ -21,6 +23,10 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Project Filtering: Focus on specific projects
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
+- **Configurable Settings**: 
+  - Save Interval: Customize how often your coding time data is saved (default: 5 seconds)
+  - Inactivity Timeout: Set how long to wait before stopping the timer when no activity is detected (default: 5 minutes)
+   - Focus Timeout: Set how long to continue tracking after VS Code loses focus (default: 60 seconds)
 
 ## Installation
 
@@ -95,7 +101,7 @@ Tooltip shows the total coding time weekly, monthly and all time basis.
 When the user is inactive for a period of time, the timer automatically pauses and resumes when the user starts typing again coding again.
 ![Pause/Resume icon](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/paused_time.png)
 
-#### Settings
+It is configurable from the settings. Default value is 5 minutes.
 ![Settings](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/settings.png)
 
 
