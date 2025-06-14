@@ -24,21 +24,21 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [this.context.extensionUri]
-        };        webviewView.webview.onDidReceiveMessage(
-            async message => {                
+        }; webviewView.webview.onDidReceiveMessage(
+            async message => {
                 if (message.command === 'refresh') {
                     await this.show(webviewView.webview);
                 } else if (message.command === 'search') {
                     const searchResults = await this.database.searchEntries(
-                        message.startDate, 
-                        message.endDate, 
+                        message.startDate,
+                        message.endDate,
                         message.project,
                         message.branch
                     );
                     webviewView.webview.postMessage({ command: 'searchResult', data: searchResults });
                 } else if (message.command === 'projectChanged') {
                     // If project is empty, show all branches, otherwise show only branches for selected project
-                    const branches = message.project 
+                    const branches = message.project
                         ? await this.database.getBranchesByProject(message.project)
                         : await this.getUniqueBranches();
                     webviewView.webview.postMessage({ command: 'updateBranches', branches });
@@ -60,27 +60,44 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         const summaryData = await this.database.getSummaryData();
         const projects = await this.getUniqueProjects();
         const branches = await this.getUniqueBranches();
+        // const totalTime = {
+        //     today: formatTime(await this.timeTracker.getTodayTotal()),
+        //     weekly: formatTime(await this.timeTracker.getWeeklyTotal()),
+        //     monthly: formatTime(await this.timeTracker.getMonthlyTotal()),
+        //     yearly: formatTime(await this.timeTracker.getYearlyTotal()),
+        //     allTime: formatTime(await this.timeTracker.getAllTimeTotal())
+        // };
+        const periodTotals = await this.timeTracker.getAllPeriodTotals();
         const totalTime = {
-            today: formatTime(await this.timeTracker.getTodayTotal()),
-            weekly: formatTime(await this.timeTracker.getWeeklyTotal()),
-            monthly: formatTime(await this.timeTracker.getMonthlyTotal()),
-            yearly: formatTime(await this.timeTracker.getYearlyTotal()),
-            allTime: formatTime(await this.timeTracker.getAllTimeTotal())
+            today: formatTime(periodTotals.today),
+            yesterday: formatTime(periodTotals.yesterday),
+            thisWeek: formatTime(periodTotals.thisWeek),
+            lastWeek: formatTime(periodTotals.lastWeek),
+            thisMonth: formatTime(periodTotals.thisMonth),
+            lastMonth: formatTime(periodTotals.lastMonth),
+            thisYear: formatTime(periodTotals.thisYear),
+            lastYear: formatTime(periodTotals.lastYear),
+            allTime: formatTime(periodTotals.allTime)
         };
+
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const weekStartDay = config.get<string>('weekStartDay', 'Sunday');
+        const configData = { weekStartDay };
 
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
-            webview.postMessage({ 
-                command: 'update', 
-                data: summaryData, 
-                projects, 
+            webview.postMessage({
+                command: 'update',
+                data: summaryData,
+                projects,
                 branches,
-                totalTime 
+                totalTime,
+                configData // Pass the config data to the webview as well
             });
         } else if (this.panel) {
             this.panel.reveal();
             this.panel.webview.html = this.getHtmlForWebview(projects);
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, totalTime, configData });
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
@@ -100,9 +117,10 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         await this.show(this.panel?.webview);
                     } else if (message.command === 'search') {
                         const searchResults = await this.database.searchEntries(message.startDate, message.endDate, message.project);
-                        this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });                    } else if (message.command === 'projectChanged') {
+                        this.panel?.webview.postMessage({ command: 'searchResult', data: searchResults });
+                    } else if (message.command === 'projectChanged') {
                         // Update branches for selected project
-                        const branches = message.project 
+                        const branches = message.project
                             ? await this.database.getBranchesByProject(message.project)
                             : await this.getUniqueBranches();
                         this.panel?.webview.postMessage({ command: 'updateBranches', branches });
@@ -110,11 +128,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 },
                 undefined,
                 this.context.subscriptions
-            );            this.panel.onDidDispose(() => {
+            ); this.panel.onDidDispose(() => {
                 this.panel = undefined;
             });
 
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, branches, totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, branches, totalTime, configData });
         }
     }
 
@@ -122,7 +140,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private async updateContent(webview?: vscode.Webview) {
         const summaryData = await this.database.getSummaryData();
         const projects = await this.getUniqueProjects();
-        
+
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
             webview.postMessage({ command: 'update', data: summaryData, projects: projects });
@@ -146,7 +164,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
     private getHtmlForWebview(projects: string[]): string {
         const projectOptions = projects.map(project => `<option value="${project}">${project}</option>`).join('');
-        
+
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -288,9 +306,18 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .total-time-grid {
                         display: grid;
-                        grid-template-columns: repeat(5, 1fr); /* Change to 5 columns */
+                        grid-template-columns: repeat(5, 1fr);
+                        grid-template-rows: repeat(2, auto);
                         gap: 20px;
                         margin-bottom: 30px;
+                    }
+                    .total-time-item.all-time-cell {
+                        grid-column: 5 / 6;   /* Place in the last column */
+                        grid-row: 1 / 3;      /* Span both rows */
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: center;
                     }
                     .total-time-item {
                         background-color: var(--vscode-editor-background);
@@ -420,23 +447,37 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                         <div class="total-time-item">
                             <h3>This Week</h3>
-                            <p id="weekly-total">Loading...</p>
-                            <small>Sunday - today</small>
+                            <p id="this-week-total">Loading...</p>
                         </div>
                         <div class="total-time-item">
                             <h3>This Month</h3>
-                            <p id="monthly-total">Loading...</p>
-                             <small><span id="month-start"></span> - today</small>
+                            <p id="this-month-total">Loading...</p>
                         </div>
                         <div class="total-time-item">
                             <h3>This Year</h3>
-                            <p id="yearly-total">Loading...</p>
-                             <small>January 1st - today</small>
+                            <p id="this-year-total">Loading...</p>
                         </div>
                         <div class="total-time-item">
+                            <h3>Yesterday</h3>
+                            <p id="yesterday-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>Last Week</h3>
+                            <p id="last-week-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>Last Month</h3>
+                            <p id="last-month-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item">
+                            <h3>Last Year</h3>
+                            <p id="last-year-total">Loading...</p>
+                        </div>
+                        <div class="total-time-item all-time-cell">
                             <h3>All Time</h3>
                             <p id="all-time-total">Loading...</p>
                         </div>
+                    </div>
                     </div>
                     <h2>Coding Activity</h2>
                     <div class="heatmap-container">
@@ -570,14 +611,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
                     };
                     
-                    window.addEventListener('message', event => {                        const message = event.data;
+                    window.addEventListener('message', event => {
+                        const message = event.data;
                         if (message.command === 'update') {
                             updateContent(message.data);
                             updateProjectDropdown(message.projects);
                             if (message.branches) {
                                 updateBranchDropdown(message.branches);
                             }
-                            updateTotalTimeSection(message.totalTime);
+                            updateTotalTimeSection(message.totalTime, message.configData);
                         } else if (message.command === 'searchResult') {
                             displaySearchResult(message.data);
                         } else if (message.command === 'updateBranches') {
@@ -639,18 +681,16 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
                     }
 
-                    function updateTotalTimeSection(totalTime) {
+                    function updateTotalTimeSection(totalTime, configData) {
                         document.getElementById('today-total').textContent = totalTime.today;
-                        document.getElementById('weekly-total').textContent = totalTime.weekly;
-                        document.getElementById('monthly-total').textContent = totalTime.monthly;
-                        document.getElementById('yearly-total').textContent = totalTime.yearly;
+                        document.getElementById('yesterday-total').textContent = totalTime.yesterday;
+                        document.getElementById('this-week-total').textContent = totalTime.thisWeek;
+                        document.getElementById('last-week-total').textContent = totalTime.lastWeek;
+                        document.getElementById('this-month-total').textContent = totalTime.thisMonth;
+                        document.getElementById('last-month-total').textContent = totalTime.lastMonth;
+                        document.getElementById('this-year-total').textContent = totalTime.thisYear;
+                        document.getElementById('last-year-total').textContent = totalTime.lastYear;
                         document.getElementById('all-time-total').textContent = totalTime.allTime;
-
-                        // Set the start of the current month
-                        const now = new Date();
-                        const monthNames = ["January", "February", "March", "April", "May", "June",
-                            "July", "August", "September", "October", "November", "December"];
-                        document.getElementById('month-start').textContent = \`\${monthNames[now.getMonth()]} 1st\`;
                     }
 
                     function updateContent(data) {

@@ -16,7 +16,7 @@ export class StatusBar implements vscode.Disposable {
         void this.updateStatusBar();
         this.updateInterval = setInterval(() => void this.updateStatusBar(), 1000); // Update every second
     }    private async updateStatusBar() {
-        const todayTotal = await this.timeTracker.getTodayTotal();
+        const todayTotal = (await this.timeTracker.getAllPeriodTotals()).today;
         const isActive = this.timeTracker.isActive();
         this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)}`;
         this.statusBarItem.tooltip = await this.getTooltipText(isActive);
@@ -27,19 +27,22 @@ export class StatusBar implements vscode.Disposable {
         const mins = Math.floor(minutes % 60);
         const secs = Math.floor((minutes * 60) % 60);
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }    private async getTooltipText(isActive: boolean): Promise<string> {
-        const weeklyTotal = await this.timeTracker.getWeeklyTotal();
-        const monthlyTotal = await this.timeTracker.getMonthlyTotal();
-        const allTimeTotal = await this.timeTracker.getAllTimeTotal();
+    }    
+    
+    private async getTooltipText(isActive: boolean): Promise<string> {
+        // const weeklyTotal = await this.timeTracker.getWeeklyTotal();
+        // const monthlyTotal = await this.timeTracker.getMonthlyTotal();
+        // const allTimeTotal = await this.timeTracker.getAllTimeTotal();
+        const allPeriodsTotal = await this.timeTracker.getAllPeriodTotals();
         const currentBranch = this.timeTracker.getCurrentBranch();
 
         return `${isActive ? 'Active' : 'Paused'} - Total Coding Time
-Branch: ${currentBranch}
-This week: ${formatTime(weeklyTotal)}
-This month: ${formatTime(monthlyTotal)}
-All Time: ${formatTime(allTimeTotal)}
-Click to show summary`;
-    }
+            Branch: ${currentBranch}
+            This week: ${formatTime(allPeriodsTotal.thisWeek)}
+            This month: ${formatTime(allPeriodsTotal.thisMonth)}
+            All Time: ${formatTime(allPeriodsTotal.allTime)}
+            Click to show summary`;
+        }
 
     onDidClick(listener: () => void): vscode.Disposable {
         return this.onDidClickEmitter.event(listener);
