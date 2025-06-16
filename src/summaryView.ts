@@ -68,6 +68,10 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             allTime: formatTime(await this.timeTracker.getAllTimeTotal())
         };
 
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const weekStartDay = config.get<string>('weekStartDay', 'Sunday');
+        const configData = { weekStartDay };
+
         if (webview) {
             webview.html = this.getHtmlForWebview(projects);
             webview.postMessage({ 
@@ -75,12 +79,13 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 data: summaryData, 
                 projects, 
                 branches,
-                totalTime 
+                totalTime,
+                configData // Pass the config data to the webview as well
             });
         } else if (this.panel) {
             this.panel.reveal();
             this.panel.webview.html = this.getHtmlForWebview(projects);
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, totalTime, configData });
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
@@ -114,7 +119,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 this.panel = undefined;
             });
 
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, branches, totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, branches, totalTime, configData });
         }
     }
 
@@ -154,7 +159,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Coding Time Summary</title>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9" integrity="sha384-b0GXujLkk9eYYSmcSfoyZbfyElGAQnDyY0skCHSG6w3JgTMFnz11ggrTAr7seu9f" crossorigin="anonymous"></script>
                 <style>
                     :root {
                         --background-color: var(--vscode-editor-background);
@@ -421,7 +426,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="total-time-item">
                             <h3>This Week</h3>
                             <p id="weekly-total">Loading...</p>
-                            <small>Sunday - today</small>
+                            <small id="week-start-day-label">Loading...</small>
                         </div>
                         <div class="total-time-item">
                             <h3>This Month</h3>
@@ -570,14 +575,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
                     };
                     
-                    window.addEventListener('message', event => {                        const message = event.data;
+                    window.addEventListener('message', event => {
+                        const message = event.data;
                         if (message.command === 'update') {
                             updateContent(message.data);
                             updateProjectDropdown(message.projects);
                             if (message.branches) {
                                 updateBranchDropdown(message.branches);
                             }
-                            updateTotalTimeSection(message.totalTime);
+                            updateTotalTimeSection(message.totalTime, message.configData);
                         } else if (message.command === 'searchResult') {
                             displaySearchResult(message.data);
                         } else if (message.command === 'updateBranches') {
@@ -639,13 +645,21 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         }
                     }
 
-                    function updateTotalTimeSection(totalTime) {
+                    function updateTotalTimeSection(totalTime, configData) {
                         document.getElementById('today-total').textContent = totalTime.today;
                         document.getElementById('weekly-total').textContent = totalTime.weekly;
                         document.getElementById('monthly-total').textContent = totalTime.monthly;
                         document.getElementById('yearly-total').textContent = totalTime.yearly;
                         document.getElementById('all-time-total').textContent = totalTime.allTime;
-
+                        
+                        // Set the week range label if you add an element for it
+                        if (configData && configData.weekStartDay) {
+                            const weekStartDayLabel = document.getElementById('week-start-day-label');
+                            if (weekStartDayLabel) {
+                                weekStartDayLabel.textContent = configData.weekStartDay + ' - today';
+                            }
+                        }
+                        
                         // Set the start of the current month
                         const now = new Date();
                         const monthNames = ["January", "February", "March", "April", "May", "June",

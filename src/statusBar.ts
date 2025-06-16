@@ -5,7 +5,7 @@ import { formatTime } from './utils';
 export class StatusBar implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
     private timeTracker: TimeTracker;
-    private updateInterval: NodeJS.Timeout;
+    private updateInterval: ReturnType<typeof setTimeout>;
     private onDidClickEmitter = new vscode.EventEmitter<void>();
 
     constructor(timeTracker: TimeTracker) {

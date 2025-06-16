@@ -13,16 +13,27 @@ export class TimeTracker implements vscode.Disposable {
     private currentProject: string = '';
     private currentBranch: string = 'unknown';
     private database: Database;
-    private updateInterval: NodeJS.Timeout | null = null;
-    private saveInterval: NodeJS.Timeout | null = null;
+    private updateInterval: ReturnType<typeof setTimeout> | null = null;
+    private saveInterval: ReturnType<typeof setTimeout> | null = null;
     private saveIntervalSeconds: number = 5;
     private lastCursorActivity: number = Date.now();
-    private cursorInactivityTimeout: NodeJS.Timeout | null = null;
+    private cursorInactivityTimeout: ReturnType<typeof setTimeout> | null = null;
     private inactivityTimeoutSeconds: number = 300;
-    private focusTimeoutHandle: NodeJS.Timeout | null = null;
+    private focusTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
     private focusTimeoutSeconds: number = 60;
     private gitWatcher: GitWatcher | null = null;
-    private branchCheckInterval: NodeJS.Timeout | null = null;
+    private branchCheckInterval: ReturnType<typeof setTimeout> | null = null;
+    private weekStartDay: number = 0; // 0 = Sunday by default
+
+    private static readonly WEEKDAY_MAP: Record<string, number> = {
+        Sunday: 0,
+        Monday: 1,
+        Tuesday: 2,
+        Wednesday: 3,
+        Thursday: 4,
+        Friday: 5,
+        Saturday: 6
+    };
 
     constructor(database: Database) {
         this.database = database;
@@ -99,6 +110,10 @@ export class TimeTracker implements vscode.Disposable {
         this.saveIntervalSeconds = config.get('saveInterval', 5);
         this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 300);
         this.focusTimeoutSeconds = config.get('focusTimeout', 60);
+
+        // Map string to number for weekStartDay
+        const weekStartDayStr = config.get<string>('weekStartDay', 'Sunday');
+        this.weekStartDay = TimeTracker.WEEKDAY_MAP[weekStartDayStr] ?? 0; 
     }
 
     private async updateCurrentBranch() {
@@ -294,7 +309,10 @@ export class TimeTracker implements vscode.Disposable {
 
     async getWeeklyTotal(): Promise<number> {
         const now = new Date();
-        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+        // Calculate difference between current day and weekStartDay
+        let diff = now.getDay() - this.weekStartDay;
+        if (diff < 0) diff += 7;
+        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff);
         return this.getTotalSince(startOfWeek);
     }
 

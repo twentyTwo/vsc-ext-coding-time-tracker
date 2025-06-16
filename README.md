@@ -71,6 +71,9 @@ You can customize the extension's behavior through VS Code settings:
      - Default: 180 seconds (3 minutes)
      - Determines how long to keep tracking when you switch to other applications
      - Useful for when you're referencing documentation or testing your application
+   - **Week Start Day**: The first day of the week
+     - Default: Sunday
+     - Determines the first day of the week  
 
 
 ## Screenshots
