@@ -2,6 +2,50 @@
 
 This document explains how the time tracking mechanism works in Simple Coding Time Tracker (SCTT). It's written for both developers who want to understand the code and users who want to know what's happening behind the scenes.
 
+## Features
+
+The following features are implemented in this codebase:
+
+- **Automatic Coding Time Tracking**
+  - Tracks active coding time in minutes, per project and per git branch.
+  - Detects activity (typing, cursor movement, file changes) and inactivity.
+  - Handles project and branch switching automatically.
+  - Multi-root workspace aware.
+
+- **Customizable Tracking Behavior**
+  - Configurable save interval, inactivity timeout, and focus timeout via settings.
+  - Accurate time tracking even with frequent app switching.
+
+- **Persistent Data Storage**
+  - Stores time entries persistently using VS Code's global state.
+  - Data is structured as `TimeEntry` objects (date, project, branch, time spent).
+  - Automatic migration for new data fields (e.g., branch support).
+
+- **Summary and Reporting**
+  - Provides a summary view with daily, project, and branch breakdowns.
+  - Aggregates total time, and allows filtering by date, project, or branch.
+  - Real-time status bar updates showing current tracked time and context.
+
+- **User Interface Integration**
+  - Status bar item for quick access and live tracking status.
+  - Commands to start/stop tracking, show summary, and clear all data.
+  - Webview or panel for detailed time statistics and reports.
+
+- **Robust Error Handling**
+  - All storage and tracking operations are wrapped in error handling.
+  - User notifications for errors or important actions (e.g., data deletion).
+
+- **Developer-Friendly Structure**
+  - Modular codebase with clear separation of concerns:
+    - `timeTracker.ts`: Core tracking logic and activity detection
+    - `database.ts`: Persistent storage and summary aggregation
+    - `statusBar.ts`: Status bar UI integration
+    - `summaryView.ts`: Summary/reporting UI
+    - `utils.ts`: Helper functions for formatting and common tasks
+  - Well-documented code and architecture for easy maintenance and extension.
+
+---
+
 ## Core Concepts
 
 ### Time Units and Storage
