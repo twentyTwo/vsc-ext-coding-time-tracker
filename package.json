@@ -47,8 +47,8 @@
         "title": "SCTT: View Time Tracking Data"
       },
       {
-        "command": "coding-time-tracker.clearAllData",
-        "title": "Clear All Time Tracking Data"
+        "command": "simpleCodingTimeTracker.clearAllData",
+        "title": "SCTT: Clear All Time Tracking Data"
       }
     ]
   },

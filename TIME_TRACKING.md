@@ -81,11 +81,12 @@ The tracker records:
 
 ### 2. During Active Tracking
 
-The tracker maintains three important intervals:
+The tracker maintains three important intervals and time validation:
 
 1. **Update Interval (1 second)**
    - Runs every second
-   - Updates internal state
+   - Updates internal state and validates time continuity
+   - Detects system sleep/wake by checking time gaps
    - Used for real-time UI updates
 
 2. **Save Interval (5 seconds by default)**
@@ -120,6 +121,7 @@ Tracking stops in these scenarios:
    - No cursor movement
    - No typing
    - No file changes
+   - Abnormal time gaps (system sleep/hibernate detected)
 
 2. **Lost Focus** (after 1 minute by default)
    - Switched to another application

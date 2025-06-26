@@ -23,6 +23,10 @@ export class TimeTracker implements vscode.Disposable {
     private focusTimeoutSeconds: number = 60;
     private gitWatcher: GitWatcher | null = null;
     private branchCheckInterval: NodeJS.Timeout | null = null;
+    private lastUpdateTime: number = Date.now();
+    private lastFocusTime: number = Date.now();
+    private readonly MAX_VALID_TIME_GAP = 2 * 60 * 1000; // 2 minutes in milliseconds
+    private wasSleeping: boolean = false;
 
     constructor(database: Database) {
         this.database = database;
@@ -74,20 +78,45 @@ export class TimeTracker implements vscode.Disposable {
         }, '(', ',');
 
         // Track when VS Code window gains focus
-        vscode.window.onDidChangeWindowState((e) => {
+        vscode.window.onDidChangeWindowState(async (e) => {
+            const now = Date.now();
             if (e.focused) {
-                if (this.focusTimeoutHandle) {
+                const focusGap = now - this.lastFocusTime;
+                // Check for potential system sleep when window regains focus
+                if (focusGap > this.MAX_VALID_TIME_GAP) {
+                    console.log(`Potential system wake detected after ${focusGap}ms`);
+                    this.wasSleeping = true;
+                    if (this.isTracking) {
+                        this.stopTracking('system sleep detected');
+                        vscode.window.showInformationMessage('Time tracking paused due to system sleep detection');
+                    }
+                } else if (this.focusTimeoutHandle) {
                     clearTimeout(this.focusTimeoutHandle);
                     this.focusTimeoutHandle = null;
+                    if (this.wasSleeping) {
+                        // Don't auto-start tracking after sleep
+                        this.wasSleeping = false;
+                    } else {
+                        // Save current session before starting new one
+                        if (this.isTracking) {
+                            await this.saveCurrentSession('window focus gained');
+                        }
+                        this.startTracking('focus regained');
+                    }
                 }
-                this.startTracking();
+                this.lastFocusTime = now;
             } else {
+                // Save session when losing focus
+                if (this.isTracking) {
+                    await this.saveCurrentSession('window focus lost');
+                }
+                
                 if (this.focusTimeoutHandle) {
                     clearTimeout(this.focusTimeoutHandle);
                 }
                 this.focusTimeoutHandle = setTimeout(() => {
                     if (this.isTracking) {
-                        this.stopTracking();
+                        this.stopTracking('focus timeout');
                     }
                 }, this.focusTimeoutSeconds * 1000);
             }
@@ -146,58 +175,115 @@ export class TimeTracker implements vscode.Disposable {
 
     public async updateCursorActivity() {
         if (!this.isTracking) {
-            await this.startTracking();
+            await this.startTracking('cursor activity');
+            return;
+        }
+
+        const currentProject = this.getCurrentProject();
+        if (currentProject !== this.currentProject) {
+            // Save time for previous project before switching
+            await this.saveCurrentSession();
+            this.currentProject = currentProject;
+            this.startTime = Date.now();
         }
 
         this.lastCursorActivity = Date.now();
         this.setupCursorTracking();
     }
 
-    async startTracking() {
+    async startTracking(reason: string = 'manual') {
         if (!this.isTracking) {
             await this.updateCurrentBranch();
+            const now = Date.now();
             this.isTracking = true;
-            this.startTime = Date.now();
+            this.startTime = now;
+            this.lastUpdateTime = now;
+            this.lastSaveTime = now;
             this.currentProject = this.getCurrentProject();
+            
+            // Only need update interval for UI updates
+            if (this.updateInterval) {
+                clearInterval(this.updateInterval);
+            }
             this.updateInterval = setInterval(() => this.updateCurrentSession(), 1000);
-            this.saveInterval = setInterval(() => this.saveCurrentSession(), this.saveIntervalSeconds * 1000);
+            
             this.setupCursorTracking();
-            await this.setupGitWatcher(); // Set up real-time branch monitoring
+            await this.setupGitWatcher();
         }
     }
 
-    stopTracking() {
+    stopTracking(reason?: string) {
         if (this.isTracking) {
             this.isTracking = false;
+            
+            // Clear update interval
             if (this.updateInterval) {
                 clearInterval(this.updateInterval);
                 this.updateInterval = null;
             }
-            if (this.saveInterval) {
-                clearInterval(this.saveInterval);
-                this.saveInterval = null;
-            }
+            
             if (this.cursorInactivityTimeout) {
                 clearTimeout(this.cursorInactivityTimeout);
                 this.cursorInactivityTimeout = null;
             }
-            this.saveCurrentSession();
-            this.stopGitWatcher(); // Clean up branch monitoring
+
+            // Save the final session
+            this.saveCurrentSession(reason);
+
+            // Reset tracking state
+            this.lastSaveTime = 0;
+            this.stopGitWatcher();
         }
     }
 
+    private validateTimeGap(): boolean {
+        const now = Date.now();
+        const timeDiff = now - this.lastUpdateTime;
+        
+        // If time gap is larger than expected, assume system was sleeping
+        if (timeDiff > this.MAX_VALID_TIME_GAP) {
+            console.log(`Large time gap detected: ${timeDiff}ms. Stopping tracking.`);
+            this.wasSleeping = true;
+            this.stopTracking();
+            vscode.window.showInformationMessage('Time tracking paused due to system sleep/hibernate detection');
+            return false;
+        }
+        
+        // Reset sleep state if we're getting normal updates
+        if (this.wasSleeping && timeDiff < 2000) { // Two consecutive normal updates
+            this.wasSleeping = false;
+        }
+        
+        this.lastUpdateTime = now;
+        return true;
+    }
+
     private updateCurrentSession() {
+        // Validate time gap before updating session
+        if (!this.validateTimeGap()) {
+            return;
+        }
         // This method will be called every second when tracking is active
         // You can emit an event here if you want to update the UI more frequently
     }
 
-    private async saveCurrentSession() {
-        if (this.isTracking) {
-            const duration = (Date.now() - this.startTime) / 60000;
+    private lastSaveTime: number = 0;
+
+    private async saveCurrentSession(reason?: string) {
+        const now = Date.now();
+        const duration = (now - this.startTime) / 60000; // Convert to minutes
+
+        if (duration > 0) {
+            // Add reason as a comment in debug log
+            if (reason) {
+                console.log(`Saving session (${reason}): ${duration} minutes`);
+            }
+            
             await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch);
-            this.startTime = Date.now();
+            this.startTime = now; // Reset start time for next session
+            this.lastSaveTime = now;
         }
-    }    private getCurrentProject(): string {
+    }    getCurrentProject(): string {
         // If we have a current project name, keep using it
         if (this.currentProject && this.currentProject !== 'Unknown Project') {
             return this.currentProject;
@@ -401,13 +487,13 @@ export class TimeTracker implements vscode.Disposable {
             // If branch has changed
             if (currentBranch !== this.gitWatcher.lastKnownBranch) {
                 // Save the current session with the old branch
-                await this.saveCurrentSession();
+                await this.saveCurrentSession(`branch change from ${this.gitWatcher.lastKnownBranch} to ${currentBranch}`);
 
                 // Update branch tracking
                 this.gitWatcher.lastKnownBranch = currentBranch;
                 this.currentBranch = currentBranch;
 
-                // Start a new session
+                // Start a new session from this point
                 this.startTime = Date.now();
             }
         } catch (error) {

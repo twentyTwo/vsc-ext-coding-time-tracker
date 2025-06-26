@@ -51,6 +51,12 @@ export class Database {
     }
 
     async addEntry(date: Date, project: string, timeSpent: number, branch: string) {
+        // Validate time spent to prevent unreasonable values
+        if (timeSpent <= 0 || timeSpent > 24 * 60) { // More than 24 hours is unlikely
+            console.warn(`Suspicious time value detected: ${timeSpent} minutes for ${project}/${branch}`);
+            return;
+        }
+
         const dateString = this.getLocalDateString(date);
         const entries = this.getEntries();
         
@@ -60,14 +66,18 @@ export class Database {
             entry.branch === branch
         );
 
+        // Round to 2 decimal places to avoid floating point issues
+        const roundedTime = Math.round(timeSpent * 100) / 100;
+
         if (existingEntryIndex !== -1) {
-            entries[existingEntryIndex].timeSpent += timeSpent;
+            entries[existingEntryIndex].timeSpent += roundedTime;
         } else {
-            entries.push({ date: dateString, project, timeSpent, branch });
+            entries.push({ date: dateString, project, timeSpent: roundedTime, branch });
         }
 
         try {
             await this.updateEntries(entries);
+            console.log(`Saved ${roundedTime}min for ${project}/${branch} on ${dateString}`);
         } catch (error) {
             console.error('Error saving entry:', error);
             vscode.window.showErrorMessage('Failed to save time entry');
@@ -128,25 +138,45 @@ export class Database {
         return Array.from(branchSet).sort();
     }
 
-    async clearAllData(): Promise<void> {
-        // Ask for explicit confirmation with a specific phrase to prevent accidental deletion
+    async clearAllData(): Promise<boolean> {
+        // First confirm with a warning dialog
+        const warningResult = await vscode.window.showWarningMessage(
+            'Are you sure you want to delete all time tracking data? This cannot be undone.',
+            { modal: true },
+            'Delete All Data',
+            'Cancel'
+        );
+
+        if (warningResult !== 'Delete All Data') {
+            return false;
+        }
+
+        // Then require typing confirmation for extra safety
         const response = await vscode.window.showInputBox({
-            prompt: 'This will permanently delete all time tracking data. Type "DELETE ALL DATA" to confirm.',
-            placeHolder: 'DELETE ALL DATA'
+            prompt: 'Type "DELETE ALL DATA" to confirm permanent deletion of all time tracking data.',
+            placeHolder: 'DELETE ALL DATA',
+            ignoreFocusOut: true
         });
 
         if (response !== 'DELETE ALL DATA') {
             vscode.window.showInformationMessage('Data deletion cancelled.');
-            return;
+            return false;
         }
 
         try {
+            // Clear memory cache
             this.entries = [];
+            
+            // Clear persistent storage
             await this.context.globalState.update('timeEntries', []);
-            vscode.window.showInformationMessage('All time tracking data has been cleared.');
+            
+            // Show success message
+            vscode.window.showInformationMessage('All time tracking data has been cleared successfully.');
+            return true;
         } catch (error) {
             console.error('Error clearing data:', error);
-            vscode.window.showErrorMessage('Failed to clear time tracking data');
+            vscode.window.showErrorMessage('Failed to clear time tracking data: ' + (error instanceof Error ? error.message : 'Unknown error'));
+            return false;
         }
     }
 }

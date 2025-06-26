@@ -60,9 +60,20 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // Register data management command (hidden from command palette)
-    let clearDataCommand = vscode.commands.registerCommand('coding-time-tracker.clearAllData', () => {
-        database.clearAllData();
+    // Register data management command
+    let clearDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.clearAllData', async () => {
+        // Stop tracking before clearing data
+        if (timeTracker.isActive()) {
+            timeTracker.stopTracking('clear all data');
+        }
+        
+        const success = await database.clearAllData();
+        if (success) {
+            // Update the summary view to show empty state
+            await summaryView.show();
+            // Force status bar update
+            statusBar.updateNow();
+        }
     });
     context.subscriptions.push(clearDataCommand);
 
@@ -73,37 +84,19 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Start tracking immediately if VS Code is already focused
     if (vscode.window.state.focused) {
-        timeTracker.startTracking();
+        timeTracker.startTracking('initial startup');
     }
 
-    // Variable to store the focus timeout handle
-    let focusTimeoutHandle: NodeJS.Timeout | null = null;
-
+    // Window state is now handled in TimeTracker class
     vscode.window.onDidChangeWindowState((e: vscode.WindowState) => {
-        if (e.focused) {
-            if (focusTimeoutHandle) {
-                clearTimeout(focusTimeoutHandle);
-                focusTimeoutHandle = null;
-            }
-            timeTracker.startTracking();
-        } else {
-            const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-            const focusTimeoutSeconds = config.get('focusTimeout', 60);
-
-            // Only stop tracking after the focus timeout
-            if (focusTimeoutHandle) {
-                clearTimeout(focusTimeoutHandle);
-            }
-            
-            focusTimeoutHandle = setTimeout(() => {
-                timeTracker.stopTracking();
-            }, focusTimeoutSeconds * 1000);
+        if (e.focused && !timeTracker.isActive()) {
+            timeTracker.startTracking('window focus');
         }
     });
 
     vscode.workspace.onDidOpenTextDocument(() => {
         if (vscode.window.state.focused) {
-            timeTracker.startTracking();
+            timeTracker.startTracking('document opened');
         }
     });
 

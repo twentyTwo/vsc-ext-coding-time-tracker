@@ -17,9 +17,12 @@ export class StatusBar implements vscode.Disposable {
         this.updateInterval = setInterval(() => void this.updateStatusBar(), 1000); // Update every second
     }    private async updateStatusBar() {
         const todayTotal = await this.timeTracker.getTodayTotal();
+        const currentProjectTime = await this.timeTracker.getCurrentProjectTime();
         const isActive = this.timeTracker.isActive();
-        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)}`;
-        this.statusBarItem.tooltip = await this.getTooltipText(isActive);
+        
+        // Show both total time and current project time
+        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)} (${this.formatTime(currentProjectTime)})`;
+        this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
     }
 
     private formatTime(minutes: number): string {
@@ -27,14 +30,17 @@ export class StatusBar implements vscode.Disposable {
         const mins = Math.floor(minutes % 60);
         const secs = Math.floor((minutes * 60) % 60);
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }    private async getTooltipText(isActive: boolean): Promise<string> {
+    }    private async getTooltipText(isActive: boolean, currentProjectTime: number): Promise<string> {
         const weeklyTotal = await this.timeTracker.getWeeklyTotal();
         const monthlyTotal = await this.timeTracker.getMonthlyTotal();
         const allTimeTotal = await this.timeTracker.getAllTimeTotal();
         const currentBranch = this.timeTracker.getCurrentBranch();
+        const currentProject = this.timeTracker.getCurrentProject();
 
-        return `${isActive ? 'Active' : 'Paused'} - Total Coding Time
+        return `${isActive ? 'Active' : 'Paused'} - Coding Time
+Project: ${currentProject}
 Branch: ${currentBranch}
+Current Project Today: ${formatTime(currentProjectTime)}
 This week: ${formatTime(weeklyTotal)}
 This month: ${formatTime(monthlyTotal)}
 All Time: ${formatTime(allTimeTotal)}
@@ -43,6 +49,11 @@ Click to show summary`;
 
     onDidClick(listener: () => void): vscode.Disposable {
         return this.onDidClickEmitter.event(listener);
+    }
+
+    // Public method to force immediate update
+    async updateNow() {
+        await this.updateStatusBar();
     }
 
     dispose() {
