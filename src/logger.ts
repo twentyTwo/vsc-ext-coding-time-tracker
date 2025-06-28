@@ -16,16 +16,25 @@ type LogEntry = {
 }
 
 export class Logger {
-    private logFilePath: string;
+    private logFilePath: string = '';
     private static instance: Logger;
-    private currentDate: string;
+    private currentDate: string = '';
     private eventCounter: number = 0;
+    private static enableLogging: boolean = false;
 
     private constructor() {
-        const storagePath = this.getStoragePath();
         this.currentDate = this.getDateString();
-        this.logFilePath = path.join(storagePath, `timetracker_${this.currentDate}.log`);
-        this.ensureLogFileExists();
+        this.updateLogPath();
+    }
+
+    private updateLogPath() {
+        if (Logger.enableLogging) {
+            const storagePath = this.getStoragePath();
+            this.logFilePath = path.join(storagePath, `timetracker_${this.currentDate}.log`);
+            this.ensureLogFileExists();
+        } else {
+            this.logFilePath = '';
+        }
     }
 
     public static getInstance(): Logger {
@@ -33,6 +42,17 @@ export class Logger {
             Logger.instance = new Logger();
         }
         return Logger.instance;
+    }
+
+    public static setLoggingEnabled(enabled: boolean) {
+        Logger.enableLogging = enabled;
+        if (Logger.instance) {
+            Logger.instance.updateLogPath();
+        }
+    }
+
+    public static isLoggingEnabled(): boolean {
+        return Logger.enableLogging;
     }
 
     private getStoragePath(): string {
@@ -62,18 +82,25 @@ export class Logger {
     }
 
     private ensureLogFileExists() {
+        if (!Logger.enableLogging) {
+            return;
+        }
         const date = this.getDateString();
         if (date !== this.currentDate) {
             this.currentDate = date;
             this.logFilePath = path.join(this.getStoragePath(), `timetracker_${date}.log`);
             this.eventCounter = 0;
         }
-        if (!fs.existsSync(this.logFilePath)) {
+        if (this.logFilePath && !fs.existsSync(this.logFilePath)) {
             fs.writeFileSync(this.logFilePath, '');
         }
     }
 
     public logEvent(event: string, details: Record<string, any>) {
+        if (!Logger.enableLogging) {
+            return;
+        }
+
         this.ensureLogFileExists();
         const now = new Date();
         this.eventCounter++;

@@ -27,8 +27,7 @@ export class TimeTracker implements vscode.Disposable {
     private branchCheckInterval: NodeJS.Timeout | null = null;
     private lastUpdateTime: number = Date.now();
     private lastFocusTime: number = Date.now();
-    private readonly MAX_VALID_TIME_GAP = 2 * 60 * 1000; // 2 minutes in milliseconds
-    private wasSleeping: boolean = false;
+    // Track time between updates for validation
 
     constructor(database: Database) {
         this.database = database;
@@ -84,28 +83,16 @@ export class TimeTracker implements vscode.Disposable {
         vscode.window.onDidChangeWindowState(async (e) => {
             const now = Date.now();
             if (e.focused) {
-                const focusGap = now - this.lastFocusTime;
-                // Check for potential system sleep when window regains focus
-                if (focusGap > this.MAX_VALID_TIME_GAP) {
-                    console.log(`Potential system wake detected after ${focusGap}ms`);
-                    this.wasSleeping = true;
-                    if (this.isTracking) {
-                        this.stopTracking('system sleep detected');
-                        vscode.window.showInformationMessage('Time tracking paused due to system sleep detection');
-                    }
-                } else if (this.focusTimeoutHandle) {
+                if (this.focusTimeoutHandle) {
+                    // Window regained focus within the timeout period
                     clearTimeout(this.focusTimeoutHandle);
                     this.focusTimeoutHandle = null;
-                    if (this.wasSleeping) {
-                        // Don't auto-start tracking after sleep
-                        this.wasSleeping = false;
-                    } else {
-                        // Save current session before starting new one
-                        if (this.isTracking) {
-                            await this.saveCurrentSession('window focus gained');
-                        }
-                        this.startTracking('focus regained');
+                    
+                    // Save current session before starting new one
+                    if (this.isTracking) {
+                        await this.saveCurrentSession('window focus gained');
                     }
+                    this.startTracking('focus regained');
                 }
                 this.lastFocusTime = now;
             } else {
@@ -128,7 +115,7 @@ export class TimeTracker implements vscode.Disposable {
 
     public updateConfiguration() {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        this.saveIntervalSeconds = config.get('saveInterval', 5);
+        // this.saveIntervalSeconds = config.get('saveInterval', 5);
         this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 180);
         this.focusTimeoutSeconds = config.get('focusTimeout', 180);
     }
@@ -262,22 +249,6 @@ export class TimeTracker implements vscode.Disposable {
 
     private validateTimeGap(): boolean {
         const now = Date.now();
-        const timeDiff = now - this.lastUpdateTime;
-        
-        // If time gap is larger than expected, assume system was sleeping
-        if (timeDiff > this.MAX_VALID_TIME_GAP) {
-            console.log(`Large time gap detected: ${timeDiff}ms. Stopping tracking.`);
-            this.wasSleeping = true;
-            this.stopTracking();
-            vscode.window.showInformationMessage('Time tracking paused due to system sleep/hibernate detection');
-            return false;
-        }
-        
-        // Reset sleep state if we're getting normal updates
-        if (this.wasSleeping && timeDiff < 2000) { // Two consecutive normal updates
-            this.wasSleeping = false;
-        }
-        
         this.lastUpdateTime = now;
         return true;
     }
