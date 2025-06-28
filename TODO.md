@@ -17,6 +17,7 @@ Quick capture for ideas and tasks while coding.
 - [ ] Fix race condition in branch detection during quick switches
 - [ ] Add proper handling for detached HEAD state
 - [ ] Implement data migration strategy for existing entries
+- [ ] log each events in console.log
 
 ## Ideas
 - Maybe add a quick pause button in status bar?

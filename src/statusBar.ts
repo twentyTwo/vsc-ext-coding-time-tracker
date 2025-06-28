@@ -1,18 +1,40 @@
 import * as vscode from 'vscode';
 import { TimeTracker } from './timeTracker';
 import { formatTime } from './utils';
+import { SummaryViewProvider } from './summaryView';
 
 export class StatusBar implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
     private timeTracker: TimeTracker;
+    private summaryView: SummaryViewProvider;
     private updateInterval: NodeJS.Timeout;
-    private onDidClickEmitter = new vscode.EventEmitter<void>();
+    private readonly commandId = 'simpleCodingTimeTracker.manualSave';
 
-    constructor(timeTracker: TimeTracker) {
+    constructor(timeTracker: TimeTracker, summaryView: SummaryViewProvider) {
         this.timeTracker = timeTracker;
+        this.summaryView = summaryView;
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        this.statusBarItem.command = 'simpleCodingTimeTracker.showSummary';
-        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');        this.statusBarItem.show();
+        
+        // Register manual save command first
+        const commandDisposable = vscode.commands.registerCommand(this.commandId, () => {
+            if (this.timeTracker.isActive()) {
+                // Save current session with manual save reason
+                this.timeTracker.saveCurrentSession('manual status bar click');
+                
+                // Show summary view after saving
+                this.summaryView.show();
+                
+                // Show confirmation to user
+                vscode.window.showInformationMessage('Time entry saved and summary view opened');
+            }
+        });
+        
+        // Set up status bar item
+        this.statusBarItem.command = this.commandId;
+        this.statusBarItem.tooltip = 'Click to save current session and show summary';
+        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        this.statusBarItem.show();
+        
         void this.updateStatusBar();
         this.updateInterval = setInterval(() => void this.updateStatusBar(), 1000); // Update every second
     }    private async updateStatusBar() {
@@ -49,18 +71,13 @@ All Time total: ${formatTime(allTimeTotal)}
 Click to show summary`;
     }
 
-    onDidClick(listener: () => void): vscode.Disposable {
-        return this.onDidClickEmitter.event(listener);
-    }
-
     // Public method to force immediate update
     async updateNow() {
         await this.updateStatusBar();
     }
 
     dispose() {
-        clearInterval(this.updateInterval);
         this.statusBarItem.dispose();
-        this.onDidClickEmitter.dispose();
+        clearInterval(this.updateInterval);
     }
 }

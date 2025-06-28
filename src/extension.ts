@@ -7,8 +7,8 @@ import { SummaryViewProvider } from './summaryView';
 export function activate(context: vscode.ExtensionContext) {
     const database = new Database(context);
     const timeTracker = new TimeTracker(database);
-    const statusBar = new StatusBar(timeTracker);
     const summaryView = new SummaryViewProvider(context, database, timeTracker);
+    const statusBar = new StatusBar(timeTracker, summaryView);
 
     // Register cursor tracking
     context.subscriptions.push(
@@ -100,10 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // Refresh summary view when status bar is clicked
-    statusBar.onDidClick(() => {
-        summaryView.show();
-    });
 }
 
 export function deactivate() {}

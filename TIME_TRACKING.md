@@ -62,7 +62,7 @@ The following features are implemented in this codebase:
 // These are the main timing control variables
 saveIntervalSeconds = 5       // How often to save time entries
 inactivityTimeoutSeconds = 300 // Stop tracking after 5 mins of inactivity
-focusTimeoutSeconds = 60      // Continue tracking for 1 min after losing focus
+focusTimeoutSeconds = 180     // Continue tracking for 3 mins after losing focus
 ```
 
 ## How Time Tracking Works
@@ -159,7 +159,7 @@ You can customize tracking behavior:
 
 3. **Focus Timeout** (`simpleCodingTimeTracker.focusTimeout`)
    - How long to continue tracking after losing window focus
-   - Default: 60 seconds (1 minute)
+   - Default: 180 seconds (3 minutes)
    - Higher = Better for quick app switches
 
 ## Tips for Accurate Tracking

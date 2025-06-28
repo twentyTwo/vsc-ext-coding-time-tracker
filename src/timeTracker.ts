@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Database, TimeEntry } from './database';
 import { simpleGit, SimpleGit } from 'simple-git';
+import { Logger } from './logger';
 
 type GitWatcher = {
     git: SimpleGit;
@@ -13,14 +14,15 @@ export class TimeTracker implements vscode.Disposable {
     private currentProject: string = '';
     private currentBranch: string = 'unknown';
     private database: Database;
+    private logger: Logger;
     private updateInterval: NodeJS.Timeout | null = null;
     private saveInterval: NodeJS.Timeout | null = null;
     private saveIntervalSeconds: number = 5;
     private lastCursorActivity: number = Date.now();
     private cursorInactivityTimeout: NodeJS.Timeout | null = null;
-    private inactivityTimeoutSeconds: number = 300;
+    private inactivityTimeoutSeconds: number = 180;
     private focusTimeoutHandle: NodeJS.Timeout | null = null;
-    private focusTimeoutSeconds: number = 60;
+    private focusTimeoutSeconds: number = 180;
     private gitWatcher: GitWatcher | null = null;
     private branchCheckInterval: NodeJS.Timeout | null = null;
     private lastUpdateTime: number = Date.now();
@@ -30,6 +32,7 @@ export class TimeTracker implements vscode.Disposable {
 
     constructor(database: Database) {
         this.database = database;
+        this.logger = Logger.getInstance();
         this.updateConfiguration();
 
         // Track cursor movements
@@ -126,8 +129,8 @@ export class TimeTracker implements vscode.Disposable {
     public updateConfiguration() {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         this.saveIntervalSeconds = config.get('saveInterval', 5);
-        this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 300);
-        this.focusTimeoutSeconds = config.get('focusTimeout', 60);
+        this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 180);
+        this.focusTimeoutSeconds = config.get('focusTimeout', 180);
     }
 
     private async updateCurrentBranch() {
@@ -164,8 +167,13 @@ export class TimeTracker implements vscode.Disposable {
                 const inactivityDuration = now - this.lastCursorActivity;
                 
                 if (this.isTracking && inactivityDuration >= this.inactivityTimeoutSeconds * 1000) {
-                    this.stopTracking();
-                    this.saveCurrentSession();
+                    this.logger.logEvent('inactivity_detected', {
+                        project: this.currentProject,
+                        branch: this.currentBranch,
+                        inactivityDuration: inactivityDuration / 1000,
+                        lastActivityTime: new Date(this.lastCursorActivity).toISOString()
+                    });
+                    this.stopTracking('inactivity');
                 }
             }, this.inactivityTimeoutSeconds * 1000);
         }
@@ -201,6 +209,13 @@ export class TimeTracker implements vscode.Disposable {
             this.lastSaveTime = now;
             this.currentProject = this.getCurrentProject();
             
+            this.logger.logEvent('tracking_started', {
+                reason,
+                project: this.currentProject,
+                branch: this.currentBranch,
+                startTime: new Date(now).toISOString()
+            });
+
             // Only need update interval for UI updates
             if (this.updateInterval) {
                 clearInterval(this.updateInterval);
@@ -214,6 +229,7 @@ export class TimeTracker implements vscode.Disposable {
 
     stopTracking(reason?: string) {
         if (this.isTracking) {
+            const now = Date.now();
             this.isTracking = false;
             
             // Clear update interval
@@ -226,6 +242,14 @@ export class TimeTracker implements vscode.Disposable {
                 clearTimeout(this.cursorInactivityTimeout);
                 this.cursorInactivityTimeout = null;
             }
+
+            this.logger.logEvent('tracking_stopped', {
+                reason: reason || 'manual',
+                project: this.currentProject,
+                branch: this.currentBranch,
+                stopTime: new Date(now).toISOString(),
+                sessionDuration: (now - this.startTime) / 60000
+            });
 
             // Save the final session
             this.saveCurrentSession(reason);
@@ -269,21 +293,37 @@ export class TimeTracker implements vscode.Disposable {
 
     private lastSaveTime: number = 0;
 
-    private async saveCurrentSession(reason?: string) {
+    public async saveCurrentSession(reason?: string) {
         const now = Date.now();
-        const duration = (now - this.startTime) / 60000; // Convert to minutes
+        let duration = (now - this.startTime) / 60000; // Convert to minutes
+        
+        // Adjust duration based on the reason for session end
+        if (reason === 'inactivity' && this.inactivityTimeoutSeconds) {
+            // Subtract the inactivity timeout period
+            duration = Math.max(0, duration - this.inactivityTimeoutSeconds / 60);
+        } else if (reason === 'focus timeout' && this.focusTimeoutSeconds) {
+            // Subtract the focus timeout period
+            duration = Math.max(0, duration - this.focusTimeoutSeconds / 60);
+        }
 
         if (duration > 0) {
-            // Add reason as a comment in debug log
-            if (reason) {
-                console.log(`Saving session (${reason}): ${duration} minutes`);
-            }
+            // Log the session being saved
+            this.logger.logEvent('session_saved', {
+                reason: reason || 'periodic',
+                project: this.currentProject,
+                branch: this.currentBranch,
+                duration,
+                startTime: new Date(this.startTime).toISOString(),
+                endTime: new Date(now).toISOString()
+            });
             
             await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch);
             this.startTime = now; // Reset start time for next session
             this.lastSaveTime = now;
         }
-    }    getCurrentProject(): string {
+    }    
+    
+    getCurrentProject(): string {
         // If we have a current project name, keep using it
         if (this.currentProject && this.currentProject !== 'Unknown Project') {
             return this.currentProject;
@@ -437,6 +477,30 @@ export class TimeTracker implements vscode.Disposable {
         this.stopTracking();
     }
 
+    public registerStatusBarCommand(command: string) {
+        return vscode.commands.registerCommand(command, () => {
+            if (this.isTracking) {
+                // Save current session with manual save reason
+                this.saveCurrentSession('manual status bar click');
+                
+                // Log the manual save event
+                this.logger.logEvent('manual_save', {
+                    project: this.currentProject,
+                    branch: this.currentBranch,
+                    duration: (Date.now() - this.startTime) / 60000,
+                    startTime: new Date(this.startTime).toISOString(),
+                    endTime: new Date().toISOString()
+                });
+                
+                // Reset start time for next session
+                this.startTime = Date.now();
+                
+                // Show confirmation to user
+                vscode.window.showInformationMessage('Time entry saved manually');
+            }
+        });
+    }
+
     isActive(): boolean {
         return this.isTracking;
     }
@@ -449,6 +513,11 @@ export class TimeTracker implements vscode.Disposable {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
+                this.logger.logEvent('branch_check_error', {
+                    project: this.currentProject,
+                    currentBranch: this.currentBranch,
+                    error: 'No workspace folder found'
+                });
                 return;
             }
 
@@ -456,6 +525,11 @@ export class TimeTracker implements vscode.Disposable {
             const isGitRepo = await git.checkIsRepo();
             
             if (!isGitRepo) {
+                this.logger.logEvent('branch_check_error', {
+                    project: this.currentProject,
+                    currentBranch: this.currentBranch,
+                    error: 'Not a git repository'
+                });
                 return;
             }
 
@@ -471,6 +545,14 @@ export class TimeTracker implements vscode.Disposable {
             }, 1000);
 
         } catch (error) {
+            this.logger.logEvent('branch_check_error', {
+                project: this.currentProject,
+                currentBranch: this.currentBranch,
+                error: error instanceof Error ? 
+                    `Git setup error: ${error.message}` : 
+                    'Unknown git setup error',
+                location: 'setupGitWatcher'
+            });
             console.error('Error setting up git watcher:', error);
         }
     }
@@ -486,6 +568,13 @@ export class TimeTracker implements vscode.Disposable {
 
             // If branch has changed
             if (currentBranch !== this.gitWatcher.lastKnownBranch) {
+                // Log branch change event
+                this.logger.logEvent('branch_changed', {
+                    project: this.currentProject,
+                    oldBranch: this.gitWatcher.lastKnownBranch,
+                    newBranch: currentBranch
+                });
+
                 // Save the current session with the old branch
                 await this.saveCurrentSession(`branch change from ${this.gitWatcher.lastKnownBranch} to ${currentBranch}`);
 
@@ -497,6 +586,14 @@ export class TimeTracker implements vscode.Disposable {
                 this.startTime = Date.now();
             }
         } catch (error) {
+            this.logger.logEvent('branch_check_error', {
+                project: this.currentProject,
+                currentBranch: this.currentBranch,
+                error: error instanceof Error ? 
+                    `Branch check error: ${error.message}` : 
+                    'Unknown branch check error',
+                location: 'checkBranchChanges'
+            });
             console.error('Error checking branch changes:', error);
         }
     }
