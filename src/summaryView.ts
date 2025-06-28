@@ -688,7 +688,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         new Chart(projectCtx, {
                             type: 'bar',
                             data: {
-                                labels: projectData.map(([project]) => project),
+                                labels: projectData.map(([key]) => key),
                                 datasets: [{
                                     label: 'Coding Time',
                                     data: projectData.map(([_, time]) => time/60),
@@ -866,11 +866,21 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         filteredEntries.forEach(entry => {
                             totalTime += entry.timeSpent;
                             
-                            // Update project data
-                            if (!projectData[entry.project]) {
-                                projectData[entry.project] = 0;
+                            // If a project is selected, organize by branch
+                            if (selectedProject) {
+                                if (entry.project === selectedProject) {
+                                    if (!projectData[entry.branch]) {
+                                        projectData[entry.branch] = 0;
+                                    }
+                                    projectData[entry.branch] += entry.timeSpent;
+                                }
+                            } else {
+                                // Otherwise organize by project
+                                if (!projectData[entry.project]) {
+                                    projectData[entry.project] = 0;
+                                }
+                                projectData[entry.project] += entry.timeSpent;
                             }
-                            projectData[entry.project] += entry.timeSpent;
                     
                             // Update daily data
                             if (!dailyData[entry.date]) {
@@ -905,16 +915,19 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const projectCtx = document.getElementById('projectChart').getContext('2d');
                         const projectChartData = Object.entries(projectData)
                             .sort((a, b) => b[1] - a[1])
-                            .slice(0, 5);
-                    
+                            // Show all branches when a project is selected, otherwise limit to top 5 projects
+                            .slice(0, selectedProject ? undefined : 5);
+
                         new Chart(projectCtx, {
                             type: 'bar',
                             data: {
-                                labels: projectChartData.map(([project]) => project),
+                                labels: projectChartData.map(([key]) => key),
                                 datasets: [{
-                                    label: 'Coding Time',
+                                    label: selectedProject ? 'Time per Branch' : 'Time per Project',
                                     data: projectChartData.map(([_, time]) => time/60),
-                                    backgroundColor: chartColors.chartBlues,
+                                    backgroundColor: selectedProject 
+                                        ? projectChartData.map((_, index) => chartColors.chartBlues[index % chartColors.chartBlues.length])
+                                        : chartColors.chartBlues[0],
                                     borderColor: chartColors.grid,
                                     borderWidth: 1
                                 }]
@@ -924,13 +937,28 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 indexAxis: 'y',
                                 plugins: {
                                     ...commonChartConfig.plugins,
+                                    title: {
+                                        display: selectedProject ? true : false,
+                                        text: selectedProject ? \`Time Distribution Across Branches - \${selectedProject}\` : '',
+                                        color: chartColors.text,
+                                        font: {
+                                            size: 14,
+                                            weight: '600'
+                                        },
+                                        padding: {
+                                            bottom: 15
+                                        }
+                                    },
                                     tooltip: {
                                         ...commonChartConfig.plugins.tooltip,
                                         callbacks: {
+                                            title: function(context) {
+                                                return selectedProject ? \`Branch: \${context[0].label}\` : \`Project: \${context[0].label}\`;
+                                            },
                                             label: function(context) {
                                                 const hours = Math.floor(context.raw);
                                                 const mins = Math.round((context.raw % 1) * 60);
-                                                return \`\${context.label}: \${hours} hour\${hours !== 1 ? 's' : ''} and \${mins} minute\${mins !== 1 ? 's' : ''}\`;
+                                                return \`Time: \${hours} hour\${hours !== 1 ? 's' : ''} and \${mins} minute\${mins !== 1 ? 's' : ''}\`;
                                             }
                                         }
                                     }
