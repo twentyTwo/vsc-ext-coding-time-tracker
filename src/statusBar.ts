@@ -21,7 +21,7 @@ export class StatusBar implements vscode.Disposable {
         const isActive = this.timeTracker.isActive();
         
         // Show both total time and current project time
-        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)} (${this.formatTime(currentProjectTime)})`;
+        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)}`;
         this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
     }
 
@@ -30,7 +30,9 @@ export class StatusBar implements vscode.Disposable {
         const mins = Math.floor(minutes % 60);
         const secs = Math.floor((minutes * 60) % 60);
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }    private async getTooltipText(isActive: boolean, currentProjectTime: number): Promise<string> {
+    }    
+    
+    private async getTooltipText(isActive: boolean, currentProjectTime: number): Promise<string> {
         const weeklyTotal = await this.timeTracker.getWeeklyTotal();
         const monthlyTotal = await this.timeTracker.getMonthlyTotal();
         const allTimeTotal = await this.timeTracker.getAllTimeTotal();
@@ -41,9 +43,9 @@ export class StatusBar implements vscode.Disposable {
 Project: ${currentProject}
 Branch: ${currentBranch}
 Current Project Today: ${formatTime(currentProjectTime)}
-This week: ${formatTime(weeklyTotal)}
-This month: ${formatTime(monthlyTotal)}
-All Time: ${formatTime(allTimeTotal)}
+This week total: ${formatTime(weeklyTotal)}
+This month total: ${formatTime(monthlyTotal)}
+All Time total: ${formatTime(allTimeTotal)}
 Click to show summary`;
     }
 
