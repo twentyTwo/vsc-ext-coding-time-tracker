@@ -20,11 +20,6 @@
     "configuration": {
       "title": "Simple Coding Time Tracker",
       "properties": {
-        "simpleCodingTimeTracker.saveInterval": {
-          "type": "number",
-          "default": 30,
-          "description": "How often to save coding time data (in seconds)"
-        },
         "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
           "default": 150,
