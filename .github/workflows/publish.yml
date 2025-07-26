@@ -175,36 +175,140 @@ jobs:
         run: |
           # Get the previous tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          VERSION="${{ steps.package.outputs.version }}"
           
           if [ -n "$PREV_TAG" ]; then
-            # Generate changelog from commits since last tag
-            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+            # Generate detailed changelog from commits since last tag
+            echo "## 🚀 What's New in v${VERSION}"
+            echo ""
             
-            # Create release body with actual changes
+            # Get commit messages with more details
+            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"- **%s** (%h)" --no-merges)
+            
+            # Categorize changes
+            FEATURES=$(echo "$COMMITS" | grep -i "feat\|add\|new" || echo "")
+            FIXES=$(echo "$COMMITS" | grep -i "fix\|bug\|resolve" || echo "")
+            IMPROVEMENTS=$(echo "$COMMITS" | grep -i "improve\|enhance\|update\|optimize" || echo "")
+            DOCS=$(echo "$COMMITS" | grep -i "doc\|readme" || echo "")
+            OTHER=$(echo "$COMMITS" | grep -v -i "feat\|add\|new\|fix\|bug\|resolve\|improve\|enhance\|update\|optimize\|doc\|readme" || echo "")
+            
+            # Create categorized release body
             cat << EOF > release_body.md
-          ## What's Changed
+          ## 🚀 What's New in v${VERSION}
           
-          ${CHANGELOG}
+          This release includes several improvements and fixes to enhance your coding time tracking experience.
           
-          ## Installation
+          EOF
           
-          - **VS Code Marketplace**: Search for "Simple Coding Time Tracker" in VS Code Extensions
-          - **Manual Install**: Download the \`.vsix\` file below and install via \`Extensions: Install from VSIX\`
+            # Add features if any
+            if [ -n "$FEATURES" ]; then
+              echo "### ✨ New Features" >> release_body.md
+              echo "$FEATURES" >> release_body.md
+              echo "" >> release_body.md
+            fi
+            
+            # Add fixes if any
+            if [ -n "$FIXES" ]; then
+              echo "### 🐛 Bug Fixes" >> release_body.md
+              echo "$FIXES" >> release_body.md
+              echo "" >> release_body.md
+            fi
+            
+            # Add improvements if any
+            if [ -n "$IMPROVEMENTS" ]; then
+              echo "### 🔧 Improvements" >> release_body.md
+              echo "$IMPROVEMENTS" >> release_body.md
+              echo "" >> release_body.md
+            fi
+            
+            # Add documentation changes if any
+            if [ -n "$DOCS" ]; then
+              echo "### 📚 Documentation" >> release_body.md
+              echo "$DOCS" >> release_body.md
+              echo "" >> release_body.md
+            fi
+            
+            # Add other changes if any
+            if [ -n "$OTHER" ]; then
+              echo "### 🔄 Other Changes" >> release_body.md
+              echo "$OTHER" >> release_body.md
+              echo "" >> release_body.md
+            fi
+            
+            # Add installation and additional info
+            cat << EOF >> release_body.md
+          ## 📦 Installation
+          
+          ### From VS Code Marketplace (Recommended)
+          1. Open VS Code
+          2. Go to Extensions (Ctrl+Shift+X)
+          3. Search for "Simple Coding Time Tracker"
+          4. Click Install
+          
+          ### Manual Installation
+          1. Download the \`.vsix\` file below
+          2. Open VS Code
+          3. Press Ctrl+Shift+P and type "Extensions: Install from VSIX"
+          4. Select the downloaded file
+          
+          ## 🔗 Links
+          
+          - **Marketplace**: [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker)
+          - **Repository**: [GitHub](https://github.com/${{ github.repository }})
+          - **Issues**: [Report a Bug](https://github.com/${{ github.repository }}/issues/new)
+          - **Full Changelog**: [v${PREV_TAG}...v${VERSION}](https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${VERSION})
           
           ---
           
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ steps.package.outputs.version }}
+          **Release Date**: $(date +'%B %d, %Y')  
+          **Package Size**: $(stat -c%s "${{ steps.package.outputs.vsix_path }}" 2>/dev/null | awk '{print int($1/1024/1024)" MB"}' || echo "Unknown")
           EOF
           else
+            # First release
             cat << EOF > release_body.md
-          ## What's Changed
+          ## 🎉 Welcome to Simple Coding Time Tracker v${VERSION}!
           
-          Initial release of Simple Coding Time Tracker v${{ steps.package.outputs.version }}
+          This is the initial release of Simple Coding Time Tracker - a powerful VS Code extension that helps you monitor and analyze your coding time.
           
-          ## Installation
+          ## ✨ Key Features
           
-          - **VS Code Marketplace**: Search for "Simple Coding Time Tracker" in VS Code Extensions  
-          - **Manual Install**: Download the \`.vsix\` file below and install via \`Extensions: Install from VSIX\`
+          - **Automatic Time Tracking**: Seamlessly tracks your coding time in the background
+          - **Project & Branch Tracking**: Organizes time data by project and Git branches
+          - **Smart Activity Detection**: Automatically pauses during periods of inactivity
+          - **Interactive Visualizations**: Charts and graphs showing your coding patterns
+          - **Data Export**: Export your time tracking data for further analysis
+          
+          ## 📦 Installation
+          
+          ### From VS Code Marketplace (Recommended)
+          1. Open VS Code
+          2. Go to Extensions (Ctrl+Shift+X)
+          3. Search for "Simple Coding Time Tracker"
+          4. Click Install
+          
+          ### Manual Installation
+          1. Download the \`.vsix\` file below
+          2. Open VS Code
+          3. Press Ctrl+Shift+P and type "Extensions: Install from VSIX"
+          4. Select the downloaded file
+          
+          ## 🚀 Getting Started
+          
+          Once installed, the extension will automatically start tracking your coding time. You can:
+          - View current session time in the status bar
+          - Access detailed reports via the Command Palette (Ctrl+Shift+P > "Simple Coding Time Tracker")
+          - Configure settings in VS Code preferences
+          
+          ## 🔗 Links
+          
+          - **Repository**: [GitHub](https://github.com/${{ github.repository }})
+          - **Documentation**: [README](https://github.com/${{ github.repository }}#readme)
+          - **Issues**: [Report a Bug](https://github.com/${{ github.repository }}/issues/new)
+          
+          ---
+          
+          **Release Date**: $(date +'%B %d, %Y')  
+          **Package Size**: $(stat -c%s "${{ steps.package.outputs.vsix_path }}" 2>/dev/null | awk '{print int($1/1024/1024)" MB"}' || echo "Unknown")
           EOF
           fi
 
