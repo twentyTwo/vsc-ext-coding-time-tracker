@@ -152,6 +152,25 @@ The release process is defined in two GitHub Actions workflow files:
    - Data processing
    - Helper functions
 
+### Git Branch Tracking
+
+The extension uses the `simple-git` library to monitor git branch changes and associate coding time with specific branches:
+
+1. **Initialization**
+   - The git watcher is initialized in `timeTracker.ts` through the `setupGitWatcher()` method
+   - It checks if the current workspace is a git repository
+   - Sets up an interval to periodically check for branch changes
+
+2. **Branch Monitoring**
+   - Checks for branch changes every 5 seconds (optimized from 1 second to reduce CPU load)
+   - Uses `git.branch()` to get the current branch name
+   - When a branch change is detected, the current session is saved and a new one is started
+
+3. **Optimization Considerations**
+   - The interval is cleared and recreated when appropriate to prevent multiple overlapping intervals
+   - A locking mechanism prevents concurrent executions of branch checking
+   - Proper cleanup is implemented when the extension is deactivated
+
 ### Data Flow
 
 1. User activity triggers events in VS Code

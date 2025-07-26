@@ -25,6 +25,7 @@ export class TimeTracker implements vscode.Disposable {
     private focusTimeoutSeconds: number = 180;
     private gitWatcher: GitWatcher | null = null;
     private branchCheckInterval: NodeJS.Timeout | null = null;
+    private isCheckingBranch: boolean = false;
     private lastUpdateTime: number = Date.now();
     private lastFocusTime: number = Date.now();
     // Track time between updates for validation
@@ -445,7 +446,17 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     dispose() {
-        this.stopTracking();
+        // Make sure all intervals are stopped
+        this.stopTracking('extension disposed');
+        
+        // Ensure git watcher is completely stopped
+        this.stopGitWatcher();
+        
+        // Clear any other potentially running intervals
+        if (this.saveInterval) {
+            clearInterval(this.saveInterval);
+            this.saveInterval = null;
+        }
     }
 
     public registerStatusBarCommand(command: string) {
@@ -481,6 +492,9 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     private async setupGitWatcher() {
+        // Clear any existing interval first to prevent duplicate watchers
+        this.stopGitWatcher();
+        
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
@@ -510,10 +524,11 @@ export class TimeTracker implements vscode.Disposable {
                 lastKnownBranch: branchInfo.current || 'unknown'
             };
 
-            // Check for branch changes every second
+            // Check for branch changes less frequently to reduce CPU load
+            // Changed from 1 second to 5 seconds to reduce the number of git processes spawned
             this.branchCheckInterval = setInterval(async () => {
                 await this.checkBranchChanges();
-            }, 1000);
+            }, 5000);
 
         } catch (error) {
             this.logger.logEvent('branch_check_error', {
@@ -529,11 +544,13 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     private async checkBranchChanges() {
-        if (!this.gitWatcher || !this.isTracking) {
+        // Prevent concurrent executions of branch checking
+        if (this.isCheckingBranch || !this.gitWatcher || !this.isTracking) {
             return;
         }
 
         try {
+            this.isCheckingBranch = true;
             const branchInfo = await this.gitWatcher.git.branch();
             const currentBranch = branchInfo.current || 'unknown';
 
@@ -566,6 +583,9 @@ export class TimeTracker implements vscode.Disposable {
                 location: 'checkBranchChanges'
             });
             console.error('Error checking branch changes:', error);
+        } finally {
+            // Always reset the flag to allow future checks
+            this.isCheckingBranch = false;
         }
     }
 

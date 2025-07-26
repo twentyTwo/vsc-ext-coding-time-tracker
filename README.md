@@ -105,6 +105,12 @@ For technical details about development, release process, and internal architect
 
 ## Changelog
 
+### [0.4.1] - 2025-07-26
+- Fixed issue with excessive git processes being spawned
+- Optimized git branch monitoring to reduce CPU load
+- Reduced frequency of git checks from every 1 second to every 5 seconds
+- Improved cleanup of interval timers to prevent memory leaks
+
 ### [0.4.0] - 2025-06-28
 - Added Git branch tracking to monitor time spent on different branches
 - Enhanced project view with branch-specific time tracking
