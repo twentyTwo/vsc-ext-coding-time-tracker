@@ -21,16 +21,40 @@ jobs:
       - name: Get changed files
         id: changed-files
         run: |
-          echo "files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          # Handle different trigger scenarios
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # For manual triggers, compare with previous commit
+            echo "files=$(git diff --name-only HEAD~1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          elif [ -z "${{ github.event.before }}" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # For first commit or when before is null, get all files in the commit
+            echo "files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-files | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          else
+            # Normal push event
+            echo "files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
+          fi
           
       - name: Check version change and file types
         id: check-changes
         run: |
-          # Check if package.json version changed
-          VERSION_CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} package.json | grep '+\s*"version"')
+          # Check if package.json version changed with proper fallback
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # For manual triggers, check if version changed in last commit
+            VERSION_CHANGED=$(git diff HEAD~1 HEAD package.json | grep -E '^\+\s*"version"' || echo "")
+          elif [ -z "${{ github.event.before }}" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # For first commit or when before is null, assume version changed
+            VERSION_CHANGED="version_changed_first_commit"
+          else
+            # Normal push event
+            VERSION_CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} package.json | grep -E '^\+\s*"version"' || echo "")
+          fi
           
           # Get list of changed files
           CHANGED_FILES="${{ steps.changed-files.outputs.files }}"
+          
+          # Debug output
+          echo "🔍 Event: ${{ github.event_name }}"
+          echo "📁 Changed files: $CHANGED_FILES"
+          echo "📦 Version changed: ${VERSION_CHANGED:-'no'}"
           
           # Check if only documentation files were changed
           DOCS_ONLY=true
@@ -44,7 +68,11 @@ jobs:
           # Initialize should_publish as false
           echo "should_publish=false" >> $GITHUB_OUTPUT
           
-          if [[ "$DOCS_ONLY" == "true" ]]; then
+          # For manual workflow dispatch, always publish (assuming user knows what they're doing)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "🚀 Manual workflow dispatch - proceeding with publish"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          elif [[ "$DOCS_ONLY" == "true" ]]; then
             echo "ℹ️ Only documentation files were changed"
             echo "should_publish=false" >> $GITHUB_OUTPUT
           elif [[ -z "$VERSION_CHANGED" ]]; then
@@ -119,7 +147,7 @@ jobs:
         with:
           name: extension-release-v${{ steps.package.outputs.version }}-${{ steps.package.outputs.date }}
           path: "*.vsix"
-          retention-days: 99  # Maximum retention period allowed by GitHub
+          retention-days: 90  # Maximum retention period allowed by GitHub
           
       - name: Check if tag exists
         id: check_tag
@@ -138,9 +166,9 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           retry_wait_seconds: 30
-          command: vsce publish --packagePath ${{ steps.package.outputs.vsix_path }}
+          command: vsce publish -p $VSC_PAT --packagePath ${{ steps.package.outputs.vsix_path }}
         env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VSC_PAT: ${{ secrets.VSC_PAT }}
 
       - name: Generate Release Notes
         id: release_notes
