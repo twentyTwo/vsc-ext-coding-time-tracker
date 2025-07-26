@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",

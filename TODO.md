@@ -24,6 +24,8 @@ Quick capture for ideas and tasks while coding.
 - A variable maybe for tracking the active coding session duration, and it will notify when it exceeds a certain threshold.
 
 ## Bug Fixes
+- [X] Fix excessive git processes being spawned during branch tracking (2025-07-26)
+- [X] Optimize CPU usage when monitoring git branches (2025-07-26)
 
 
 ## Ideas
