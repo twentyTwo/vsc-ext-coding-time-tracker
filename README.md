@@ -1,5 +1,23 @@
 <div style="display: flex; align-items: center;">
-    <img src="icon-sctt.png" alt="Simple Coding Time Tracker Icon" width="100" style="margin-right: 20px;">
+    <img src="icon-sctt.png" alt#### 👁️ Eye Rest Notification (Warning Level - Modal)
+```
+👁️ EYE HEALTH REMINDER: Look at something 20 feet away for 20 seconds (20-20-20 rule)
+[Pause Timer] [Got it!]
+```
+
+#### 🧘 Stretch Notification (Warning Level - Modal)
+```
+🧘 STRETCH REMINDER: Stand up and stretch your back and neck - Your body needs it!
+[Pause Timer] [Will do!]
+```
+
+#### 🚨 Break Notification (Error Level - Modal)
+```
+🚨 HEALTH BREAK REQUIRED: You've been coding for 2+ hours! Take a break now for your health.
+[Pause Timer] [Quick stretch (5 min)] [Eye rest (10 min)] [Coffee break (15 min)] [Proper break (20 min)]
+```
+
+**Note**: All notifications are **modal by default** (block the UI) and require user interaction to dismiss, ensuring you don't miss important health reminders. You can disable modal behavior in settings if preferred.e Tracker Icon" width="100" style="margin-right: 20px;">
     <h1>Simple Coding Time Tracker: A Visual Studio Code Extension</h1>
 </div>
 
@@ -11,6 +29,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Project and Branch Tracking**: Organizes time data by project and Git branches for comprehensive analysis.
 - **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
+- **Health Notification System**: Proactive reminders to promote healthy coding habits with customizable intervals and one-click pause functionality.
 - **Interactive Data Visualization**:
   - Project Summary Chart: Visual breakdown of time spent on each project
   - Daily Activity Timeline: Interactive line chart showing your coding patterns
@@ -21,6 +40,92 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Project Filtering: Focus on specific projects
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
+
+## Health Notification System
+
+The extension includes a comprehensive health notification system to promote healthy coding habits and prevent strain-related issues.
+
+### 🔔 Smart Health Notifications
+- **Eye Rest Reminders**: Every 20 minutes, get reminded to follow the 20-20-20 rule (look at something 20 feet away for 20 seconds)
+- **Stretch Reminders**: Every 45 minutes, get reminded to stand up and stretch your back and neck
+- **Break Suggestions**: Every 2 hours, get prompted to take a proper break with multiple options
+
+### ⏸️ Quick Pause Functionality
+- Every notification includes a "Pause Timer" button
+- Clicking it immediately pauses your time tracking
+- Timer automatically resumes when you start typing again
+
+### 🎯 Break Options
+When you get a break suggestion after 2 hours, you can choose from:
+- **Quick stretch** (5 minutes)
+- **Eye rest** (10 minutes) 
+- **Coffee break** (15 minutes)
+- **Proper break** (20 minutes)
+
+### Health Notification Configuration
+
+You can customize the health notifications through VS Code settings:
+
+1. Open VS Code Settings (`Ctrl+,` or `Cmd+,`)
+2. Search for "Simple Coding Time Tracker"
+3. Configure these health-related settings:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `simpleCodingTimeTracker.health.enableNotifications` | `true` | Enable/disable health notifications |
+| `simpleCodingTimeTracker.health.eyeRestInterval` | `20` | Eye rest reminder interval (minutes) |
+| `simpleCodingTimeTracker.health.stretchInterval` | `45` | Stretch reminder interval (minutes) |
+| `simpleCodingTimeTracker.health.breakThreshold` | `120` | Break suggestion threshold (minutes) |
+| `simpleCodingTimeTracker.health.modalNotifications` | `true` | Make all notifications modal (blocks UI) for better visibility |
+
+### Health Notification Commands
+
+#### Toggle Health Notifications
+- **Command**: `SCTT: Toggle Health Notifications`
+- **Usage**: Quickly enable/disable health notifications
+- **Access**: Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+
+### How Health Notifications Work
+
+1. **Automatic Start**: Health notifications start automatically when you begin coding
+2. **Smart Timing**: Notifications are based on actual coding time, not just VS Code being open
+3. **Prominent & Persistent**: 
+   - Eye and stretch reminders use **warning-level modal notifications** (orange/yellow, blocks UI)
+   - Break notifications use **error-level modal notifications** (red color, blocks UI)
+   - All notifications are **modal by default** and stay visible until manually dismissed
+   - Modal behavior can be disabled via settings for non-blocking notifications
+4. **Seamless Integration**: Works alongside your existing time tracking without interference
+5. **Respectful but Firm**: Eye/stretch reminders are non-blocking; break notifications are modal to ensure attention
+
+### Notification Types
+
+#### 👁️ Eye Rest Notification (Warning Level)
+```
+�️ EYE HEALTH REMINDER: Look at something 20 feet away for 20 seconds (20-20-20 rule)
+[Pause Timer] [Got it!]
+```
+
+#### 🧘 Stretch Notification (Warning Level)
+```
+🧘 STRETCH REMINDER: Stand up and stretch your back and neck - Your body needs it!
+[Pause Timer] [Will do!]
+```
+
+#### 🚨 Break Notification (Error Level - Modal)
+```
+🚨 HEALTH BREAK REQUIRED: You've been coding for 2+ hours! Take a break now for your health.
+[Pause Timer] [Quick stretch (5 min)] [Eye rest (10 min)] [Coffee break (15 min)] [Proper break (20 min)]
+```
+
+**Note**: Break notifications are **modal** (block the UI) and require user interaction to dismiss, ensuring you don't miss important health reminders.
+
+### Health Benefits
+
+- **Eye Health**: Regular breaks reduce eye strain and fatigue
+- **Physical Health**: Stretching prevents repetitive strain injuries
+- **Mental Health**: Regular breaks improve focus and productivity
+- **Customizable**: Adjust timing to fit your workflow
+- **Non-intrusive**: Easy one-click pause option
 
 ## Installation
 
@@ -65,6 +170,12 @@ You can customize the extension's behavior through VS Code settings:
      - Default: 180 seconds (3 minutes)
      - Determines how long to keep tracking when you switch to other applications
      - Useful for when you're referencing documentation or testing your application
+   - **Health Notifications**: Configure health reminder settings
+     - **Modal Notifications**: Enable/disable modal behavior for health notifications (default: true)
+     - **Enable Notifications**: Enable/disable all health notifications (default: true)
+     - **Eye Rest Interval**: Frequency of eye rest reminders in minutes (default: 20)
+     - **Stretch Interval**: Frequency of stretch reminders in minutes (default: 45)
+     - **Break Threshold**: Coding duration before suggesting a break in minutes (default: 120)
 
 
 ## Screenshots
@@ -104,6 +215,18 @@ When the user is inactive for a period of time, the timer automatically pauses a
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.4.2] - 2025-07-27
+- Added comprehensive health notification system with customizable intervals
+- Implemented **prominent, persistent notifications** that don't auto-dismiss:
+  - Eye rest reminders (20-20-20 rule) every 20 minutes using warning-level notifications
+  - Stretch reminders every 45 minutes using warning-level notifications  
+  - Break suggestions every 2 hours using **modal error-level notifications** that block UI
+- Enhanced notification visibility with attention-grabbing messages and colors
+- Added one-click pause functionality in all health notifications
+- Implemented toggle command for quick enable/disable of health notifications
+- Health notifications automatically start/stop with time tracking
+- All health notification intervals are fully configurable through VS Code settings
 
 ### [0.4.1] - 2025-07-26
 - Fixed issue with excessive git processes being spawned

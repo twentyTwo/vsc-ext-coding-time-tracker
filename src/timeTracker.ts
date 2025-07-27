@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Database, TimeEntry } from './database';
 import { simpleGit, SimpleGit } from 'simple-git';
 import { Logger } from './logger';
+import { HealthNotificationManager } from './healthNotifications';
 
 type GitWatcher = {
     git: SimpleGit;
@@ -10,6 +11,7 @@ type GitWatcher = {
 
 export class TimeTracker implements vscode.Disposable {
     private isTracking: boolean = false;
+    private isPaused: boolean = false; // New: track if user manually paused
     private startTime: number = 0;
     private currentProject: string = '';
     private currentBranch: string = 'unknown';
@@ -28,11 +30,16 @@ export class TimeTracker implements vscode.Disposable {
     private isCheckingBranch: boolean = false;
     private lastUpdateTime: number = Date.now();
     private lastFocusTime: number = Date.now();
+    private healthManager: HealthNotificationManager;
     // Track time between updates for validation
 
     constructor(database: Database) {
         this.database = database;
         this.logger = Logger.getInstance();
+        this.healthManager = new HealthNotificationManager(
+            () => this.pauseForHealthBreak(), 
+            () => this.resumeFromHealthBreak()
+        );
         this.updateConfiguration();
 
         // Track cursor movements
@@ -119,6 +126,11 @@ export class TimeTracker implements vscode.Disposable {
         // this.saveIntervalSeconds = config.get('saveInterval', 5);
         this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 180);
         this.focusTimeoutSeconds = config.get('focusTimeout', 180);
+        
+        // Update health notification settings
+        if (this.healthManager) {
+            this.healthManager.updateSettings();
+        }
     }
 
     private async updateCurrentBranch() {
@@ -170,6 +182,12 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     public async updateCursorActivity() {
+        // Don't auto-resume if user manually paused
+        if (this.isPaused) {
+            console.log('Timer is manually paused - not auto-resuming');
+            return;
+        }
+
         if (!this.isTracking) {
             await this.startTracking('cursor activity');
             return;
@@ -212,6 +230,9 @@ export class TimeTracker implements vscode.Disposable {
             
             this.setupCursorTracking();
             await this.setupGitWatcher();
+            
+            // Start health notifications
+            this.healthManager.start();
         }
     }
 
@@ -245,6 +266,78 @@ export class TimeTracker implements vscode.Disposable {
             // Reset tracking state
             this.lastSaveTime = 0;
             this.stopGitWatcher();
+            
+            // Stop health notifications
+            this.healthManager.stop();
+        }
+    }
+
+    public pauseTimer() {
+        console.log('pauseTimer() called - stopping tracking');
+        this.isPaused = true;
+        this.logger.logEvent('manual_pause_triggered', {
+            reason: 'health notification pause button',
+            project: this.currentProject,
+            branch: this.currentBranch,
+            sessionDuration: (Date.now() - this.startTime) / 60000,
+            wasTracking: this.isTracking
+        });
+        
+        if (this.isTracking) {
+            this.stopTracking('health notification pause');
+            console.log('Timer successfully stopped');
+        } else {
+            console.log('Timer was already stopped');
+        }
+        
+        // Set up a simple way for user to resume - through a command or status bar click
+        vscode.window.showInformationMessage(
+            'Coding timer paused. Click "Resume" to continue tracking.', 
+            'Resume'
+        ).then(selection => {
+            if (selection === 'Resume') {
+                this.resumeTimer();
+            }
+        });
+        // Note: Don't show additional messages here as it conflicts with modal notifications
+    }
+
+    public resumeTimer(): void {
+        console.log('Resuming timer after manual pause');
+        this.isPaused = false;
+        this.startTracking('manual resume');
+    }
+
+    public pauseForHealthBreak(): void {
+        console.log('pauseForHealthBreak() called - auto-pausing for health modal');
+        this.logger.logEvent('health_break_pause', {
+            reason: 'health modal appeared',
+            project: this.currentProject,
+            branch: this.currentBranch,
+            sessionDuration: (Date.now() - this.startTime) / 60000,
+            wasTracking: this.isTracking
+        });
+        
+        if (this.isTracking) {
+            this.stopTracking('health modal pause');
+            console.log('Timer auto-paused for health break');
+        }
+    }
+
+    public resumeFromHealthBreak(): void {
+        console.log('resumeFromHealthBreak() called - auto-resuming after health modal');
+        this.logger.logEvent('health_break_resume', {
+            reason: 'health modal dismissed',
+            project: this.currentProject,
+            branch: this.currentBranch
+        });
+        
+        // Only auto-resume if not manually paused
+        if (!this.isPaused) {
+            this.startTracking('health modal dismissed');
+            console.log('Timer auto-resumed after health break');
+        } else {
+            console.log('Timer remains paused - user manually paused');
         }
     }
 
@@ -451,6 +544,9 @@ export class TimeTracker implements vscode.Disposable {
         
         // Ensure git watcher is completely stopped
         this.stopGitWatcher();
+        
+        // Dispose health notifications
+        this.healthManager.dispose();
         
         // Clear any other potentially running intervals
         if (this.saveInterval) {

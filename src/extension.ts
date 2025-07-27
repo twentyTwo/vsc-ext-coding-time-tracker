@@ -75,7 +75,40 @@ export function activate(context: vscode.ExtensionContext) {
             statusBar.updateNow();
         }
     });
+
+    // Register health notifications toggle command
+    let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const currentEnabled = config.get('health.enableNotifications', true);
+        await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
+        
+        const message = !currentEnabled ? 
+            'Health notifications enabled! 💡 You\'ll receive reminders for eye rest, stretching, and breaks.' :
+            'Health notifications disabled.';
+        vscode.window.showInformationMessage(message);
+    });
+
+    // Register test pause command for debugging
+    let testPauseCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.testPause', () => {
+        console.log('Test pause command executed');
+        if (timeTracker.isActive()) {
+            timeTracker.pauseTimer();
+            vscode.window.showInformationMessage('Test pause executed - check console for logs');
+        } else {
+            vscode.window.showInformationMessage('Timer is not active');
+        }
+    });
+
+    // Register test notification command for debugging
+    let testNotificationCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.testNotification', () => {
+        console.log('Test notification command executed');
+        (timeTracker as any).healthManager.triggerTestNotification();
+    });
+
     context.subscriptions.push(clearDataCommand);
+    context.subscriptions.push(toggleHealthCommand);
+    context.subscriptions.push(testPauseCommand);
+    context.subscriptions.push(testNotificationCommand);
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(viewStorageDisposable);

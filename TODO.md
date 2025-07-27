@@ -10,6 +10,7 @@ Quick capture for ideas and tasks while coding.
 ## Immediate Tasks
 - [X] Listen for branch changes in real-time , save immediately when branch changes , start new session with new branch
 - [X] Add branch name to time entries
+- [X] Health notification system with pause functionality (2025-01-27)
 - [ ] Update UI to show current branch in status bar
 - [ ] Branch dropdown in summary view
 - [ ] Add branch filter in time tracking summary
