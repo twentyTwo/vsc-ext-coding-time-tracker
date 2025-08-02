@@ -1,24 +1,8 @@
+ **📖 For detailed configuration, advanced features, and complete documentation, see the [Health Notifications Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Health-Notifications) in our wiki.**
+
+# Simple Coding Time Tracker: A Visual Studio Code Extension
 <div style="display: flex; align-items: center;">
-    <img src="icon-sctt.plt#### 👁️ Eye Rest Notification (Warning Level - Modal)
-```
-👁️ EYE HEALTH REMINDER: Look at something 20 feet away for 20 seconds (20-20-20 rule)
-[Pause Timer] [Got it!]
-```
-
-#### 🧘 Stretch Notification (Warning Level - Modal)
-```
-🧘 STRETCH REMINDER: Stand up and stretch your back and neck - Your body needs it!
-[Pause Timer] [Will do!]
-```
-
-#### 🚨 Break Notification (Error Level - Modal)
-```
-🚨 HEALTH BREAK REQUIRED: You've been coding for 2+ hours! Take a break now for your health.
-[Pause Timer] [Quick stretch (5 min)] [Eye rest (10 min)] [Coffee break (15 min)] [Proper break (20 min)]
-```
-
-**Note**: All notifications are **modal by default** (block the UI) and require user interaction to dismiss, ensuring you don't miss important health reminders. You can disable modal behavior in settings if preferred.e Tracker Icon" width="100" style="margin-right: 20px;">
-    <h1>Simple Coding Time Tracker: A Visual Studio Code Extension</h1>
+  <img src="icon-sctt.png" alt="Simple Coding Time Tracker Icon" width="100" style="margin-right: 20px;">
 </div>
 
 Simple Coding Time Tracker is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time. If you are curious about your coding habits, this extension covers you.
@@ -29,7 +13,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Project and Branch Tracking**: Organizes time data by project and Git branches for comprehensive analysis.
 - **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
-- **Health Notification System**: Proactive reminders to promote healthy coding habits with customizable intervals and one-click pause functionality.
+- **Health Notification System**: Proactive reminders to promote healthy coding habits with scientifically backed intervals.
 - **Interactive Data Visualization**:
   - Project Summary Chart: Visual breakdown of time spent on each project
   - Daily Activity Timeline: Interactive line chart showing your coding patterns
@@ -47,44 +31,11 @@ The extension includes a comprehensive health notification system to promote hea
 
 ### 🔔 Smart Health Notifications
 - **Eye Rest Reminders**: Every 20 minutes, get reminded to follow the 20-20-20 rule (look at something 20 feet away for 20 seconds)
-- **Stretch Reminders**: Every 45 minutes, get reminded to stand up and stretch your back and neck
-- **Break Suggestions**: Every 2 hours, get prompted to take a proper break with multiple options
-
-### ⏸️ Quick Pause Functionality
-- Every notification includes a "Pause Timer" button
-- Clicking it immediately pauses your time tracking
-- Timer automatically resumes when you start typing again
-
-### 🎯 Break Options
-When you get a break suggestion after 2 hours, you can choose from:
-- **Quick stretch** (5 minutes)
-- **Eye rest** (10 minutes) 
-- **Coffee break** (15 minutes)
-- **Proper break** (20 minutes)
+- **Stretch Reminders**: Every 30 minutes, get reminded to stand up and stretch your back and neck - Recommended for posture health
+- **Break Suggestions**: Every 90 minutes, get prompted to take a proper break with multiple options - Based on ultradian rhythms
+These are default values and designed to help you maintain focus and prevent fatigue during long coding sessions. You can always customize these intervals in the settings.
 
 **📖 For detailed configuration, advanced features, and complete documentation, see the [Health Notifications Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Health-Notifications) in our wiki.**
-
-
-
-
-
-
-
-
-
-### Notification Types
-
-#### 👁️ Eye Rest Notification (Warning Level)
-```
-�️ EYE HEALTH REMINDER: Look at something 20 feet away for 20 seconds (20-20-20 rule)
-[Pause Timer] [Got it!]
-```
-
-
-
-
-
-
 
 ## Installation
 
@@ -116,11 +67,7 @@ You can customize the extension's behavior through VS Code settings:
 
 1. Open VS Code Settings (Ctrl+, or Cmd+, on macOS)
 2. Search for "Simple Coding Time Tracker"
-3. Available settings:
-   - **Save Interval**: How often to save your coding time data (in seconds)
-     - Default: 5 seconds
-     - Lower values provide more frequent updates but may impact performance
-     - Higher values are more efficient but update less frequently   
+3. Available settings:  
    - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in seconds)
      - Default: 150 seconds (2.5 minutes)
      - Lower values will stop tracking sooner when you're not actively coding
@@ -132,9 +79,9 @@ You can customize the extension's behavior through VS Code settings:
    - **Health Notifications**: Configure health reminder settings
      - **Modal Notifications**: Enable/disable modal behavior for health notifications (default: true)
      - **Enable Notifications**: Enable/disable all health notifications (default: true)
-     - **Eye Rest Interval**: Frequency of eye rest reminders in minutes (default: 20)
-     - **Stretch Interval**: Frequency of stretch reminders in minutes (default: 45)
-     - **Break Threshold**: Coding duration before suggesting a break in minutes (default: 120)
+     - **Eye Rest Interval**: Frequency of eye rest reminders in minutes (default: 20) - Based on 20-20-20 rule
+     - **Stretch Interval**: Frequency of stretch reminders in minutes (default: 30) - Recommended for posture health
+     - **Break Threshold**: Coding duration before suggesting a break in minutes (default: 90) - Based on ultradian rhythms
 
 
 ## Screenshots
@@ -161,9 +108,6 @@ Status bar resets to zero at midnight each day and hence shows the coding time f
 Tooltip shows the total coding time weekly, monthly and all time basis.
 ![Tooltip](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/tooltip.png)
 
-#### Automatic Pause/Resume
-When the user is inactive for a period of time, the timer automatically pauses and resumes when the user starts typing again coding again.
-![Pause/Resume icon](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/paused_time.png)
 
 #### Settings
 ![Settings](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/settings.png)
@@ -188,8 +132,8 @@ For technical details about development, release process, and internal architect
 - Added comprehensive health notification system with customizable intervals
 - Implemented **prominent, persistent notifications** that don't auto-dismiss:
   - Eye rest reminders (20-20-20 rule) every 20 minutes using warning-level notifications
-  - Stretch reminders every 45 minutes using warning-level notifications  
-  - Break suggestions every 2 hours using **modal error-level notifications** that block UI
+  - Stretch reminders every 30 minutes using warning-level notifications  
+  - Break suggestions every 90 minutes using **modal error-level notifications** that block UI
 - Enhanced notification visibility with attention-grabbing messages and colors
 - Added one-click pause functionality in all health notifications
 - Implemented toggle command for quick enable/disable of health notifications

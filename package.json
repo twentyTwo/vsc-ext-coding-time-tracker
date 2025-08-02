@@ -35,25 +35,25 @@
           "default": true,
           "description": "Enable health notifications during coding sessions"
         },
-        "simpleCodingTimeTracker.health.eyeRestInterval": {
-          "type": "number",
-          "default": 20,
-          "description": "Interval for eye rest reminders (minutes)"
-        },
-        "simpleCodingTimeTracker.health.stretchInterval": {
-          "type": "number",
-          "default": 45,
-          "description": "Interval for stretch reminders (minutes)"
-        },
-        "simpleCodingTimeTracker.health.breakThreshold": {
-          "type": "number",
-          "default": 120,
-          "description": "Coding duration before suggesting a break (minutes)"
-        },
         "simpleCodingTimeTracker.health.modalNotifications": {
           "type": "boolean",
           "default": true,
           "description": "Make health notifications modal (blocks UI until dismissed) for better visibility"
+        },
+        "simpleCodingTimeTracker.health.eyeRestInterval": {
+          "type": "number",
+          "default": 20,
+          "description": "Interval for eye rest reminders (minutes) - Based on 20-20-20 rule"
+        },
+        "simpleCodingTimeTracker.health.stretchInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "Interval for stretch reminders (minutes) - Recommended for posture health"
+        },
+        "simpleCodingTimeTracker.health.breakThreshold": {
+          "type": "number",
+          "default": 120,
+          "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
         }
       }
     },
@@ -73,14 +73,6 @@
       {
         "command": "simpleCodingTimeTracker.toggleHealthNotifications",
         "title": "SCTT: Toggle Health Notifications"
-      },
-      {
-        "command": "simpleCodingTimeTracker.testPause",
-        "title": "SCTT: Test Pause Function (Debug)"
-      },
-      {
-        "command": "simpleCodingTimeTracker.testNotification",
-        "title": "SCTT: Test Health Notification (Debug)"
       }
     ]
   },

@@ -80,12 +80,34 @@ export function activate(context: vscode.ExtensionContext) {
     let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         const currentEnabled = config.get('health.enableNotifications', true);
-        await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
         
-        const message = !currentEnabled ? 
-            'Health notifications enabled! 💡 You\'ll receive reminders for eye rest, stretching, and breaks.' :
-            'Health notifications disabled.';
-        vscode.window.showInformationMessage(message);
+        // Show current state and ask for confirmation
+        const action = currentEnabled ? 'disable' : 'enable';
+        const icon = currentEnabled ? '🔕' : '🔔';
+        const statusText = currentEnabled ? 'currently ENABLED' : 'currently DISABLED';
+        
+        const message = `Health notifications are ${statusText}. ${icon} ${action.charAt(0).toUpperCase() + action.slice(1)} them?`;
+        const confirmAction = currentEnabled ? 'Disable' : 'Enable';
+        
+        const choice = await vscode.window.showInformationMessage(
+            message,
+            { modal: false },
+            confirmAction,
+            'Cancel'
+        );
+        
+        if (choice === confirmAction) {
+            await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
+            
+            const resultMessage = !currentEnabled ? 
+                '✅ Health notifications enabled! You\'ll receive reminders for eye rest (20min), stretching (45min), and breaks (2h).' :
+                '❌ Health notifications disabled. No health reminders will be shown.';
+            
+            vscode.window.showInformationMessage(resultMessage);
+            
+            // Update status bar to reflect the change
+            statusBar.updateNow();
+        }
     });
 
     // Register test pause command for debugging
