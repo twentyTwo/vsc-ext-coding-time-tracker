@@ -128,14 +128,14 @@ For technical details about development, release process, and internal architect
 
 ## Changelog
 
-### [0.4.2] - 2025-07-27
+
+### [0.5.0] - 2025-08-02
 - Added comprehensive health notification system with customizable intervals
 - Implemented **prominent, persistent notifications** that don't auto-dismiss:
-  - Eye rest reminders (20-20-20 rule) every 20 minutes using warning-level notifications
-  - Stretch reminders every 30 minutes using warning-level notifications  
-  - Break suggestions every 90 minutes using **modal error-level notifications** that block UI
-- Enhanced notification visibility with attention-grabbing messages and colors
-- Added one-click pause functionality in all health notifications
+  - Eye rest reminders (20-20-20 rule) every 20 minutes 
+  - Stretch reminders every 30 minutes (Recommended for posture health)
+  - Break suggestions every 90 minutes using (ultradian rhythms)
+
 - Implemented toggle command for quick enable/disable of health notifications
 - Health notifications automatically start/stop with time tracking
 - All health notification intervals are fully configurable through VS Code settings
