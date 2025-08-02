@@ -1,5 +1,5 @@
 <div style="display: flex; align-items: center;">
-    <img src="icon-sctt.png" alt#### 👁️ Eye Rest Notification (Warning Level - Modal)
+    <img src="icon-sctt.plt#### 👁️ Eye Rest Notification (Warning Level - Modal)
 ```
 👁️ EYE HEALTH REMINDER: Look at something 20 feet away for 20 seconds (20-20-20 rule)
 [Pause Timer] [Got it!]
@@ -62,40 +62,15 @@ When you get a break suggestion after 2 hours, you can choose from:
 - **Coffee break** (15 minutes)
 - **Proper break** (20 minutes)
 
-### Health Notification Configuration
+**📖 For detailed configuration, advanced features, and complete documentation, see the [Health Notifications Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Health-Notifications) in our wiki.**
 
-You can customize the health notifications through VS Code settings:
 
-1. Open VS Code Settings (`Ctrl+,` or `Cmd+,`)
-2. Search for "Simple Coding Time Tracker"
-3. Configure these health-related settings:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `simpleCodingTimeTracker.health.enableNotifications` | `true` | Enable/disable health notifications |
-| `simpleCodingTimeTracker.health.eyeRestInterval` | `20` | Eye rest reminder interval (minutes) |
-| `simpleCodingTimeTracker.health.stretchInterval` | `45` | Stretch reminder interval (minutes) |
-| `simpleCodingTimeTracker.health.breakThreshold` | `120` | Break suggestion threshold (minutes) |
-| `simpleCodingTimeTracker.health.modalNotifications` | `true` | Make all notifications modal (blocks UI) for better visibility |
 
-### Health Notification Commands
 
-#### Toggle Health Notifications
-- **Command**: `SCTT: Toggle Health Notifications`
-- **Usage**: Quickly enable/disable health notifications
-- **Access**: Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
 
-### How Health Notifications Work
 
-1. **Automatic Start**: Health notifications start automatically when you begin coding
-2. **Smart Timing**: Notifications are based on actual coding time, not just VS Code being open
-3. **Prominent & Persistent**: 
-   - Eye and stretch reminders use **warning-level modal notifications** (orange/yellow, blocks UI)
-   - Break notifications use **error-level modal notifications** (red color, blocks UI)
-   - All notifications are **modal by default** and stay visible until manually dismissed
-   - Modal behavior can be disabled via settings for non-blocking notifications
-4. **Seamless Integration**: Works alongside your existing time tracking without interference
-5. **Respectful but Firm**: Eye/stretch reminders are non-blocking; break notifications are modal to ensure attention
+
 
 ### Notification Types
 
@@ -105,27 +80,11 @@ You can customize the health notifications through VS Code settings:
 [Pause Timer] [Got it!]
 ```
 
-#### 🧘 Stretch Notification (Warning Level)
-```
-🧘 STRETCH REMINDER: Stand up and stretch your back and neck - Your body needs it!
-[Pause Timer] [Will do!]
-```
 
-#### 🚨 Break Notification (Error Level - Modal)
-```
-🚨 HEALTH BREAK REQUIRED: You've been coding for 2+ hours! Take a break now for your health.
-[Pause Timer] [Quick stretch (5 min)] [Eye rest (10 min)] [Coffee break (15 min)] [Proper break (20 min)]
-```
 
-**Note**: Break notifications are **modal** (block the UI) and require user interaction to dismiss, ensuring you don't miss important health reminders.
 
-### Health Benefits
 
-- **Eye Health**: Regular breaks reduce eye strain and fatigue
-- **Physical Health**: Stretching prevents repetitive strain injuries
-- **Mental Health**: Regular breaks improve focus and productivity
-- **Customizable**: Adjust timing to fit your workflow
-- **Non-intrusive**: Easy one-click pause option
+
 
 ## Installation
 
@@ -209,6 +168,15 @@ When the user is inactive for a period of time, the timer automatically pauses a
 #### Settings
 ![Settings](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/settings.png)
 
+
+## 📚 Documentation
+
+For comprehensive documentation, guides, and testing information, visit our **[Documentation Wiki](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki)**:
+
+- **[Health Notifications Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Health-Notifications)** - Complete health notification configuration and features
+- **[Time Tracking Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Time-Tracking)** - How time tracking works internally  
+- **[Test Scenarios](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Test-Scenarios)** - Comprehensive testing documentation
+- **[Development Roadmap](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/TODO)** - Current tasks and future plans
 
 ## Technical Documentation
 
