@@ -214,6 +214,73 @@ npm run generate-test-data
 
 This will create sample time entries for the last 90 days with varied projects and durations.
 
+### Marketplace Publishing Tests
+
+The extension uses a consolidated workflow with granular control for testing each marketplace individually. You can test publishing to specific marketplaces without affecting production.
+
+#### Test Only Open VSX Registry
+
+```bash
+# Using GitHub CLI
+gh workflow run build-and-publish.yml \
+  --field publish_vscode=false \
+  --field publish_openvsx=true \
+  --field force_publish=true
+
+# Or via GitHub UI:
+# Actions → "Build and Publish Extension" → Run workflow
+# ❌ Uncheck "Publish to VS Code Marketplace" 
+# ✅ Check "Publish to Open VSX Registry"
+# ✅ Check "Force publish" (if no version change)
+```
+
+#### Test Only VS Code Marketplace
+
+```bash
+# Using GitHub CLI
+gh workflow run build-and-publish.yml \
+  --field publish_vscode=true \
+  --field publish_openvsx=false \
+  --field force_publish=true
+
+# Or via GitHub UI:
+# Actions → "Build and Publish Extension" → Run workflow
+# ✅ Check "Publish to VS Code Marketplace"
+# ❌ Uncheck "Publish to Open VSX Registry"  
+# ✅ Check "Force publish" (if no version change)
+```
+
+#### Test Both Marketplaces (Default)
+
+```bash
+# Using GitHub CLI
+gh workflow run build-and-publish.yml \
+  --field publish_vscode=true \
+  --field publish_openvsx=true \
+  --field force_publish=true
+
+# Or via GitHub UI:
+# Actions → "Build and Publish Extension" → Run workflow
+# ✅ Check "Publish to VS Code Marketplace"
+# ✅ Check "Publish to Open VSX Registry"
+# ✅ Check "Force publish" (if testing without version change)
+```
+
+#### Workflow Input Parameters
+
+| Parameter | Description | Default | Use Case |
+|-----------|-------------|---------|----------|
+| `publish_vscode` | Publish to VS Code Marketplace | `true` | Test VS Code publishing |
+| `publish_openvsx` | Publish to Open VSX Registry | `true` | Test Open VSX publishing |
+| `force_publish` | Force publish (ignore version change check) | `false` | Testing without version bump |
+
+#### Testing Notes
+
+- **Force Publish**: Use when testing without bumping the version in `package.json`
+- **Individual Testing**: Disable one marketplace to test the other in isolation
+- **Status Report**: The workflow provides detailed status for each marketplace
+- **Artifacts**: VSIX files are stored as artifacts for 90 days for rollback capability
+
 ### Manual Testing Checklist
 
 Before submitting a pull request:

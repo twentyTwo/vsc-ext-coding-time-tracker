@@ -1,0 +1,392 @@
+name: Build and Publish Extension
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      publish_vscode:
+        description: 'Publish to VS Code Marketplace'
+        required: false
+        default: true
+        type: boolean
+      publish_openvsx:
+        description: 'Publish to Open VSX Registry'
+        required: false
+        default: true
+        type: boolean
+      force_publish:
+        description: 'Force publish (ignore version change check)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  # 1️⃣ BUILD ONCE - Single source of truth
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      should_publish: ${{ steps.verify.outputs.should_publish }}
+      vsix_name: ${{ steps.build.outputs.vsix_name }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Verify changes
+        id: verify
+        run: |
+          # Handle different trigger scenarios
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # For manual triggers, compare with previous commit
+            echo "files=$(git diff --name-only HEAD~1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            VERSION_CHANGED=$(git diff HEAD~1 HEAD package.json | grep -E '^\+\s*"version"' || echo "")
+          elif [ -z "${{ github.event.before }}" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # For first commit or when before is null, get all files in the commit
+            echo "files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-files | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            VERSION_CHANGED="version_changed_first_commit"
+          else
+            # Normal push event
+            echo "files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | tr '\n' ' ')" >> $GITHUB_OUTPUT
+            VERSION_CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} package.json | grep -E '^\+\s*"version"' || echo "")
+          fi
+          
+          # Get list of changed files
+          CHANGED_FILES=$(echo "${{ github.event_name }}" | grep -q "workflow_dispatch" && git diff --name-only HEAD~1 HEAD | tr '\n' ' ' || git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | tr '\n' ' ')
+          
+          # Debug output
+          echo "🔍 Event: ${{ github.event_name }}"
+          echo "📁 Changed files: $CHANGED_FILES"
+          echo "📦 Version changed: ${VERSION_CHANGED:-'no'}"
+          
+          # Check if only documentation files were changed
+          DOCS_ONLY=true
+          for file in $CHANGED_FILES; do
+            if [[ ! $file =~ \.(md|txt|doc|docx)$ ]] && [[ ! $file =~ ^docs/ ]]; then
+              DOCS_ONLY=false
+              break
+            fi
+          done
+          
+          # Initialize should_publish as false
+          echo "should_publish=false" >> $GITHUB_OUTPUT
+          
+          # Decision logic
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ github.event.inputs.force_publish }}" = "true" ]; then
+              echo "🚀 Manual workflow dispatch with force publish - proceeding with publish"
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+            elif [[ -n "$VERSION_CHANGED" ]]; then
+              echo "🚀 Manual workflow dispatch with version change - proceeding with publish"
+              echo "should_publish=true" >> $GITHUB_OUTPUT
+            else
+              echo "⚠️ Manual workflow dispatch without version change - use force_publish to override"
+              echo "should_publish=false" >> $GITHUB_OUTPUT
+            fi
+          elif [[ "$DOCS_ONLY" == "true" ]]; then
+            echo "ℹ️ Only documentation files were changed - skipping publish"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          elif [[ -z "$VERSION_CHANGED" ]]; then
+            echo "❌ Version in package.json was not updated - skipping publish"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Version changed and non-documentation files modified - proceeding with publish"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get package info
+        id: package
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "📦 Package version: $VERSION"
+
+      - name: Build VSIX package
+        id: build
+        if: steps.verify.outputs.should_publish == 'true'
+        run: |
+          npm install -g @vscode/vsce@latest
+          rm -f *.vsix
+          vsce package
+          
+          VSIX_NAME="simple-coding-time-tracker-${{ steps.package.outputs.version }}.vsix"
+          echo "vsix_name=$VSIX_NAME" >> $GITHUB_OUTPUT
+          
+          # Validate VSIX
+          if [ ! -f "$VSIX_NAME" ]; then
+            echo "❌ VSIX build failed"
+            exit 1
+          fi
+          
+          # Verify the package can be listed
+          vsce ls "$VSIX_NAME"
+          
+          SIZE=$(stat -c%s "$VSIX_NAME" 2>/dev/null || stat -f%z "$VSIX_NAME")
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          
+          if [ $SIZE_MB -gt 10 ]; then
+            echo "⚠️ Warning: Package size is ${SIZE_MB}MB (consider optimizing)"
+          else
+            echo "✅ Package size: ${SIZE_MB}MB"
+          fi
+          
+          echo "✅ VSIX built successfully - $VSIX_NAME"
+
+      - name: Upload VSIX artifact
+        if: steps.verify.outputs.should_publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-vsix-${{ steps.package.outputs.version }}
+          path: ${{ steps.build.outputs.vsix_name }}
+          retention-days: 90
+
+  # 2️⃣ DEPLOY TO VS CODE MARKETPLACE
+  publish-vscode:
+    needs: build
+    if: |
+      needs.build.outputs.should_publish == 'true' && (
+        github.event_name != 'workflow_dispatch' || 
+        github.event.inputs.publish_vscode == 'true'
+      )
+    runs-on: ubuntu-latest
+    environment: VSC EXT
+    permissions:
+      contents: write
+      actions: read
+    
+    steps:
+      - name: Log VS Code Marketplace Publishing
+        run: |
+          echo "🏪 Publishing to VS Code Marketplace"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "📋 Manual trigger - VS Code Marketplace: ${{ github.event.inputs.publish_vscode }}"
+          else
+            echo "📋 Automatic trigger - VS Code Marketplace: enabled"
+          fi
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-vsix-${{ needs.build.outputs.version }}
+
+      - name: Install vsce CLI
+        run: npm install -g @vscode/vsce@latest
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ needs.build.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ needs.build.outputs.version }} already exists"
+            echo "tag_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "tag_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to VS Code Marketplace
+        id: marketplace_publish
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: vsce publish -p $VSC_PAT --packagePath ${{ needs.build.outputs.vsix_name }}
+        env:
+          VSC_PAT: ${{ secrets.VSC_PAT }}
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          
+          if [ -n "$PREV_TAG" ]; then
+            # Generate changelog from commits since last tag
+            CHANGELOG=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+            
+            # Create release body with actual changes
+            cat << EOF > release_body.md
+          ## 🚀 What's New in v${{ needs.build.outputs.version }}
+          
+          ${CHANGELOG}
+          
+          ## 📦 Installation
+          - **VS Code Marketplace**: [Install from VS Code](https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker)
+          - **Open VSX Registry**: [Install for VS Codium](https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker)
+          
+          ## 🔗 Links
+          - [📋 Changelog](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/blob/main/README.md#changelog)
+          - [📚 Documentation Wiki](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki)
+          - [🐛 Report Issues](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/issues)
+          
+          ---
+          
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...v${{ needs.build.outputs.version }}
+          EOF
+          else
+            cat << EOF > release_body.md
+          ## 🚀 What's New in v${{ needs.build.outputs.version }}
+          
+          Initial release of Simple Coding Time Tracker
+          
+          ## 📦 Installation
+          - **VS Code Marketplace**: [Install from VS Code](https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker)
+          - **Open VSX Registry**: [Install for VS Codium](https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker)
+          
+          ## 🔗 Links
+          - [📚 Documentation Wiki](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki)
+          - [🐛 Report Issues](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/issues)
+          EOF
+          fi
+
+      - name: Create GitHub Release
+        id: create_release
+        if: steps.check_tag.outputs.tag_exists == 'false' && steps.marketplace_publish.outcome == 'success'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build.outputs.version }}
+          name: Release v${{ needs.build.outputs.version }}
+          body_path: release_body.md
+          files: ${{ needs.build.outputs.vsix_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 3️⃣ DEPLOY TO OPEN VSX (Parallel)
+  publish-openvsx:
+    needs: build
+    if: |
+      needs.build.outputs.should_publish == 'true' && (
+        github.event_name != 'workflow_dispatch' || 
+        github.event.inputs.publish_openvsx == 'true'
+      )
+    runs-on: ubuntu-latest
+    environment: Open VSX
+    permissions:
+      contents: read
+      actions: read
+    
+    steps:
+      - name: Log Open VSX Publishing
+        run: |
+          echo "🌐 Publishing to Open VSX Registry"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "📋 Manual trigger - Open VSX: ${{ github.event.inputs.publish_openvsx }}"
+          else
+            echo "📋 Automatic trigger - Open VSX: enabled"
+          fi
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-vsix-${{ needs.build.outputs.version }}
+
+      - name: Install ovsx CLI
+        run: npm install -g ovsx@latest
+
+      - name: Publish to Open VSX Registry
+        id: openvsx_publish
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: ovsx publish ${{ needs.build.outputs.vsix_name }} --pat $OPENVSX_PAT
+        env:
+          OPENVSX_PAT: ${{ secrets.OPENVSX_PAT }}
+
+      - name: Verify Publication
+        if: steps.openvsx_publish.outcome == 'success'
+        run: |
+          echo "🎉 Successfully published to Open VSX Registry!"
+          echo "📦 Extension: simple-coding-time-tracker v${{ needs.build.outputs.version }}"
+          echo "🌐 Open VSX: https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker"
+
+  # 4️⃣ REPORT FINAL STATUS
+  report-status:
+    needs: [build, publish-vscode, publish-openvsx]
+    if: always() && needs.build.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Report Final Status
+        run: |
+          echo "## 📊 Publication Status Report"
+          echo "**Version**: v${{ needs.build.outputs.version }}"
+          
+          # Show what was requested
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "**Trigger**: Manual (workflow_dispatch)"
+            echo "**VS Code Marketplace**: ${{ github.event.inputs.publish_vscode }}"
+            echo "**Open VSX Registry**: ${{ github.event.inputs.publish_openvsx }}"
+          else
+            echo "**Trigger**: Automatic (push to main)"
+            echo "**VS Code Marketplace**: enabled"
+            echo "**Open VSX Registry**: enabled"
+          fi
+          echo ""
+          
+          # VS Code Marketplace status
+          if [ "${{ needs.publish-vscode.result }}" = "success" ]; then
+            echo "✅ **VS Code Marketplace**: Successfully published"
+          elif [ "${{ needs.publish-vscode.result }}" = "skipped" ]; then
+            echo "⏭️ **VS Code Marketplace**: Skipped (disabled in manual trigger)"
+          else
+            echo "❌ **VS Code Marketplace**: Failed to publish"
+          fi
+          
+          # Open VSX status
+          if [ "${{ needs.publish-openvsx.result }}" = "success" ]; then
+            echo "✅ **Open VSX Registry**: Successfully published"
+          elif [ "${{ needs.publish-openvsx.result }}" = "skipped" ]; then
+            echo "⏭️ **Open VSX Registry**: Skipped (disabled in manual trigger)"
+          else
+            echo "❌ **Open VSX Registry**: Failed to publish"
+          fi
+          
+          # Overall status
+          VSCODE_SUCCESS=${{ needs.publish-vscode.result == 'success' }}
+          VSCODE_SKIPPED=${{ needs.publish-vscode.result == 'skipped' }}
+          OPENVSX_SUCCESS=${{ needs.publish-openvsx.result == 'success' }}
+          OPENVSX_SKIPPED=${{ needs.publish-openvsx.result == 'skipped' }}
+          
+          if [ "$VSCODE_SUCCESS" = "true" ] && [ "$OPENVSX_SUCCESS" = "true" ]; then
+            echo ""
+            echo "🎉 **Overall Status**: All requested publications successful!"
+            echo "::notice title=Publication Complete::Version v${{ needs.build.outputs.version }} published to both marketplaces"
+          elif [ "$VSCODE_SUCCESS" = "true" ] || [ "$OPENVSX_SUCCESS" = "true" ]; then
+            echo ""
+            echo "✅ **Overall Status**: Partial success - some publications completed"
+            echo "::notice title=Partial Publication::Version v${{ needs.build.outputs.version }} published to some marketplaces"
+          elif [ "$VSCODE_SKIPPED" = "true" ] && [ "$OPENVSX_SKIPPED" = "true" ]; then
+            echo ""
+            echo "⏭️ **Overall Status**: All publications skipped (both disabled)"
+            echo "::warning title=No Publications::All marketplaces were disabled in manual trigger"
+          else
+            echo ""
+            echo "❌ **Overall Status**: Publication failures occurred"
+            echo "::error title=Publication Failed::Some publications failed - check logs above"
+            exit 1
+          fi
