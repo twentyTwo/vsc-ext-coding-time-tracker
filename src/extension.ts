@@ -75,7 +75,62 @@ export function activate(context: vscode.ExtensionContext) {
             statusBar.updateNow();
         }
     });
+
+    // Register health notifications toggle command
+    let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const currentEnabled = config.get('health.enableNotifications', true);
+        
+        // Show current state and ask for confirmation
+        const action = currentEnabled ? 'disable' : 'enable';
+        const icon = currentEnabled ? '🔕' : '🔔';
+        const statusText = currentEnabled ? 'currently ENABLED' : 'currently DISABLED';
+        
+        const message = `Health notifications are ${statusText}. ${icon} ${action.charAt(0).toUpperCase() + action.slice(1)} them?`;
+        const confirmAction = currentEnabled ? 'Disable' : 'Enable';
+        
+        const choice = await vscode.window.showInformationMessage(
+            message,
+            { modal: false },
+            confirmAction,
+            'Cancel'
+        );
+        
+        if (choice === confirmAction) {
+            await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
+            
+            const resultMessage = !currentEnabled ? 
+                '✅ Health notifications enabled! You\'ll receive reminders for eye rest (20min), stretching (45min), and breaks (2h).' :
+                '❌ Health notifications disabled. No health reminders will be shown.';
+            
+            vscode.window.showInformationMessage(resultMessage);
+            
+            // Update status bar to reflect the change
+            statusBar.updateNow();
+        }
+    });
+
+    // Register test pause command for debugging
+    let testPauseCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.testPause', () => {
+        console.log('Test pause command executed');
+        if (timeTracker.isActive()) {
+            timeTracker.pauseTimer();
+            vscode.window.showInformationMessage('Test pause executed - check console for logs');
+        } else {
+            vscode.window.showInformationMessage('Timer is not active');
+        }
+    });
+
+    // Register test notification command for debugging
+    let testNotificationCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.testNotification', () => {
+        console.log('Test notification command executed');
+        (timeTracker as any).healthManager.triggerTestNotification();
+    });
+
     context.subscriptions.push(clearDataCommand);
+    context.subscriptions.push(toggleHealthCommand);
+    context.subscriptions.push(testPauseCommand);
+    context.subscriptions.push(testNotificationCommand);
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(viewStorageDisposable);

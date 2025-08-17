@@ -42,9 +42,14 @@ export class StatusBar implements vscode.Disposable {
         const currentProjectTime = await this.timeTracker.getCurrentProjectTime();
         const isActive = this.timeTracker.isActive();
         
-        // Show both total time and current project time
-        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)}`;
-        this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
+        // Check health notification status
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const healthEnabled = config.get('health.enableNotifications', true);
+        const healthIcon = healthEnabled ? '🔔' : '🔕';
+        
+        // Show status with health notification indicator
+        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)} ${healthIcon}`;
+        this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime, healthEnabled);
     }
 
     private formatTime(minutes: number): string {
@@ -54,12 +59,14 @@ export class StatusBar implements vscode.Disposable {
         return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }    
     
-    private async getTooltipText(isActive: boolean, currentProjectTime: number): Promise<string> {
+    private async getTooltipText(isActive: boolean, currentProjectTime: number, healthEnabled: boolean): Promise<string> {
         const weeklyTotal = await this.timeTracker.getWeeklyTotal();
         const monthlyTotal = await this.timeTracker.getMonthlyTotal();
         const allTimeTotal = await this.timeTracker.getAllTimeTotal();
         const currentBranch = this.timeTracker.getCurrentBranch();
         const currentProject = this.timeTracker.getCurrentProject();
+
+        const healthStatus = healthEnabled ? 'Health notifications: ON 🔔' : 'Health notifications: OFF 🔕';
 
         return `${isActive ? 'Active' : 'Paused'} - Coding Time
 Project: ${currentProject}
@@ -68,6 +75,7 @@ Current Project Today: ${formatTime(currentProjectTime)}
 This week total: ${formatTime(weeklyTotal)}
 This month total: ${formatTime(monthlyTotal)}
 All Time total: ${formatTime(allTimeTotal)}
+${healthStatus}
 Click to show summary`;
     }
 

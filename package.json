@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -29,6 +29,31 @@
           "type": "number",
           "default": 180,
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
+        },
+        "simpleCodingTimeTracker.health.enableNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable health notifications during coding sessions"
+        },
+        "simpleCodingTimeTracker.health.modalNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Make health notifications modal (blocks UI until dismissed) for better visibility"
+        },
+        "simpleCodingTimeTracker.health.eyeRestInterval": {
+          "type": "number",
+          "default": 20,
+          "description": "Interval for eye rest reminders (minutes) - Based on 20-20-20 rule"
+        },
+        "simpleCodingTimeTracker.health.stretchInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "Interval for stretch reminders (minutes) - Recommended for posture health"
+        },
+        "simpleCodingTimeTracker.health.breakThreshold": {
+          "type": "number",
+          "default": 120,
+          "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
         }
       }
     },
@@ -44,6 +69,10 @@
       {
         "command": "simpleCodingTimeTracker.clearAllData",
         "title": "SCTT: Clear All Time Tracking Data"
+      },
+      {
+        "command": "simpleCodingTimeTracker.toggleHealthNotifications",
+        "title": "SCTT: Toggle Health Notifications"
       }
     ]
   },
