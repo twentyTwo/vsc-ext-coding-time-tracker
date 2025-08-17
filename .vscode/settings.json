@@ -1,6 +1,6 @@
 {
     "simpleCodingTimeTracker.health.eyeRestInterval": 20,
     "simpleCodingTimeTracker.health.stretchInterval": 100,
-    "simpleCodingTimeTracker.inactivityTimeout": 15000,
-    "simpleCodingTimeTracker.focusTimeout": 18000
+    "simpleCodingTimeTracker.inactivityTimeout": 2.5,
+    "simpleCodingTimeTracker.focusTimeout": 3
 }

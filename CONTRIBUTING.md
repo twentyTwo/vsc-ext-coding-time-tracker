@@ -47,13 +47,6 @@ To compile the extension, run:
 
 This will transpile the TypeScript files to JavaScript.
 
-## Testing
-
-To run the tests, use:
-`npm test`
-
-Make sure to write tests for any new functionality you add.
-
 ## Creating a VSCode Package
 
 To package the extension for distribution:

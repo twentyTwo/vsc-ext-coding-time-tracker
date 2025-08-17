@@ -22,9 +22,9 @@ export class TimeTracker implements vscode.Disposable {
     private saveIntervalSeconds: number = 5;
     private lastCursorActivity: number = Date.now();
     private cursorInactivityTimeout: NodeJS.Timeout | null = null;
-    private inactivityTimeoutSeconds: number = 180;
+    private inactivityTimeoutSeconds: number = 150; // Default 2.5 minutes * 60 = 150 seconds
     private focusTimeoutHandle: NodeJS.Timeout | null = null;
-    private focusTimeoutSeconds: number = 180;
+    private focusTimeoutSeconds: number = 180; // Default 3 minutes * 60 = 180 seconds
     private gitWatcher: GitWatcher | null = null;
     private branchCheckInterval: NodeJS.Timeout | null = null;
     private isCheckingBranch: boolean = false;
@@ -124,8 +124,9 @@ export class TimeTracker implements vscode.Disposable {
     public updateConfiguration() {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         // this.saveIntervalSeconds = config.get('saveInterval', 5);
-        this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 180);
-        this.focusTimeoutSeconds = config.get('focusTimeout', 180);
+        // Convert from minutes to seconds for internal use
+        this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 2.5) * 60;
+        this.focusTimeoutSeconds = config.get('focusTimeout', 3) * 60;
         
         // Update health notification settings
         if (this.healthManager) {

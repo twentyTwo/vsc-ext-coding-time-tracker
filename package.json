@@ -22,13 +22,17 @@
       "properties": {
         "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
-          "default": 150,
-          "description": "Pause tracking if there is no keyboard or mouse activity in VS Code for this many seconds."
+          "default": 2.5,
+          "minimum": 0.5,
+          "maximum": 60,
+          "description": "Pause tracking if there is no keyboard or mouse activity in VS Code for this many minutes."
         },
         "simpleCodingTimeTracker.focusTimeout": {
           "type": "number",
-          "default": 180,
-          "description": "If you switch away from VS Code, continue counting as coding time for up to this many seconds before pausing."
+          "default": 3,
+          "minimum": 0.5,
+          "maximum": 60,
+          "description": "If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing."
         },
         "simpleCodingTimeTracker.health.enableNotifications": {
           "type": "boolean",
@@ -43,16 +47,22 @@
         "simpleCodingTimeTracker.health.eyeRestInterval": {
           "type": "number",
           "default": 20,
+          "minimum": 5,
+          "maximum": 120,
           "description": "Interval for eye rest reminders (minutes) - Based on 20-20-20 rule"
         },
         "simpleCodingTimeTracker.health.stretchInterval": {
           "type": "number",
           "default": 30,
+          "minimum": 10,
+          "maximum": 180,
           "description": "Interval for stretch reminders (minutes) - Recommended for posture health"
         },
         "simpleCodingTimeTracker.health.breakThreshold": {
           "type": "number",
-          "default": 120,
+          "default": 90,
+          "minimum": 30,
+          "maximum": 480,
           "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
         }
       }

@@ -25,7 +25,12 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
 
-## Health Notification System
+## Time Tracking Details
+The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance.
+
+**📖 For detailed configuration, advanced features, and complete documentation, see the [Time Tracking Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Time-Tracking) in our wiki.**
+
+## Health Notification System Details
 
 The extension includes a comprehensive health notification system to promote healthy coding habits and prevent strain-related issues.
 
@@ -68,12 +73,12 @@ You can customize the extension's behavior through VS Code settings:
 1. Open VS Code Settings (Ctrl+, or Cmd+, on macOS)
 2. Search for "Simple Coding Time Tracker"
 3. Available settings:  
-   - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in seconds)
-     - Default: 150 seconds (2.5 minutes)
+   - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in minutes)
+     - Default: 2.5 minutes
      - Lower values will stop tracking sooner when you're not actively coding
      - Higher values will continue tracking for longer during breaks
-   - **Focus Timeout**: How long to continue tracking after VS Code loses focus (in seconds)
-     - Default: 180 seconds (3 minutes)
+   - **Focus Timeout**: How long to continue tracking after VS Code loses focus (in minutes)
+     - Default: 3 minutes
      - Determines how long to keep tracking when you switch to other applications
      - Useful for when you're referencing documentation or testing your application
    - **Health Notifications**: Configure health reminder settings

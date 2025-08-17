@@ -27,8 +27,8 @@ export class HealthNotificationManager {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         this.settings = {
             eyeRestInterval: config.get('health.eyeRestInterval', 20),
-            stretchInterval: config.get('health.stretchInterval', 45),
-            breakThreshold: config.get('health.breakThreshold', 120),
+            stretchInterval: config.get('health.stretchInterval', 30),
+            breakThreshold: config.get('health.breakThreshold', 90),
             enableNotifications: config.get('health.enableNotifications', true),
             modalNotifications: config.get('health.modalNotifications', true)
         };
@@ -204,7 +204,7 @@ export class HealthNotificationManager {
         }
 
         const result = await vscode.window.showErrorMessage(
-            '🚨 HEALTH BREAK REQUIRED: You\'ve been coding for 2+ hours! Take a break now for your health.',
+            '🚨 HEALTH BREAK REQUIRED: You\'ve been coding intensely! Take a break now for your health.',
             { modal: this.settings.modalNotifications },
             doneAction,
             remindAction

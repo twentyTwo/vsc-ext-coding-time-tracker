@@ -111,8 +111,8 @@ All notifications are designed to be **persistent** rather than auto-dismissing:
 The system uses three independent timers:
 
 1. **Eye Rest Timer**: Triggers every 20 minutes (configurable)
-2. **Stretch Timer**: Triggers every 45 minutes (configurable)  
-3. **Break Timer**: Triggers every 120 minutes (configurable)
+2. **Stretch Timer**: Triggers every 30 minutes (configurable)  
+3. **Break Timer**: Triggers every 90 minutes (configurable)
 
 Each timer is implemented using `setTimeout` with automatic restart:
 
