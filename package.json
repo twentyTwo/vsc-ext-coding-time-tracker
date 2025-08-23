@@ -97,6 +97,10 @@
     "test:unit": "npm run compile && mocha out/test/suite/*.test.js --timeout 10000",
     "test:watch": "npm run compile && mocha out/test/suite/*.test.js --timeout 10000 --watch",
     "coverage": "npm run compile && nyc --reporter=text --reporter=html mocha out/test/suite/*.test.js --timeout 10000",
+    "clean": "node scripts/cleanup-test-files.js",
+    "clean:all": "npm run clean && rimraf out/ dist/ node_modules/.cache",
+    "clean:test": "rimraf .vscode-test/ out/test/ && npm run compile",
+    "reset:test": "npm run clean:test && npm test",
     "generate-test-data": "node scripts/generate-test-data.js",
     "refresh-extension": "code --uninstall-extension noorashuvo.simple-coding-time-tracker && vsce package && code --install-extension $(npm pack --quiet)"
   },
