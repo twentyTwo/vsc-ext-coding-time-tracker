@@ -1,0 +1,13 @@
+{
+  "require": [
+    "source-map-support/register"
+  ],
+  "timeout": 10000,
+  "ui": "tdd",
+  "recursive": true,
+  "watch-extensions": ["ts"],
+  "ignore": [
+    "node_modules/**",
+    "out/**/*.js"
+  ]
+}
