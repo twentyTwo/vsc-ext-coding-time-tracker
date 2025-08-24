@@ -204,9 +204,114 @@ For detailed contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.
 
 ## Testing
 
+### Test Infrastructure
+
+The extension includes a comprehensive testing framework built with Mocha, Sinon, and VS Code's test runner. The test suite covers 126 test cases across all major components.
+
+#### Test Structure
+```
+src/test/
+├── runTest.ts              # VS Code test runner entry point
+├── suite/                  # Test suites
+│   ├── index.ts           # Test suite index
+│   ├── database.test.ts   # Database operations (21 tests)
+│   ├── timeTracker.test.ts # Time tracking logic (22 tests)
+│   ├── healthNotifications.test.ts # Health notifications (20 tests)
+│   ├── logger.test.ts     # Logging functionality (16 tests)
+│   ├── extension.test.ts  # Extension integration (18 tests)
+│   └── utils.test.ts      # Utility functions (9 tests)
+└── mocks/
+    └── vscode.ts          # VS Code API mocks
+```
+
+#### Test Cleanup Utilities
+
+Multiple cleanup methods are available for managing test artifacts:
+
+##### CMake (Cross-platform)
+```bash
+# Show available targets
+cmake --build . --target help
+
+# Clean test artifacts only
+cmake --build . --target clean-test-files
+
+# Clean compiled output
+cmake --build . --target clean-compiled
+
+# Reset VS Code test cache
+cmake --build . --target reset-vscode-test
+
+# Complete cleanup
+cmake --build . --target clean-all
+
+# Clean and run fresh tests
+cmake --build . --target test-clean
+```
+
+##### NPM Scripts
+```bash
+# Clean test artifacts
+npm run clean
+
+# Complete cleanup (test files + compiled output)
+npm run clean:all
+
+# Clean test cache and recompile
+npm run clean:test
+
+# Reset and run fresh tests
+npm run reset:test
+```
+
+##### Direct Script Execution
+```bash
+# Cross-platform Node.js script
+node scripts/cleanup-test-files.js
+
+# Windows PowerShell script
+.\scripts\cleanup-test-files.ps1 -All
+```
+
+#### Test Configuration
+
+- **Mocha Configuration**: `.mocharc.json` - TDD interface, 10-second timeout
+- **TypeScript Config**: `tsconfig.test.json` - Separate compilation for tests
+- **VS Code Test Settings**: Configured for extension host testing
+
+#### What Gets Cleaned
+
+Test cleanup removes:
+- ✅ **VS Code test cache** (`.vscode-test/`)
+- ✅ **Compiled test output** (`out/test/`)
+- ✅ **Coverage reports** (`coverage/`, `.nyc_output/`)
+- ✅ **Log files** (`*.log`, `logs/`)
+- ✅ **Temporary databases** (`*.test.db`)
+- ✅ **Build artifacts** (`out/`, `dist/`)
+- ✅ **Node cache** (`node_modules/.cache`)
+
+#### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run coverage
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run unit tests only
+npm run test:unit
+
+# Fresh test run (clean + test)
+npm run reset:test
+```
+
 ### Generate Test Data
 
-The extension includes a script to generate test data for development: [ON PROGRESS]
+The extension includes a script to generate test data for development:
 
 ```bash
 npm run generate-test-data

@@ -2,65 +2,27 @@
 
 This directory contains utilities for cleaning up generated test files and temporary artifacts from the VS Code Simple Coding Time Tracker extension testing.
 
-## Available Cleanup Methods
+## Available Scripts
 
-### 1. CMake (Cross-platform)
+### cleanup-test-files.js
+Cross-platform Node.js script for comprehensive test artifact cleanup.
 
-```bash
-# Show available targets
-cmake --build . --target help
+**Features:**
+- Removes VS Code test cache and compiled test output
+- Cleans coverage reports and temporary files
+- Handles log files and test databases
+- Pattern-based file removal with glob support
+- Comprehensive logging of cleanup operations
 
-# Clean test artifacts only
-cmake --build . --target clean-test-files
+### cleanup-test-files.ps1
+Windows PowerShell script optimized for Windows environments.
 
-# Clean compiled output
-cmake --build . --target clean-compiled
-
-# Reset VS Code test cache
-cmake --build . --target reset-vscode-test
-
-# Complete cleanup
-cmake --build . --target clean-all
-
-# Clean and run fresh tests
-cmake --build . --target test-clean
-```
-
-### 2. NPM Scripts
-
-```bash
-# Clean test artifacts
-npm run clean
-
-# Complete cleanup (test files + compiled output)
-npm run clean:all
-
-# Clean test cache and recompile
-npm run clean:test
-
-# Reset and run fresh tests
-npm run reset:test
-```
-
-### 3. Node.js Script (Cross-platform)
-
-```bash
-# Direct execution
-node scripts/cleanup-test-files.js
-```
-
-### 4. PowerShell (Windows)
-
-```powershell
-# Basic cleanup
-.\scripts\cleanup-test-files.ps1
-
-# Complete cleanup
-.\scripts\cleanup-test-files.ps1 -All
-
-# Verbose output
-.\scripts\cleanup-test-files.ps1 -VerboseOutput
-```
+**Features:**
+- Windows-specific file handling
+- Multiple cleanup levels (`-All`, `-TestOnly`)
+- Verbose output option (`-VerboseOutput`)
+- Safe file removal with error handling
+- Integration with Windows file system
 
 ## What Gets Cleaned
 
@@ -85,64 +47,25 @@ node scripts/cleanup-test-files.js
 - `src/test/**/*.js` - Compiled test JavaScript
 - `src/test/**/*.js.map` - Source maps
 
-## Usage Scenarios
+## Integration Points
 
-### Before Running Tests
-```bash
-# Clean slate testing
-npm run reset:test
-```
+These cleanup utilities are integrated with:
+- **CMake targets** (see `CMakeLists.txt`)
+- **NPM scripts** (see `package.json`)
+- **CI/CD pipelines** (GitHub Actions)
+- **Development workflow** (pre-commit hooks)
 
-### After Test Development
-```bash
-# Clean up test artifacts
-npm run clean
-```
+## Usage Examples and Documentation
 
-### Complete Environment Reset
-```bash
-# Nuclear option - clean everything
-npm run clean:all
-npm install  # Reinstall dependencies
-```
-
-### CI/CD Pipeline
-```bash
-# Clean before test run
-cmake --build . --target clean-test-files
-npm test
-```
-
-## Integration with Development Workflow
-
-1. **Pre-commit**: Run `npm run clean` to remove temporary files
-2. **Testing**: Use `npm run reset:test` for fresh test runs
-3. **Debugging**: Use `npm run clean:test` to clear cached test data
-4. **Release**: Use `npm run clean:all` before packaging
-
-## Troubleshooting
-
-### Permission Issues
-If you encounter permission errors:
-- On Windows: Run PowerShell as Administrator
-- On Unix: Use `sudo` if necessary
-- Check file locks from running processes
-
-### Missing Dependencies
-Some cleanup features require additional packages:
-```bash
-npm install -g rimraf  # For cross-platform file removal
-npm install glob       # For pattern matching
-```
-
-### Performance
-- Large projects: Use targeted cleanup (`clean:test`) instead of full cleanup
-- Frequent testing: Consider using `test:watch` mode instead of repeated cleanup
+For complete usage examples, integration guides, and troubleshooting information, see:
+- **[TECHNICAL.md](../TECHNICAL.md#test-cleanup-utilities)** - Complete testing documentation
+- **[CMakeLists.txt](../CMakeLists.txt)** - CMake target definitions
+- **[package.json](../package.json)** - NPM script definitions
 
 ## Customization
 
-To add custom cleanup paths, edit:
-- `scripts/cleanup-test-files.js` - Node.js script
-- `scripts/cleanup-test-files.ps1` - PowerShell script
-- `CMakeLists.txt` - CMake targets
-- `package.json` - NPM scripts
+To add custom cleanup paths:
+1. **Node.js script**: Edit `cleanupPaths` and `additionalPatterns` arrays
+2. **PowerShell script**: Modify `$cleanupPaths` and `$additionalPaths` variables
+3. **CMake targets**: Update target commands in `CMakeLists.txt`
+4. **NPM scripts**: Add new scripts in `package.json`
