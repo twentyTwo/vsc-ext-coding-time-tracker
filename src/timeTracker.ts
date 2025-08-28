@@ -3,6 +3,7 @@ import { Database, TimeEntry } from './database';
 import { simpleGit, SimpleGit } from 'simple-git';
 import { Logger } from './logger';
 import { HealthNotificationManager } from './healthNotifications';
+import { detectLanguageFromFile, detectLanguageFromLanguageId } from './utils';
 
 type GitWatcher = {
     git: SimpleGit;
@@ -15,6 +16,7 @@ export class TimeTracker implements vscode.Disposable {
     private startTime: number = 0;
     private currentProject: string = '';
     private currentBranch: string = 'unknown';
+    private currentLanguage: string = 'unknown';
     private database: Database;
     private logger: Logger;
     private updateInterval: NodeJS.Timeout | null = null;
@@ -54,6 +56,7 @@ export class TimeTracker implements vscode.Disposable {
         vscode.window.onDidChangeActiveTextEditor((editor) => {
             if (editor) {
                 this.currentProject = this.getCurrentProject();
+                this.updateCurrentLanguage();
             }
             this.updateCursorActivity();
         });
@@ -134,7 +137,7 @@ export class TimeTracker implements vscode.Disposable {
         }
     }
 
-    private async updateCurrentBranch() {
+    private updateCurrentBranch() {
         try {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
@@ -144,13 +147,30 @@ export class TimeTracker implements vscode.Disposable {
 
             const git = simpleGit(workspaceFolder.uri.fsPath);
             try {
-                const branchInfo = await git.branch();
-                this.currentBranch = branchInfo.current || 'unknown';
+                const branchInfo = git.branch();
+                branchInfo.then(info => {
+                    this.currentBranch = info.current || 'unknown';
+                });
             } catch (error) {
                 this.currentBranch = 'unknown';
             }
         } catch (error) {
             this.currentBranch = 'unknown';
+        }
+    }
+
+    private updateCurrentLanguage() {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor) {
+            // Try to get language from VS Code language ID first (most accurate)
+            if (activeEditor.document.languageId) {
+                this.currentLanguage = detectLanguageFromLanguageId(activeEditor.document.languageId);
+            } else {
+                // Fall back to file extension detection
+                this.currentLanguage = detectLanguageFromFile(activeEditor.document.fileName);
+            }
+        } else {
+            this.currentLanguage = 'unknown';
         }
     }
 
@@ -171,6 +191,7 @@ export class TimeTracker implements vscode.Disposable {
                     this.logger.logEvent('inactivity_detected', {
                         project: this.currentProject,
                         branch: this.currentBranch,
+                        language: this.currentLanguage,
                         inactivityDuration: inactivityDuration / 1000,
                         lastActivityTime: new Date(this.lastCursorActivity).toISOString()
                     });
@@ -195,6 +216,8 @@ export class TimeTracker implements vscode.Disposable {
         }
 
         const currentProject = this.getCurrentProject();
+        this.updateCurrentLanguage();
+        
         if (currentProject !== this.currentProject) {
             // Save time for previous project before switching
             await this.saveCurrentSession();
@@ -208,7 +231,8 @@ export class TimeTracker implements vscode.Disposable {
 
     async startTracking(reason: string = 'manual') {
         if (!this.isTracking) {
-            await this.updateCurrentBranch();
+            this.updateCurrentBranch();
+            this.updateCurrentLanguage();
             const now = Date.now();
             this.isTracking = true;
             this.startTime = now;
@@ -220,6 +244,7 @@ export class TimeTracker implements vscode.Disposable {
                 reason,
                 project: this.currentProject,
                 branch: this.currentBranch,
+                language: this.currentLanguage,
                 startTime: new Date(now).toISOString()
             });
 
@@ -257,6 +282,7 @@ export class TimeTracker implements vscode.Disposable {
                 reason: reason || 'manual',
                 project: this.currentProject,
                 branch: this.currentBranch,
+                language: this.currentLanguage,
                 stopTime: new Date(now).toISOString(),
                 sessionDuration: (now - this.startTime) / 60000
             });
@@ -280,6 +306,7 @@ export class TimeTracker implements vscode.Disposable {
             reason: 'health notification pause button',
             project: this.currentProject,
             branch: this.currentBranch,
+            language: this.currentLanguage,
             sessionDuration: (Date.now() - this.startTime) / 60000,
             wasTracking: this.isTracking
         });
@@ -315,6 +342,7 @@ export class TimeTracker implements vscode.Disposable {
             reason: 'health modal appeared',
             project: this.currentProject,
             branch: this.currentBranch,
+            language: this.currentLanguage,
             sessionDuration: (Date.now() - this.startTime) / 60000,
             wasTracking: this.isTracking
         });
@@ -330,7 +358,8 @@ export class TimeTracker implements vscode.Disposable {
         this.logger.logEvent('health_break_resume', {
             reason: 'health modal dismissed',
             project: this.currentProject,
-            branch: this.currentBranch
+            branch: this.currentBranch,
+            language: this.currentLanguage
         });
         
         // Only auto-resume if not manually paused
@@ -378,12 +407,13 @@ export class TimeTracker implements vscode.Disposable {
                 reason: reason || 'periodic',
                 project: this.currentProject,
                 branch: this.currentBranch,
+                language: this.currentLanguage,
                 duration,
                 startTime: new Date(this.startTime).toISOString(),
                 endTime: new Date(now).toISOString()
             });
             
-            await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch);
+            await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch, this.currentLanguage);
             this.startTime = now; // Reset start time for next session
             this.lastSaveTime = now;
         }
@@ -469,7 +499,8 @@ export class TimeTracker implements vscode.Disposable {
             .filter((entry: TimeEntry) => 
                 entry.date === today && 
                 entry.project === currentProject && 
-                entry.branch === this.currentBranch
+                entry.branch === this.currentBranch &&
+                entry.language === this.currentLanguage
             )
             .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
         
@@ -566,6 +597,7 @@ export class TimeTracker implements vscode.Disposable {
                 this.logger.logEvent('manual_save', {
                     project: this.currentProject,
                     branch: this.currentBranch,
+                    language: this.currentLanguage,
                     duration: (Date.now() - this.startTime) / 60000,
                     startTime: new Date(this.startTime).toISOString(),
                     endTime: new Date().toISOString()
@@ -588,6 +620,10 @@ export class TimeTracker implements vscode.Disposable {
         return this.currentBranch;
     }
 
+    getCurrentLanguage(): string {
+        return this.currentLanguage;
+    }
+
     private async setupGitWatcher() {
         // Clear any existing interval first to prevent duplicate watchers
         this.stopGitWatcher();
@@ -598,6 +634,7 @@ export class TimeTracker implements vscode.Disposable {
                 this.logger.logEvent('branch_check_error', {
                     project: this.currentProject,
                     currentBranch: this.currentBranch,
+                    currentLanguage: this.currentLanguage,
                     error: 'No workspace folder found'
                 });
                 return;
@@ -610,6 +647,7 @@ export class TimeTracker implements vscode.Disposable {
                 this.logger.logEvent('branch_check_error', {
                     project: this.currentProject,
                     currentBranch: this.currentBranch,
+                    currentLanguage: this.currentLanguage,
                     error: 'Not a git repository'
                 });
                 return;
@@ -631,6 +669,7 @@ export class TimeTracker implements vscode.Disposable {
             this.logger.logEvent('branch_check_error', {
                 project: this.currentProject,
                 currentBranch: this.currentBranch,
+                currentLanguage: this.currentLanguage,
                 error: error instanceof Error ? 
                     `Git setup error: ${error.message}` : 
                     'Unknown git setup error',
@@ -656,6 +695,7 @@ export class TimeTracker implements vscode.Disposable {
                 // Log branch change event
                 this.logger.logEvent('branch_changed', {
                     project: this.currentProject,
+                    language: this.currentLanguage,
                     oldBranch: this.gitWatcher.lastKnownBranch,
                     newBranch: currentBranch
                 });
@@ -674,6 +714,7 @@ export class TimeTracker implements vscode.Disposable {
             this.logger.logEvent('branch_check_error', {
                 project: this.currentProject,
                 currentBranch: this.currentBranch,
+                currentLanguage: this.currentLanguage,
                 error: error instanceof Error ? 
                     `Branch check error: ${error.message}` : 
                     'Unknown branch check error',

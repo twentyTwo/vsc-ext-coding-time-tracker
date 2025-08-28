@@ -58,6 +58,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
     async show(webview?: vscode.Webview) {
         const summaryData = await this.database.getSummaryData();
+        const allEntries = await this.database.getEntries();
         const projects = await this.getUniqueProjects();
         const branches = await this.getUniqueBranches();
         const totalTime = {
@@ -73,6 +74,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             webview.postMessage({ 
                 command: 'update', 
                 data: summaryData, 
+                entries: allEntries,
                 projects, 
                 branches,
                 totalTime 
@@ -80,7 +82,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         } else if (this.panel) {
             this.panel.reveal();
             this.panel.webview.html = this.getHtmlForWebview(projects);
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects: projects, totalTime: totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, entries: allEntries, projects: projects, totalTime: totalTime });
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
@@ -114,7 +116,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 this.panel = undefined;
             });
 
-            this.panel.webview.postMessage({ command: 'update', data: summaryData, projects, branches, totalTime });
+            this.panel.webview.postMessage({ command: 'update', data: summaryData, entries: allEntries, projects, branches, totalTime });
         }
     }
 
@@ -310,6 +312,117 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         margin: 10px 0 0;
                         color: var(--vscode-textLink-foreground);
                     }
+                    
+                    /* Insight Widgets CSS */
+                    .insights-grid {
+                        display: grid;
+                        grid-template-columns: repeat(5, 1fr);
+                        gap: 15px;
+                        margin-bottom: 30px;
+                    }
+                    .insight-box {
+                        background-color: var(--vscode-editor-background);
+                        border: 1px solid var(--vscode-panel-border);
+                        padding: 12px;
+                        text-align: center;
+                        border-radius: 5px;
+                        position: relative;
+                        min-height: 100px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                    }
+                    .insight-icon {
+                        display: none;
+                    }
+                    .insight-box h3 {
+                        margin: 0 0 8px 0;
+                        font-size: 11px;
+                        color: var(--vscode-descriptionForeground);
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                        font-weight: 500;
+                        line-height: 1.2;
+                    }
+                    .insight-value {
+                        font-size: 18px;
+                        font-weight: bold;
+                        color: var(--vscode-textLink-foreground);
+                        margin-bottom: 3px;
+                        line-height: 1.1;
+                    }
+                    .insight-subtitle {
+                        font-size: 10px;
+                        color: var(--vscode-descriptionForeground);
+                        margin-bottom: 8px;
+                        line-height: 1.2;
+                    }
+                    .insight-chart {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 50px;
+                        flex-grow: 1;
+                    }
+                    .insight-visual {
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 40px;
+                        flex-grow: 1;
+                    }
+                    
+                    /* Flame animation for streak */
+                    .flame-container {
+                        width: 25px;
+                        height: 35px;
+                        position: relative;
+                    }
+                    .flame {
+                        width: 100%;
+                        height: 100%;
+                        background: linear-gradient(45deg, #ff4444, #ff8800, #ffaa00);
+                        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+                        transform-origin: bottom;
+                        animation: flicker 2s ease-in-out infinite alternate;
+                    }
+                    .flame.low {
+                        opacity: 0.4;
+                        animation-duration: 3s;
+                    }
+                    .flame.medium {
+                        opacity: 0.7;
+                        animation-duration: 2s;
+                    }
+                    .flame.high {
+                        opacity: 1;
+                        animation-duration: 1s;
+                    }
+                    @keyframes flicker {
+                        0% { transform: scale(1) rotate(-1deg); }
+                        25% { transform: scale(1.05) rotate(1deg); }
+                        50% { transform: scale(0.98) rotate(-0.5deg); }
+                        75% { transform: scale(1.02) rotate(0.5deg); }
+                        100% { transform: scale(1) rotate(0deg); }
+                    }
+                    
+                    /* Responsive design for smaller screens */
+                    @media (max-width: 1200px) {
+                        .insights-grid {
+                            grid-template-columns: repeat(3, 1fr);
+                        }
+                    }
+                    @media (max-width: 800px) {
+                        .insights-grid {
+                            grid-template-columns: repeat(2, 1fr);
+                        }
+                    }
+                    @media (max-width: 500px) {
+                        .insights-grid {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                    
                     .heatmap-container {
                         margin: 30px 0;
                         overflow-x: auto;
@@ -438,6 +551,56 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             <p id="all-time-total">Loading...</p>
                         </div>
                     </div>
+
+                    <h2>Developer Insights</h2>
+                    <div class="insights-grid">
+                        <div class="insight-box">
+                            <h3>Average Daily Time</h3>
+                            <div class="insight-value" id="avg-daily-time">Loading...</div>
+                            <div class="insight-chart">
+                                <canvas id="avgDailyChart" width="50" height="50"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-box">
+                            <h3>Languages Used</h3>
+                            <div class="insight-value" id="languages-count">Loading...</div>
+                            <div class="insight-subtitle" id="most-used-lang">Most used: Loading...</div>
+                            <div class="insight-chart">
+                                <canvas id="languagesChart" width="50" height="50"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-box">
+                            <h3>Projects Worked</h3>
+                            <div class="insight-value" id="projects-count">Loading...</div>
+                            <div class="insight-subtitle" id="most-active-project">Most active: Loading...</div>
+                            <div class="insight-chart">
+                                <canvas id="projectsChart" width="50" height="40"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-box">
+                            <h3>Longest Streak</h3>
+                            <div class="insight-value" id="longest-streak">Loading...</div>
+                            <div class="insight-subtitle" id="current-streak">Current: Loading...</div>
+                            <div class="insight-visual">
+                                <div class="flame-container">
+                                    <div class="flame" id="flame-visual"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="insight-box">
+                            <h3>Most Productive Day</h3>
+                            <div class="insight-value" id="productive-day">Loading...</div>
+                            <div class="insight-subtitle" id="productive-day-time">Avg: Loading...</div>
+                            <div class="insight-chart">
+                                <canvas id="weekdayChart" width="50" height="35"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
                     <h2>Coding Activity</h2>
                     <div class="heatmap-container">
                         <div class="heatmap-wrapper">
@@ -572,7 +735,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     
                     window.addEventListener('message', event => {                        const message = event.data;
                         if (message.command === 'update') {
-                            updateContent(message.data);
+                            updateContent(message.data, message.entries);
                             updateProjectDropdown(message.projects);
                             if (message.branches) {
                                 updateBranchDropdown(message.branches);
@@ -653,7 +816,346 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         document.getElementById('month-start').textContent = \`\${monthNames[now.getMonth()]} 1st\`;
                     }
 
-                    function updateContent(data) {
+                    // Store chart instances to destroy them before creating new ones
+                    let insightCharts = {
+                        avgDaily: null,
+                        languages: null,
+                        projects: null,
+                        weekday: null
+                    };
+
+                    function updateInsightWidgets(data, allEntries) {
+                        // 1. Average Daily Coding Time
+                        updateAverageDailyTime(data, allEntries);
+                        
+                        // 2. Languages Used
+                        updateLanguagesInsight(data);
+                        
+                        // 3. Projects Worked
+                        updateProjectsInsight(data);
+                        
+                        // 4. Longest Streak
+                        updateStreakInsight(allEntries);
+                        
+                        // 5. Most Productive Day
+                        updateProductiveDayInsight(allEntries);
+                    }
+
+                    function updateAverageDailyTime(data, allEntries) {
+                        const dailyTimes = Object.values(data.dailySummary);
+                        const totalDays = dailyTimes.length;
+                        const avgDaily = totalDays > 0 ? data.totalTime / totalDays : 0;
+                        
+                        document.getElementById('avg-daily-time').textContent = formatTime(avgDaily);
+                        
+                        // Create circular progress chart
+                        if (insightCharts.avgDaily) {
+                            insightCharts.avgDaily.destroy();
+                        }
+                        
+                        const ctx = document.getElementById('avgDailyChart').getContext('2d');
+                        const targetDaily = 6 * 60; // 6 hours target
+                        const percentage = Math.min((avgDaily / targetDaily) * 100, 100);
+                        
+                        insightCharts.avgDaily = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                datasets: [{
+                                    data: [percentage, 100 - percentage],
+                                    backgroundColor: ['#36A2EB', '#E5E5E5'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                cutout: '70%',
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: { enabled: false }
+                                },
+                                elements: {
+                                    arc: { borderWidth: 0 }
+                                }
+                            },
+                            plugins: [{
+                                beforeDraw: function(chart) {
+                                    const width = chart.width,
+                                          height = chart.height,
+                                          ctx = chart.ctx;
+                                    ctx.restore();
+                                    const fontSize = (height / 100).toFixed(2);
+                                    ctx.font = fontSize + "em sans-serif";
+                                    ctx.textBaseline = "middle";
+                                    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--vscode-foreground');
+                                    const text = Math.round(percentage) + "%";
+                                    const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                                    const textY = height / 2;
+                                    ctx.fillText(text, textX, textY);
+                                    ctx.save();
+                                }
+                            }]
+                        });
+                    }
+
+                    function updateLanguagesInsight(data) {
+                        const languages = Object.entries(data.languageSummary);
+                        const languageCount = languages.length;
+                        
+                        document.getElementById('languages-count').textContent = languageCount;
+                        
+                        if (languages.length > 0) {
+                            const sortedLangs = languages.sort(([,a], [,b]) => b - a);
+                            const topLang = sortedLangs[0];
+                            const percentage = ((topLang[1] / data.totalTime) * 100).toFixed(1);
+                            document.getElementById('most-used-lang').textContent = \`Most used: \${topLang[0]} (\${percentage}%)\`;
+                            
+                            // Create mini pie chart
+                            if (insightCharts.languages) {
+                                insightCharts.languages.destroy();
+                            }
+                            
+                            const ctx = document.getElementById('languagesChart').getContext('2d');
+                            const topLanguages = sortedLangs.slice(0, 4);
+                            const otherTime = sortedLangs.slice(4).reduce((sum, [,time]) => sum + time, 0);
+                            
+                            const chartData = topLanguages.map(([name, time]) => ({ name, time }));
+                            if (otherTime > 0) {
+                                chartData.push({ name: 'Others', time: otherTime });
+                            }
+                            
+                            insightCharts.languages = new Chart(ctx, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: chartData.map(d => d.name),
+                                    datasets: [{
+                                        data: chartData.map(d => d.time),
+                                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return \`\${context.label}: \${formatTime(context.raw)}\`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            document.getElementById('most-used-lang').textContent = 'Most used: N/A';
+                        }
+                    }
+
+                    function updateProjectsInsight(data) {
+                        const projects = Object.entries(data.projectSummary);
+                        const projectCount = projects.length;
+                        
+                        document.getElementById('projects-count').textContent = projectCount;
+                        
+                        if (projects.length > 0) {
+                            const sortedProjects = projects.sort(([,a], [,b]) => b - a);
+                            const topProject = sortedProjects[0];
+                            const percentage = ((topProject[1] / data.totalTime) * 100).toFixed(1);
+                            document.getElementById('most-active-project').textContent = \`Most active: \${topProject[0]} (\${percentage}%)\`;
+                            
+                            // Create mini bar chart
+                            if (insightCharts.projects) {
+                                insightCharts.projects.destroy();
+                            }
+                            
+                            const ctx = document.getElementById('projectsChart').getContext('2d');
+                            const topProjects = sortedProjects.slice(0, 3);
+                            
+                            insightCharts.projects = new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: topProjects.map(([name]) => name.length > 10 ? name.substring(0, 10) + '...' : name),
+                                    datasets: [{
+                                        data: topProjects.map(([,time]) => time),
+                                        backgroundColor: '#36A2EB'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        x: { display: false },
+                                        y: { display: false }
+                                    },
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return \`\${context.label}: \${formatTime(context.raw)}\`;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            document.getElementById('most-active-project').textContent = 'Most active: N/A';
+                        }
+                    }
+
+                    function updateStreakInsight(allEntries) {
+                        const streaks = calculateStreaks(allEntries);
+                        const longestStreak = streaks.longest;
+                        const currentStreak = streaks.current;
+                        
+                        document.getElementById('longest-streak').textContent = \`\${longestStreak} days\`;
+                        document.getElementById('current-streak').textContent = \`Current: \${currentStreak} days\`;
+                        
+                        // Update flame visual based on current streak
+                        const flame = document.getElementById('flame-visual');
+                        flame.className = 'flame';
+                        if (currentStreak <= 2) {
+                            flame.classList.add('low');
+                        } else if (currentStreak <= 6) {
+                            flame.classList.add('medium');
+                        } else {
+                            flame.classList.add('high');
+                        }
+                    }
+
+                    function updateProductiveDayInsight(allEntries) {
+                        const dayStats = calculateDayOfWeekStats(allEntries);
+                        const mostProductiveDay = dayStats.mostProductive;
+                        
+                        document.getElementById('productive-day').textContent = mostProductiveDay.name;
+                        document.getElementById('productive-day-time').textContent = \`Avg: \${formatTime(mostProductiveDay.avgTime)}\`;
+                        
+                        // Create mini bar chart for all days
+                        if (insightCharts.weekday) {
+                            insightCharts.weekday.destroy();
+                        }
+                        
+                        const ctx = document.getElementById('weekdayChart').getContext('2d');
+                        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        const dayTimes = dayStats.days;
+                        
+                        insightCharts.weekday = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: dayNames,
+                                datasets: [{
+                                    data: dayTimes,
+                                    backgroundColor: dayTimes.map((time, index) => 
+                                        index === mostProductiveDay.index ? '#FF6384' : '#36A2EB'
+                                    )
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: { display: false },
+                                    y: { display: false }
+                                },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return \`\${dayNames[context.dataIndex]}: \${formatTime(context.raw)}\`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    function calculateStreaks(entries) {
+                        if (entries.length === 0) return { longest: 0, current: 0 };
+                        
+                        const dailyTotals = {};
+                        entries.forEach(entry => {
+                            dailyTotals[entry.date] = (dailyTotals[entry.date] || 0) + entry.timeSpent;
+                        });
+                        
+                        const dates = Object.keys(dailyTotals).sort();
+                        let longestStreak = 0;
+                        let currentStreak = 0;
+                        let tempStreak = 0;
+                        
+                        const today = new Date().toISOString().split('T')[0];
+                        let yesterdayHasCoding = false;
+                        
+                        for (let i = 0; i < dates.length; i++) {
+                            const currentDate = new Date(dates[i]);
+                            const prevDate = i > 0 ? new Date(dates[i-1]) : null;
+                            
+                            const diffDays = prevDate ? 
+                                Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24)) : 1;
+                            
+                            if (diffDays === 1) {
+                                tempStreak++;
+                            } else {
+                                tempStreak = 1;
+                            }
+                            
+                            longestStreak = Math.max(longestStreak, tempStreak);
+                            
+                            // Check if this is yesterday or today for current streak
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            const yesterdayStr = yesterday.toISOString().split('T')[0];
+                            
+                            if (dates[i] === today || dates[i] === yesterdayStr) {
+                                if (dates[i] === yesterdayStr) yesterdayHasCoding = true;
+                                currentStreak = tempStreak;
+                            }
+                        }
+                        
+                        // If today is not in the list and yesterday doesn't have coding, current streak is 0
+                        if (!dates.includes(today) && !yesterdayHasCoding) {
+                            currentStreak = 0;
+                        }
+                        
+                        return { longest: longestStreak, current: currentStreak };
+                    }
+
+                    function calculateDayOfWeekStats(entries) {
+                        const dayTotals = [0, 0, 0, 0, 0, 0, 0]; // Sun to Sat
+                        const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+                        
+                        entries.forEach(entry => {
+                            const date = new Date(entry.date);
+                            const dayOfWeek = date.getDay();
+                            dayTotals[dayOfWeek] += entry.timeSpent;
+                            dayCounts[dayOfWeek]++;
+                        });
+                        
+                        const dayAverages = dayTotals.map((total, index) => 
+                            dayCounts[index] > 0 ? total / dayCounts[index] : 0
+                        );
+                        
+                        const maxAvgIndex = dayAverages.indexOf(Math.max(...dayAverages));
+                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        
+                        return {
+                            days: dayAverages,
+                            mostProductive: {
+                                name: dayNames[maxAvgIndex],
+                                avgTime: dayAverages[maxAvgIndex],
+                                index: maxAvgIndex
+                            }
+                        };
+                    }
+
+                    function updateContent(data, allEntries = []) {
+                        // Update insight widgets first
+                        updateInsightWidgets(data, allEntries);
+                        
                         const content = document.getElementById('content');
                         content.innerHTML = \`
                             <div class="chart-container">

@@ -5,12 +5,14 @@ export interface TimeEntry {
     project: string;
     timeSpent: number;
     branch: string;
+    language: string;
 }
 
 export interface SummaryData {
     dailySummary: { [date: string]: number };
     projectSummary: { [project: string]: number };
     branchSummary: { [branch: string]: number };
+    languageSummary: { [language: string]: number };
     totalTime: number;
 }
 
@@ -33,11 +35,14 @@ export class Database {
 
     private async migrateEntries() {
         if (this.entries && this.entries.length > 0) {
-            const needsMigration = this.entries.some(entry => !('branch' in entry));
-            if (needsMigration) {
+            const needsBranchMigration = this.entries.some(entry => !('branch' in entry));
+            const needsLanguageMigration = this.entries.some(entry => !('language' in entry));
+            
+            if (needsBranchMigration || needsLanguageMigration) {
                 const migratedEntries = this.entries.map(entry => ({
                     ...entry,
-                    branch: 'branch' in entry ? entry.branch : 'unknown'
+                    branch: 'branch' in entry ? entry.branch : 'unknown',
+                    language: 'language' in entry ? entry.language : 'unknown'
                 }));
                 await this.updateEntries(migratedEntries);
             }
@@ -50,10 +55,10 @@ export class Database {
             .split('T')[0];
     }
 
-    async addEntry(date: Date, project: string, timeSpent: number, branch: string) {
+    async addEntry(date: Date, project: string, timeSpent: number, branch: string, language: string) {
         // Validate time spent to prevent unreasonable values
         if (timeSpent <= 0 || timeSpent > 24 * 60) { // More than 24 hours is unlikely
-            console.warn(`Suspicious time value detected: ${timeSpent} minutes for ${project}/${branch}`);
+            console.warn(`Suspicious time value detected: ${timeSpent} minutes for ${project}/${branch}/${language}`);
             return;
         }
 
@@ -63,7 +68,8 @@ export class Database {
         const existingEntryIndex = entries.findIndex(entry => 
             entry.date === dateString && 
             entry.project === project && 
-            entry.branch === branch
+            entry.branch === branch &&
+            entry.language === language
         );
 
         // Round to 2 decimal places to avoid floating point issues
@@ -72,12 +78,12 @@ export class Database {
         if (existingEntryIndex !== -1) {
             entries[existingEntryIndex].timeSpent += roundedTime;
         } else {
-            entries.push({ date: dateString, project, timeSpent: roundedTime, branch });
+            entries.push({ date: dateString, project, timeSpent: roundedTime, branch, language });
         }
 
         try {
             await this.updateEntries(entries);
-            console.log(`Saved ${roundedTime}min for ${project}/${branch} on ${dateString}`);
+            console.log(`Saved ${roundedTime}min for ${project}/${branch}/${language} on ${dateString}`);
         } catch (error) {
             console.error('Error saving entry:', error);
             vscode.window.showErrorMessage('Failed to save time entry');
@@ -101,12 +107,14 @@ export class Database {
         const dailySummary: { [date: string]: number } = {};
         const projectSummary: { [project: string]: number } = {};
         const branchSummary: { [branch: string]: number } = {};
+        const languageSummary: { [language: string]: number } = {};
         let totalTime = 0;
 
         for (const entry of entries) {
             dailySummary[entry.date] = (dailySummary[entry.date] || 0) + entry.timeSpent;
             projectSummary[entry.project] = (projectSummary[entry.project] || 0) + entry.timeSpent;
             branchSummary[entry.branch] = (branchSummary[entry.branch] || 0) + entry.timeSpent;
+            languageSummary[entry.language] = (languageSummary[entry.language] || 0) + entry.timeSpent;
             totalTime += entry.timeSpent;
         }
 
@@ -114,17 +122,19 @@ export class Database {
             dailySummary,
             projectSummary,
             branchSummary,
+            languageSummary,
             totalTime
         };
     }
 
-    async searchEntries(startDate?: string, endDate?: string, project?: string, branch?: string): Promise<TimeEntry[]> {
+    async searchEntries(startDate?: string, endDate?: string, project?: string, branch?: string, language?: string): Promise<TimeEntry[]> {
         const entries = this.getEntries();
         return entries.filter(entry => {
             const dateMatch = (!startDate || entry.date >= startDate) && (!endDate || entry.date <= endDate);
             const projectMatch = !project || entry.project.toLowerCase().includes(project.toLowerCase());
             const branchMatch = !branch || entry.branch.toLowerCase().includes(branch.toLowerCase());
-            return dateMatch && projectMatch && branchMatch;
+            const languageMatch = !language || entry.language.toLowerCase().includes(language.toLowerCase());
+            return dateMatch && projectMatch && branchMatch && languageMatch;
         });
     }
 

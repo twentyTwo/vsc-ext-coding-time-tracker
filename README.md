@@ -14,6 +14,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 
 - **Automatic Time Tracking**: Seamlessly tracks your coding time in the background.
 - **Project and Branch Tracking**: Organizes time data by project and Git branches for comprehensive analysis.
+- **Language Tracking**: Automatically detects and tracks time spent in different programming languages.
 - **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
 - **Health Notification System**: Proactive reminders to promote healthy coding habits with scientifically backed intervals.
@@ -21,15 +22,17 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Project Summary Chart: Visual breakdown of time spent on each project
   - Daily Activity Timeline: Interactive line chart showing your coding patterns
   - Activity Heatmap: 3-month calendar view showing coding intensity
+  - Language Distribution Chart: Visual breakdown of time spent in different programming languages
   - Theme-Aware Charts: Automatically adapts to VS Code's light/dark themes
 - **Advanced Search & Filtering**:
   - Date Range Selection: Filter data by specific time periods
   - Project Filtering: Focus on specific projects
+  - Language Filtering: Focus on specific programming languages
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
 
 ## Time Tracking Details
-The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance.
+The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance. The extension automatically detects the programming language you're working with based on file extensions and VS Code's language detection.
 
 **📖 For detailed configuration, advanced features, and complete documentation, see the [Time Tracking Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Time-Tracking) in our wiki.**
 
@@ -60,14 +63,15 @@ Once installed, the extension will automatically start tracking your coding time
 
 1. In the summary view, locate the search form
 2. Select a date range using the date pickers
-3. Filter by project and/or branch:
+3. Filter by project, branch, and/or language:
    - Choose a specific project to see all its branches
    - Select a branch to see time data for that specific branch
+   - Select a language to see time data for that specific programming language
    - The branch dropdown automatically updates to show only branches from the selected project
 4. Click "Search" to apply filters
 5. Use "Reset" to clear all filters and refresh the view
 
-The charts and visualizations will automatically update to reflect your selected project and branch filters.
+The charts and visualizations will automatically update to reflect your selected project, branch, and language filters.
 
 ### Configuration Options
 
@@ -99,6 +103,7 @@ The summary page provides a detailed report of your coding activity with interac
 - Project distribution chart showing time allocation across projects
 - Daily activity timeline with interactive tooltips
 - 3-month activity heatmap for long-term pattern analysis
+- Language distribution chart showing time spent in different programming languages
 - Theme-aware visualizations that adapt to your VS Code theme
 - Advanced search and filtering capabilities
 
@@ -136,6 +141,13 @@ For technical details about development, release process, and internal architect
 
 ## Changelog
 
+### [0.6.0] - 2025-08-28
+- Added comprehensive language tracking to monitor time spent in different programming languages
+- Automatic language detection based on file extensions and VS Code language IDs
+- Support for 50+ programming languages including JavaScript, TypeScript, Python, Java, C++, and more
+- Enhanced search and filtering capabilities to include language-based filtering
+- Language distribution visualization in summary charts
+- All existing functionality preserved with seamless migration of historical data
 
 ### [0.5.0] - 2025-08-02
 - Added comprehensive health notification system with customizable intervals
