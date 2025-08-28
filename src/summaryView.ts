@@ -558,7 +558,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             <h3>Average Daily Time</h3>
                             <div class="insight-value" id="avg-daily-time">Loading...</div>
                             <div class="insight-chart">
-                                <canvas id="avgDailyChart" width="50" height="50"></canvas>
+                                <canvas id="avgDailyChart" width="120" height="40"></canvas>
                             </div>
                         </div>
                         
@@ -848,53 +848,69 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         
                         document.getElementById('avg-daily-time').textContent = formatTime(avgDaily);
                         
-                        // Create circular progress chart
+                        // Create horizontal bar chart for time periods
                         if (insightCharts.avgDaily) {
                             insightCharts.avgDaily.destroy();
                         }
                         
                         const ctx = document.getElementById('avgDailyChart').getContext('2d');
-                        const targetDaily = 6 * 60; // 6 hours target
-                        const percentage = Math.min((avgDaily / targetDaily) * 100, 100);
+                        
+                        // Calculate time periods
+                        const today = getTodayTime(allEntries);
+                        const thisWeek = getThisWeekTime(allEntries);
+                        const thisMonth = getThisMonthTime(allEntries);
+                        const allTime = data.totalTime;
+                        
+                        // Find max value for scaling
+                        const maxTime = Math.max(today, thisWeek / 7, thisMonth / 30, avgDaily);
                         
                         insightCharts.avgDaily = new Chart(ctx, {
-                            type: 'doughnut',
+                            type: 'bar',
                             data: {
+                                labels: ['Today', 'Week Avg', 'Month Avg', 'All Time Avg'],
                                 datasets: [{
-                                    data: [percentage, 100 - percentage],
-                                    backgroundColor: ['#36A2EB', '#E5E5E5'],
-                                    borderWidth: 0
+                                    data: [today, thisWeek / 7, thisMonth / 30, avgDaily],
+                                    backgroundColor: [
+                                        '#FF6384',  // Today - Red
+                                        '#36A2EB',  // Week - Blue
+                                        '#FFCE56',  // Month - Yellow
+                                        '#4BC0C0'   // All Time - Teal
+                                    ],
+                                    borderWidth: 0,
+                                    barPercentage: 0.8,
+                                    categoryPercentage: 0.9
                                 }]
                             },
                             options: {
-                                cutout: '70%',
+                                indexAxis: 'y', // Makes it horizontal
                                 responsive: true,
                                 maintainAspectRatio: false,
+                                scales: {
+                                    x: { 
+                                        display: false,
+                                        beginAtZero: true,
+                                        max: maxTime * 1.1
+                                    },
+                                    y: { 
+                                        display: false 
+                                    }
+                                },
                                 plugins: {
                                     legend: { display: false },
-                                    tooltip: { enabled: false }
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return \`\${context.label}: \${formatTime(context.raw)}\`;
+                                            }
+                                        }
+                                    }
                                 },
                                 elements: {
-                                    arc: { borderWidth: 0 }
+                                    bar: {
+                                        borderRadius: 2
+                                    }
                                 }
-                            },
-                            plugins: [{
-                                beforeDraw: function(chart) {
-                                    const width = chart.width,
-                                          height = chart.height,
-                                          ctx = chart.ctx;
-                                    ctx.restore();
-                                    const fontSize = (height / 100).toFixed(2);
-                                    ctx.font = fontSize + "em sans-serif";
-                                    ctx.textBaseline = "middle";
-                                    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--vscode-foreground');
-                                    const text = Math.round(percentage) + "%";
-                                    const textX = Math.round((width - ctx.measureText(text).width) / 2);
-                                    const textY = height / 2;
-                                    ctx.fillText(text, textX, textY);
-                                    ctx.save();
-                                }
-                            }]
+                            }
                         });
                     }
 
@@ -1150,6 +1166,35 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 index: maxAvgIndex
                             }
                         };
+                    }
+
+                    function getTodayTime(entries) {
+                        const today = new Date().toISOString().split('T')[0];
+                        return entries
+                            .filter(entry => entry.date === today)
+                            .reduce((sum, entry) => sum + entry.timeSpent, 0);
+                    }
+
+                    function getThisWeekTime(entries) {
+                        const now = new Date();
+                        const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+                        const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
+                        const today = now.toISOString().split('T')[0];
+                        
+                        return entries
+                            .filter(entry => entry.date >= startOfWeekStr && entry.date <= today)
+                            .reduce((sum, entry) => sum + entry.timeSpent, 0);
+                    }
+
+                    function getThisMonthTime(entries) {
+                        const now = new Date();
+                        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                        const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
+                        const today = now.toISOString().split('T')[0];
+                        
+                        return entries
+                            .filter(entry => entry.date >= startOfMonthStr && entry.date <= today)
+                            .reduce((sum, entry) => sum + entry.timeSpent, 0);
                     }
 
                     function updateContent(data, allEntries = []) {
