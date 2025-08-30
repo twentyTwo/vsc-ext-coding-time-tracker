@@ -10,16 +10,19 @@ The project is organized as follows:
 vscode-time-tracker/
 ├── .vscode/               # VSCode-specific settings
 ├── src/                   # Source code
-│   ├── extension.ts       # Main extension file
+│   ├── extension.ts       # Main extension file (includes test data commands)
 │   ├── statusBar.ts       # Status bar functionality
 │   ├── summaryView.ts     # Summary view implementation
 │   ├── timeTracker.ts     # Time tracking logic
 │   ├── database.ts        # Database operations
-│   └── readme.md          # Source code documentation
+│   ├── healthNotifications.ts # Health notification system
+│   ├── logger.ts          # Logging utilities
+│   └── utils.ts           # Utility functions
 ├── .gitignore             # Git ignore file
-├── package.json           # Project metadata and dependencies
+├── package.json           # Project metadata, dependencies, and test commands
 ├── README.md              # Project readme
 ├── CONTRIBUTING.md        # Contributing guidelines
+├── TECHNICAL.md           # Technical documentation and testing guide
 └── LICENSE                # License information
 ```
 
@@ -46,6 +49,53 @@ To compile the extension, run:
 `npm run compile`
 
 This will transpile the TypeScript files to JavaScript.
+
+## Testing the Extension
+
+### Development Mode Testing
+
+For testing during development:
+
+1. **Open the project in VS Code**
+2. **Press F5** to launch Extension Development Host
+3. **Test your changes** in the new VS Code window
+
+### Package Testing
+
+For testing packaged extensions:
+
+1. **Enable test commands**:
+   - Open Settings (`Ctrl+,`)
+   - Search `"enableDevCommands"`
+   - Enable "Simple Coding Time Tracker › Enable Dev Commands"
+
+2. **Generate test data**:
+   - Press `Ctrl+Shift+P`
+   - Run `SCTT: Generate Test Data (Dev)`
+   - This creates 90 days of realistic test data
+
+3. **Test all features**:
+   - Summary view and charts
+   - Search and filtering
+   - Status bar functionality
+   - Theme compatibility
+
+4. **Clean up**:
+   - Run `SCTT: Delete Test Data (Dev)` to remove test data
+   - Disable dev commands when done
+
+### Testing Checklist
+
+Before submitting a pull request, verify:
+
+- ✅ Time tracking starts/stops correctly
+- ✅ Status bar updates in real-time
+- ✅ Charts render properly in light/dark themes
+- ✅ Search and filtering work correctly
+- ✅ Data persists across VS Code restarts
+- ✅ Health notifications function (if enabled)
+- ✅ Extension works with packaged installation
+- ✅ No console errors in Developer Tools
 
 ## Creating a VSCode Package
 

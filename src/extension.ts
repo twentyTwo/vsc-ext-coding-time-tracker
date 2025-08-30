@@ -127,10 +127,135 @@ export function activate(context: vscode.ExtensionContext) {
         (timeTracker as any).healthManager.triggerTestNotification();
     });
 
+    // Test data generation command
+    let generateTestDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.generateTestData', async () => {
+        // Check if dev commands are enabled
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const enableDevCommands = config.get<boolean>('enableDevCommands', false) || 
+                                  context.extensionMode === vscode.ExtensionMode.Development;
+        
+        if (!enableDevCommands) {
+            vscode.window.showWarningMessage('Development commands are disabled. Enable "simpleCodingTimeTracker.enableDevCommands" in settings to use this feature.');
+            return;
+        }
+
+        const projects = [
+            'React Dashboard', 'Node.js API', 'Mobile App', 'Database Migration', 'UI Components',
+            'Backend Service', 'Documentation', 'Testing Suite', 'DevOps Setup', 'Data Analytics'
+        ];
+
+        const branches = [
+            'main', 'develop', 'feature/user-auth', 'feature/dashboard', 'feature/api-integration',
+            'bugfix/login-issue', 'bugfix/memory-leak', 'hotfix/security-patch', 'release/v1.2.0',
+            'feature/mobile-responsive', 'feature/dark-theme', 'refactor/database-layer'
+        ];
+
+        const languages = [
+            'typescript', 'javascript', 'python', 'java', 'csharp', 'cpp', 'go', 'rust',
+            'php', 'ruby', 'swift', 'kotlin', 'html', 'css', 'scss', 'json', 'yaml', 'markdown', 'sql', 'bash'
+        ];
+
+        const today = new Date();
+        let totalEntries = 0;
+
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "🎲 Generating test data...",
+            cancellable: false
+        }, async (progress) => {
+            try {
+                // Generate data for the last 90 days
+                for (let i = 0; i < 90; i++) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    
+                    // Skip some days randomly (weekends or days off)
+                    if (Math.random() < 0.2) continue; // 20% chance to skip a day
+                    
+                    // Generate 1-4 entries per day
+                    const entriesCount = Math.floor(Math.random() * 4) + 1;
+                    
+                    for (let j = 0; j < entriesCount; j++) {
+                        const project = projects[Math.floor(Math.random() * projects.length)];
+                        const branch = branches[Math.floor(Math.random() * branches.length)];
+                        const language = languages[Math.floor(Math.random() * languages.length)];
+                        // Random time between 15 minutes and 3 hours
+                        const timeSpent = Math.floor(Math.random() * 165) + 15;
+                        
+                        // Use the database's addEntry method
+                        await database.addEntry(date, project, timeSpent, branch, language);
+                        totalEntries++;
+                    }
+                    
+                    // Update progress
+                    progress.report({ increment: (1/90) * 100 });
+                }
+
+                // Add some special test cases for yesterday and today
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                await database.addEntry(yesterday, 'Node.js API', 480, 'feature/api-integration', 'typescript');
+                await database.addEntry(today, 'React Dashboard', 120, 'feature/dashboard', 'typescript');
+                await database.addEntry(today, 'Documentation', 60, 'main', 'markdown');
+                totalEntries += 3;
+
+            } catch (error) {
+                vscode.window.showErrorMessage(`❌ Error generating test data: ${error}`);
+                return;
+            }
+        });
+
+        vscode.window.showInformationMessage(`✅ Generated ${totalEntries} test entries successfully!`);
+    });
+
+    // Delete test data command
+    let deleteTestDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.deleteTestData', async () => {
+        // Check if dev commands are enabled
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const enableDevCommands = config.get<boolean>('enableDevCommands', false) || 
+                                  context.extensionMode === vscode.ExtensionMode.Development;
+        
+        if (!enableDevCommands) {
+            vscode.window.showWarningMessage('Development commands are disabled. Enable "simpleCodingTimeTracker.enableDevCommands" in settings to use this feature.');
+            return;
+        }
+
+        const confirmation = await vscode.window.showWarningMessage(
+            '🗑️ Delete all time tracking data? This action cannot be undone.',
+            { modal: true },
+            'Delete All Data',
+            'Cancel'
+        );
+
+        if (confirmation === 'Delete All Data') {
+            const finalConfirmation = await vscode.window.showInputBox({
+                prompt: 'Type "DELETE ALL DATA" to confirm permanent deletion of all time tracking data.',
+                placeHolder: 'DELETE ALL DATA',
+                ignoreFocusOut: true
+            });
+
+            if (finalConfirmation === 'DELETE ALL DATA') {
+                try {
+                    const success = await database.clearAllData();
+                    if (success) {
+                        vscode.window.showInformationMessage('✅ All time tracking data has been deleted successfully!');
+                    }
+                } catch (error) {
+                    vscode.window.showErrorMessage(`❌ Error deleting data: ${error}`);
+                }
+            } else {
+                vscode.window.showInformationMessage('Data deletion cancelled.');
+            }
+        }
+    });
+
     context.subscriptions.push(clearDataCommand);
     context.subscriptions.push(toggleHealthCommand);
     context.subscriptions.push(testPauseCommand);
     context.subscriptions.push(testNotificationCommand);
+    context.subscriptions.push(generateTestDataCommand);
+    context.subscriptions.push(deleteTestDataCommand);
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(viewStorageDisposable);

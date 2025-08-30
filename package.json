@@ -64,6 +64,12 @@
           "minimum": 30,
           "maximum": 480,
           "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
+        },
+        "simpleCodingTimeTracker.enableDevCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable development commands (Generate/Delete Test Data). Only enable this for testing purposes.",
+          "scope": "application"
         }
       }
     },
@@ -83,6 +89,16 @@
       {
         "command": "simpleCodingTimeTracker.toggleHealthNotifications",
         "title": "SCTT: Toggle Health Notifications"
+      },
+      {
+        "command": "simpleCodingTimeTracker.generateTestData",
+        "title": "SCTT: Generate Test Data (Dev)",
+        "when": "config.simpleCodingTimeTracker.enableDevCommands"
+      },
+      {
+        "command": "simpleCodingTimeTracker.deleteTestData",
+        "title": "SCTT: Delete Test Data (Dev)",
+        "when": "config.simpleCodingTimeTracker.enableDevCommands"
       }
     ]
   },
@@ -94,7 +110,6 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "generate-test-data": "node scripts/generate-test-data.js",
     "refresh-extension": "code --uninstall-extension noorashuvo.simple-coding-time-tracker && vsce package && code --install-extension $(npm pack --quiet)"
   },
   "devDependencies": {

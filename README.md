@@ -135,11 +135,37 @@ For comprehensive documentation, guides, and testing information, visit our **[D
 - **[Test Scenarios](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Test-Scenarios)** - Comprehensive testing documentation
 - **[Development Roadmap](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/TODO)** - Current tasks and future plans
 
+## Testing & Development
+
+For developers and testers, the extension includes built-in test data generation commands:
+
+### Enabling Test Commands
+1. Open Settings (`Ctrl+,`)
+2. Search: `"enableDevCommands"`  
+3. Enable "Simple Coding Time Tracker › Enable Dev Commands"
+
+### Available Test Commands
+- **`SCTT: Generate Test Data (Dev)`** - Creates realistic test data for 90 days
+- **`SCTT: Delete Test Data (Dev)`** - Safely removes all tracking data
+
+**Note**: These commands are hidden from regular users and only appear when explicitly enabled in settings.
+
+For complete testing documentation, see [TECHNICAL.md](TECHNICAL.md).
+
 ## Technical Documentation
 
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.6.1] - 2025-08-30
+- Added comprehensive test data generation commands for developers and testers
+- Implemented `SCTT: Generate Test Data (Dev)` command that creates 90 days of realistic test data
+- Added `SCTT: Delete Test Data (Dev)` command for safe cleanup of test data
+- Test commands are hidden from end users by default and only visible when `enableDevCommands` setting is enabled
+- Enhanced security with configuration-controlled command visibility
+- Improved testing workflow for packaged extension installations
+- Added progress indicators for test data generation process
 
 ### [0.6.0] - 2025-08-28
 - Added comprehensive language tracking to monitor time spent in different programming languages

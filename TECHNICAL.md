@@ -206,13 +206,70 @@ For detailed contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.
 
 ### Generate Test Data
 
-The extension includes a script to generate test data for development: [ON PROGRESS]
+The extension includes built-in commands to generate comprehensive test data for development and testing purposes. These commands are hidden from end users by default and only available when explicitly enabled.
 
-```bash
-npm run generate-test-data
+#### Enabling Test Data Commands
+
+**Method 1: Via Settings UI**
+1. Open VS Code Settings (`Ctrl+,`)
+2. Search for `"enableDevCommands"`
+3. Check the box for "Simple Coding Time Tracker › Enable Dev Commands"
+
+**Method 2: Via settings.json**
+```json
+{
+    "simpleCodingTimeTracker.enableDevCommands": true
+}
 ```
 
-This will create sample time entries for the last 90 days with varied projects and durations.
+#### Available Test Commands
+
+Once enabled, the following commands become available in the Command Palette (`Ctrl+Shift+P`):
+
+**`SCTT: Generate Test Data (Dev)`**
+- Creates comprehensive test data for the last 90 days
+- Generates 150-200 realistic time entries
+- Includes 10 different projects, 12 Git branches, and 20 programming languages
+- Session durations range from 15 minutes to 3 hours
+- Automatically skips some days to simulate realistic patterns
+
+**`SCTT: Delete Test Data (Dev)`**
+- Safely removes ALL time tracking data with confirmation prompts
+- Requires typing "DELETE ALL DATA" for safety
+- Cannot be undone - use with caution
+
+#### Test Data Structure
+
+Generated test data includes:
+```javascript
+{
+  date: "2025-08-30",           // ISO date string
+  project: "React Dashboard",   // Random project name
+  timeSpent: 120,              // Minutes (15-180 range)
+  branch: "feature/dashboard", // Git branch name
+  language: "typescript"       // Programming language
+}
+```
+
+#### Security Features
+
+- **Hidden by default**: Commands don't appear for end users
+- **Configuration controlled**: Only visible when setting is enabled
+- **Development mode fallback**: Always available in extension development
+- **Clear labeling**: Commands marked with "(Dev)" suffix
+- **Warning messages**: Shows helpful errors if commands are disabled
+
+#### Testing Workflow
+
+1. **Package your extension**: `npm run package`
+2. **Install the package**: `code --install-extension your-package.vsix`
+3. **Enable dev commands**: Set `enableDevCommands` to `true` in settings
+4. **Generate test data**: Use `SCTT: Generate Test Data (Dev)` command
+5. **Test extension features**: Verify charts, filtering, search functionality
+6. **Clean up**: Use `SCTT: Delete Test Data (Dev)` to remove test data
+7. **Disable dev commands**: Set `enableDevCommands` to `false`
+
+This approach ensures test data generation works correctly with packaged extensions while keeping the functionality completely hidden from end users.
 
 ### Marketplace Publishing Tests
 
