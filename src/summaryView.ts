@@ -428,11 +428,21 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     .insight-box h3 {
                         margin: 0 0 8px 0;
                         font-size: 11px;
-                        color: var(--vscode-descriptionForeground);
+                        color: var(--vscode-editor-foreground);
                         text-transform: uppercase;
                         letter-spacing: 0.3px;
-                        font-weight: 500;
+                        font-weight: 600;
                         line-height: 1.2;
+                    }
+                    
+                    /* Dark theme specific styling */
+                    .vscode-dark .insight-box h3 {
+                        color: #ffffff !important;
+                    }
+                    
+                    /* Light theme specific styling */
+                    .vscode-light .insight-box h3 {
+                        color: #000000 !important;
                     }
                     .insight-value {
                         font-size: 18px;
@@ -443,9 +453,22 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .insight-subtitle {
                         font-size: 10px;
-                        color: var(--vscode-descriptionForeground);
+                        color: var(--vscode-editor-foreground);
+                        opacity: 0.8;
                         margin-bottom: 8px;
                         line-height: 1.2;
+                    }
+                    
+                    /* Dark theme specific styling */
+                    .vscode-dark .insight-subtitle {
+                        color: #cccccc !important;
+                        opacity: 1;
+                    }
+                    
+                    /* Light theme specific styling */
+                    .vscode-light .insight-subtitle {
+                        color: #333333 !important;
+                        opacity: 1;
                     }
                     .insight-chart {
                         display: flex;
@@ -477,11 +500,21 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     .analytics-box h3 {
                         margin: 0 0 8px 0;
                         font-size: 11px;
-                        color: var(--vscode-descriptionForeground);
+                        color: var(--vscode-editor-foreground);
                         text-transform: uppercase;
                         letter-spacing: 0.3px;
-                        font-weight: 500;
+                        font-weight: 600;
                         line-height: 1.2;
+                    }
+                    
+                    /* Dark theme specific styling */
+                    .vscode-dark .analytics-box h3 {
+                        color: #ffffff !important;
+                    }
+                    
+                    /* Light theme specific styling */
+                    .vscode-light .analytics-box h3 {
+                        color: #000000 !important;
                     }
                     .analytics-value {
                         font-size: 16px;
