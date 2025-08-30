@@ -782,7 +782,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
 
-                    <h2>Weekly & Monthly Analytics</h2>                  
+                    <h2>Coding Time Analytics</h2>                  
                     <div class="analytics-grid">
                         <div class="analytics-box">
                             <h3>Time Summary</h3>
