@@ -22,6 +22,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('simpleCodingTimeTracker')) {
                 timeTracker.updateConfiguration();
+                // Update status bar when health notifications setting changes
+                if (e.affectsConfiguration('simpleCodingTimeTracker.health.enableNotifications')) {
+                    statusBar.updateNow();
+                }
             }
         })
     );
@@ -76,7 +80,8 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // Register health notifications toggle command
+
+    // Register health notifications toggle command (legacy command with confirmation)
     let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         const currentEnabled = config.get('health.enableNotifications', true);
@@ -100,8 +105,8 @@ export function activate(context: vscode.ExtensionContext) {
             await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
             
             const resultMessage = !currentEnabled ? 
-                '✅ Health notifications enabled! You\'ll receive reminders for eye rest (20min), stretching (45min), and breaks (2h).' :
-                '❌ Health notifications disabled. No health reminders will be shown.';
+                '$(bell) Health notifications enabled! You\'ll receive reminders for eye rest (20min), stretching (45min), and breaks (2h).' :
+                '$(bell-slash) Health notifications disabled. No health reminders will be shown.';
             
             vscode.window.showInformationMessage(resultMessage);
             

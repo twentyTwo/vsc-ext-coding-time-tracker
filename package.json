@@ -87,6 +87,10 @@
         "title": "SCTT: Clear All Time Tracking Data"
       },
       {
+        "command": "simpleCodingTimeTracker.toggleNotifications",
+        "title": "SCTT: Toggle Notifications"
+      },
+      {
         "command": "simpleCodingTimeTracker.toggleHealthNotifications",
         "title": "SCTT: Toggle Health Notifications"
       },
