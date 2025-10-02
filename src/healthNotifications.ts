@@ -29,7 +29,7 @@ export class HealthNotificationManager {
             eyeRestInterval: config.get('health.eyeRestInterval', 20),
             stretchInterval: config.get('health.stretchInterval', 30),
             breakThreshold: config.get('health.breakThreshold', 90),
-            enableNotifications: config.get('health.enableNotifications', true),
+            enableNotifications: config.get('health.enableNotifications', false),
             modalNotifications: config.get('health.modalNotifications', true)
         };
     }

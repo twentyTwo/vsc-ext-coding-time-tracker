@@ -84,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Register health notifications toggle command (legacy command with confirmation)
     let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const currentEnabled = config.get('health.enableNotifications', true);
+        const currentEnabled = config.get('health.enableNotifications', false);
         
         // Show current state and ask for confirmation
         const action = currentEnabled ? 'disable' : 'enable';

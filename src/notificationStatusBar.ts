@@ -20,7 +20,7 @@ export class NotificationStatusBar implements vscode.Disposable {
 
     private updateStatusBar(): void {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const isEnabled = config.get('health.enableNotifications', true);
+        const isEnabled = config.get('health.enableNotifications', false);
         
         // Use minimal text with no extra spaces
         this.statusBarItem.text = isEnabled ? '🔔' : '🔕';
@@ -33,7 +33,7 @@ export class NotificationStatusBar implements vscode.Disposable {
 
     public async toggle(): Promise<void> {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const currentEnabled = config.get('health.enableNotifications', true);
+        const currentEnabled = config.get('health.enableNotifications', false);
         
         // Toggle the setting
         await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
