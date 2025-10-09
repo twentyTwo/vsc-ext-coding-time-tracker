@@ -3,11 +3,13 @@ import { TimeTracker } from './timeTracker';
 import { StatusBar } from './statusBar';
 import { Database } from './database';
 import { SummaryViewProvider } from './summaryView';
+import { SettingsViewProvider } from './settingsView';
 
 export function activate(context: vscode.ExtensionContext) {
     const database = new Database(context);
     const timeTracker = new TimeTracker(database);
     const summaryView = new SummaryViewProvider(context, database, timeTracker);
+    const settingsView = new SettingsViewProvider(context);
     const statusBar = new StatusBar(timeTracker, summaryView);
 
     // Register cursor tracking
@@ -33,6 +35,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Register the show summary command
     let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
         summaryView.show();
+    });
+
+    // Register open settings command
+    let openSettingsCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.openSettings', () => {
+        settingsView.show();
     });
 
     // Register view storage command
@@ -257,6 +264,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(clearDataCommand);
     context.subscriptions.push(toggleHealthCommand);
+    context.subscriptions.push(openSettingsCommand);
     context.subscriptions.push(testPauseCommand);
     context.subscriptions.push(testNotificationCommand);
     context.subscriptions.push(generateTestDataCommand);
@@ -266,6 +274,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(viewStorageDisposable);
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
+    context.subscriptions.push(settingsView);
 
     // Start tracking immediately if VS Code is already focused
     if (vscode.window.state.focused) {

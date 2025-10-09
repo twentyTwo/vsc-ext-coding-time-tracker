@@ -42,6 +42,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         ? await this.database.getBranchesByProject(message.project)
                         : await this.getUniqueBranches();
                     webviewView.webview.postMessage({ command: 'updateBranches', branches });
+                } else if (message.command === 'openSettings') {
+                    // Open settings view
+                    vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
                 }
             },
             undefined,
@@ -108,6 +111,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             ? await this.database.getBranchesByProject(message.project)
                             : await this.getUniqueBranches();
                         this.panel?.webview.postMessage({ command: 'updateBranches', branches });
+                    } else if (message.command === 'openSettings') {
+                        // Open settings view
+                        vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
                     }
                 },
                 undefined,
@@ -262,16 +268,36 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .header {
                         display: flex;
-                        justify-content: center;
+                        justify-content: space-between;
                         align-items: center;
                         background-color: var(--header-background);
-                        padding: 10px;
+                        padding: 10px 20px;
                     }
                     .header h1 {
                         margin: 0;
                         padding: 0;
                         text-align: center;
                         background-color: transparent;
+                        flex: 1;
+                    }
+                    .settings-button {
+                        background-color: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        padding: 6px 12px;
+                        cursor: pointer;
+                        border-radius: 3px;
+                        font-size: 13px;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                        transition: background-color 0.2s ease;
+                    }
+                    .settings-button:hover {
+                        background-color: var(--vscode-button-hoverBackground);
+                    }
+                    .settings-button::before {
+                        content: "⚙️";
                     }
                     .reload-button {
                         background: none;
@@ -772,6 +798,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             <body>
                 <div class="header">
                     <h1>Coding Time Summary</h1>
+                    <button class="settings-button" id="open-settings-button">Settings</button>
                 </div>
                 <div class="container">
                     <h2>Developer Insights</h2>
@@ -1043,6 +1070,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         document.getElementById('branch-search').value = '';
                         // Send refresh command
                         vscode.postMessage({ command: 'refresh' });
+                    });
+
+                    // Add event listener for the settings button
+                    document.getElementById('open-settings-button').addEventListener('click', () => {
+                        vscode.postMessage({ command: 'openSettings' });
                     });
 
                     function updateProjectDropdown(projects) {

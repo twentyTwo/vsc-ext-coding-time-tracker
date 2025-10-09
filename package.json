@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -93,6 +93,10 @@
       {
         "command": "simpleCodingTimeTracker.toggleHealthNotifications",
         "title": "SCTT: Toggle Health Notifications"
+      },
+      {
+        "command": "simpleCodingTimeTracker.openSettings",
+        "title": "SCTT: Open Settings"
       },
       {
         "command": "simpleCodingTimeTracker.generateTestData",
