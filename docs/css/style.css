@@ -132,7 +132,7 @@ body {
 .hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: var(--text-light);
-    padding: 100px 0 80px;
+    padding: 80px 0 60px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -155,10 +155,10 @@ body {
 }
 
 .hero-title {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin-bottom: 1.5rem;
-    line-height: 1.2;
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+    line-height: 1.3;
     animation: fadeInUp 0.8s ease-out;
 }
 
@@ -220,6 +220,56 @@ body {
     font-size: 1.1rem;
 }
 
+.ide-compatibility {
+    text-align: center;
+    margin-top: 3rem;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+}
+
+.compatibility-label {
+    font-size: 1rem;
+    color: var(--text-gray);
+    margin-bottom: 1.5rem;
+}
+
+.ide-logos {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.ide-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.ide-item:hover {
+    transform: translateY(-2px);
+}
+
+.ide-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    filter: grayscale(0.3);
+    transition: var(--transition);
+}
+
+.ide-item:hover .ide-logo {
+    filter: grayscale(0);
+}
+
+.ide-item span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-gray);
+}
+
 .hero-stats {
     display: flex;
     justify-content: center;
@@ -245,7 +295,7 @@ body {
 
 /* Features Section */
 .features {
-    padding: 100px 0;
+    padding: 80px 0;
     background-color: var(--bg-light);
 }
 
@@ -671,6 +721,19 @@ body {
 
     .hero {
         padding: 60px 0 40px;
+    }
+
+    .ide-logos {
+        gap: 1.5rem;
+    }
+
+    .ide-logo {
+        width: 28px;
+        height: 28px;
+    }
+
+    .ide-item span {
+        font-size: 0.8rem;
     }
 
     .hero-title {
