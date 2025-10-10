@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Complete documentation for Simple Coding Time Tracker VS Code extension">
+    <title>Documentation - Simple Coding Time Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="../icon-sctt.png">
+    <style>
+        .docs-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .docs-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-top: 40px;
+        }
+
+        .docs-header h1 {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .docs-toc {
+            background: var(--bg-gray);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .docs-toc h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .docs-toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .docs-toc li {
+            margin-bottom: 0.8rem;
+        }
+
+        .docs-toc a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+        .docs-toc a:hover {
+            transform: translateX(5px);
+            text-decoration: underline;
+        }
+
+        .docs-section {
+            margin-bottom: 60px;
+            scroll-margin-top: 100px;
+        }
+
+        .docs-section h2 {
+            font-size: 2.2rem;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .docs-section h3 {
+            font-size: 1.6rem;
+            color: var(--primary-color);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .docs-section h4 {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .docs-section p {
+            color: var(--text-gray);
+            line-height: 1.8;
+            margin-bottom: 1.2rem;
+        }
+
+        .docs-section ul,
+        .docs-section ol {
+            margin-left: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-gray);
+            line-height: 1.8;
+        }
+
+        .docs-section li {
+            margin-bottom: 0.8rem;
+        }
+
+        .code-block {
+            background: var(--bg-dark);
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .inline-code {
+            background: var(--bg-gray);
+            color: var(--secondary-color);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+        }
+
+        .info-box.warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .info-box.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .info-box h4 {
+            margin-top: 0;
+            color: var(--text-dark);
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: var(--bg-light);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .config-table th {
+            background: var(--primary-color);
+            color: var(--text-light);
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .config-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-gray);
+        }
+
+        .config-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .config-table tr:hover {
+            background: var(--bg-gray);
+        }
+
+        .back-to-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+
+        .back-to-home:hover {
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .docs-header h1 {
+                font-size: 2rem;
+            }
+
+            .docs-section h2 {
+                font-size: 1.8rem;
+            }
+
+            .config-table {
+                font-size: 0.85rem;
+            }
+
+            .config-table th,
+            .config-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <img src="../icon-sctt.png" alt="SCTT Logo" class="logo-img">
+                <span class="logo-text">Simple Coding Time Tracker</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#features">Features</a></li>
+                <li><a href="index.html#installation">Installation</a></li>
+                <li><a href="documentation.html">Documentation</a></li>
+                <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker" class="github-link" target="_blank">GitHub</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="docs-container">
+        <div class="docs-header">
+            <a href="index.html" class="back-to-home">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                Back to Home
+            </a>
+            <h1>Documentation</h1>
+            <p>Complete guide to using Simple Coding Time Tracker</p>
+        </div>
+
+        <!-- Table of Contents -->
+        <div class="docs-toc">
+            <h2>📑 Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#getting-started">Getting Started</a></li>
+                <li><a href="#configuration">Configuration Settings</a></li>
+                <li><a href="#features-detail">Feature Details</a></li>
+                <li><a href="#health-notifications">Health Notifications</a></li>
+                <li><a href="#commands">Available Commands</a></li>
+                <li><a href="#data-management">Data Management</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+                <li><a href="#faq">Frequently Asked Questions</a></li>
+            </ul>
+        </div>
+
+        <!-- Overview Section -->
+        <section id="overview" class="docs-section">
+            <h2>📖 Overview</h2>
+            <p>Simple Coding Time Tracker is a powerful VS Code extension that automatically tracks your coding time across projects, Git branches, and programming languages. It provides detailed insights into your coding habits with beautiful visualizations and comprehensive statistics.</p>
+            
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Automatic Time Tracking:</strong> Seamlessly tracks coding time in the background</li>
+                <li><strong>Git Branch Tracking:</strong> Monitors time spent on different branches</li>
+                <li><strong>Language Detection:</strong> Tracks 50+ programming languages automatically</li>
+                <li><strong>Smart Activity Detection:</strong> Pauses during inactivity periods</li>
+                <li><strong>Interactive Visualizations:</strong> Charts for projects, daily activity, heatmaps, and languages</li>
+                <li><strong>Health Notifications:</strong> Scientific reminders for eye rest, stretching, and breaks</li>
+                <li><strong>Theme-Aware Design:</strong> Adapts to VS Code's light and dark themes</li>
+            </ul>
+        </section>
+
+        <!-- Getting Started -->
+        <section id="getting-started" class="docs-section">
+            <h2>🚀 Getting Started</h2>
+            
+            <h3>Installation</h3>
+            <ol>
+                <li>Open Visual Studio Code</li>
+                <li>Go to Extensions view (<code class="inline-code">Ctrl+Shift+X</code> or <code class="inline-code">Cmd+Shift+X</code> on macOS)</li>
+                <li>Search for "Simple Coding Time Tracker"</li>
+                <li>Click "Install"</li>
+            </ol>
+
+            <div class="info-box success">
+                <h4>✅ Installation Complete!</h4>
+                <p>The extension will automatically start tracking when you begin coding. Check the status bar at the bottom of VS Code to see your today's coding time.</p>
+            </div>
+
+            <h3>First Use</h3>
+            <p>Once installed, the extension works automatically:</p>
+            <ol>
+                <li>Open a project in VS Code</li>
+                <li>Start coding - tracking begins automatically</li>
+                <li>View your stats by clicking the status bar or running <code class="inline-code">SCTT: Show Coding Time Summary</code></li>
+            </ol>
+        </section>
+
+        <!-- Configuration -->
+        <section id="configuration" class="docs-section">
+            <h2>⚙️ Configuration Settings</h2>
+            <p>Access settings via VS Code Settings (<code class="inline-code">Ctrl+,</code>) or use the dedicated Settings View by clicking "Settings" in the summary view.</p>
+
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>Setting</th>
+                        <th>Description</th>
+                        <th>Default</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">inactivityTimeout</code></td>
+                        <td>Minutes of inactivity before pausing tracking</td>
+                        <td>2.5 minutes</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">focusTimeout</code></td>
+                        <td>Continue tracking after VS Code loses focus (minutes)</td>
+                        <td>3 minutes</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">health.enableNotifications</code></td>
+                        <td>Enable/disable health notifications</td>
+                        <td>false</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">health.modalNotifications</code></td>
+                        <td>Make health notifications modal (blocks UI)</td>
+                        <td>true</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">health.eyeRestInterval</code></td>
+                        <td>Eye rest reminder frequency (minutes)</td>
+                        <td>20 minutes</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">health.stretchInterval</code></td>
+                        <td>Stretch reminder frequency (minutes)</td>
+                        <td>30 minutes</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">health.breakThreshold</code></td>
+                        <td>Break suggestion after continuous coding (minutes)</td>
+                        <td>90 minutes</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Recommended Settings</h3>
+            <div class="info-box">
+                <h4>💡 Productivity Tips</h4>
+                <ul>
+                    <li><strong>Inactivity Timeout:</strong> Set to 2-3 minutes for accurate tracking without gaps</li>
+                    <li><strong>Focus Timeout:</strong> Set to 3-5 minutes if you frequently switch to browsers or documentation</li>
+                    <li><strong>Health Notifications:</strong> Enable for better coding health and productivity</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Features Detail -->
+        <section id="features-detail" class="docs-section">
+            <h2>🎯 Feature Details</h2>
+
+            <h3>Automatic Time Tracking</h3>
+            <p>The extension tracks time based on:</p>
+            <ul>
+                <li><strong>Keyboard Activity:</strong> Typing in the editor</li>
+                <li><strong>Mouse Activity:</strong> Cursor movements and selections</li>
+                <li><strong>File Changes:</strong> Opening, closing, or switching files</li>
+                <li><strong>Window Focus:</strong> VS Code being the active window</li>
+            </ul>
+
+            <h3>Git Branch Tracking</h3>
+            <p>Automatically monitors your current Git branch and associates coding time with it. When you switch branches, the extension:</p>
+            <ol>
+                <li>Saves the current session with the old branch</li>
+                <li>Starts a new session for the new branch</li>
+                <li>Maintains separate statistics for each branch</li>
+            </ol>
+
+            <h3>Language Detection</h3>
+            <p>Supports 50+ programming languages including:</p>
+            <ul>
+                <li>JavaScript, TypeScript, Python, Java, C++, C#</li>
+                <li>Go, Rust, PHP, Ruby, Swift, Kotlin</li>
+                <li>HTML, CSS, SCSS, JSON, YAML, Markdown</li>
+                <li>SQL, Bash, and many more</li>
+            </ul>
+
+            <h3>Interactive Visualizations</h3>
+            <h4>Project Summary Chart</h4>
+            <p>Displays time distribution across different projects with interactive tooltips showing exact durations.</p>
+
+            <h4>Daily Activity Timeline</h4>
+            <p>Line chart showing your coding patterns over time, helping identify your most productive hours.</p>
+
+            <h4>Activity Heatmap</h4>
+            <p>3-month calendar view showing coding intensity, similar to GitHub contribution graphs.</p>
+
+            <h4>Language Distribution</h4>
+            <p>Pie chart showing time spent in different programming languages.</p>
+
+            <h3>Advanced Filtering</h3>
+            <p>Filter your data by:</p>
+            <ul>
+                <li><strong>Date Range:</strong> View data for specific time periods</li>
+                <li><strong>Project:</strong> Focus on specific projects</li>
+                <li><strong>Branch:</strong> Analyze time spent on different branches</li>
+                <li><strong>Language:</strong> See time distribution by programming language</li>
+            </ul>
+        </section>
+
+        <!-- Health Notifications -->
+        <section id="health-notifications" class="docs-section">
+            <h2>💪 Health Notifications</h2>
+            <p>The health notification system promotes healthy coding habits based on scientific research:</p>
+
+            <h3>Eye Rest Reminders (20-20-20 Rule)</h3>
+            <p><strong>Default: Every 20 minutes</strong></p>
+            <p>Reminds you to look at something 20 feet away for 20 seconds. This scientifically-proven technique helps prevent eye strain and digital eye fatigue.</p>
+
+            <div class="info-box">
+                <h4>👁️ Why It Matters</h4>
+                <p>Prolonged screen time can cause Computer Vision Syndrome (CVS). The 20-20-20 rule gives your eye muscles a chance to relax and reduces strain.</p>
+            </div>
+
+            <h3>Stretch Reminders</h3>
+            <p><strong>Default: Every 30 minutes</strong></p>
+            <p>Prompts you to stand up and stretch your back and neck. Regular stretching prevents muscle tension and improves posture.</p>
+
+            <h3>Break Suggestions (Ultradian Rhythms)</h3>
+            <p><strong>Default: Every 90 minutes</strong></p>
+            <p>Based on the body's natural 90-minute ultradian rhythm cycles. Taking breaks at these intervals maximizes focus and prevents burnout.</p>
+
+            <h3>Notification Actions</h3>
+            <p>Each health notification offers two options:</p>
+            <ul>
+                <li><strong>"I just did it!":</strong> Confirms you've completed the health action</li>
+                <li><strong>"Remind me later":</strong> Snoozes the notification for a shorter period</li>
+            </ul>
+
+            <h3>Modal vs. Non-Modal</h3>
+            <p>By default, health notifications are modal (they block the UI until dismissed). This ensures you actually take a break. You can disable this in settings if you prefer non-blocking notifications.</p>
+        </section>
+
+        <!-- Commands -->
+        <section id="commands" class="docs-section">
+            <h2>⌨️ Available Commands</h2>
+            <p>Access commands via Command Palette (<code class="inline-code">Ctrl+Shift+P</code> or <code class="inline-code">Cmd+Shift+P</code> on macOS):</p>
+
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">SCTT: Show Coding Time Summary</code></td>
+                        <td>Opens the main summary view with charts and statistics</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SCTT: Open Settings</code></td>
+                        <td>Opens the dedicated settings view</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SCTT: Toggle Health Notifications</code></td>
+                        <td>Quickly enable/disable health notifications</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SCTT: View Time Tracking Data</code></td>
+                        <td>Exports raw tracking data as JSON</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SCTT: Clear All Time Tracking Data</code></td>
+                        <td>Deletes all tracking data (with confirmation)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SCTT: Generate Test Data (Dev)</code></td>
+                        <td>Creates test data for 90 days (development only)</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">SCTT: Delete Test Data (Dev)</code></td>
+                        <td>Removes all test data (development only)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box warning">
+                <h4>⚠️ Development Commands</h4>
+                <p>Test data commands are hidden by default. Enable <code class="inline-code">enableDevCommands</code> in settings to access them. These are intended for testing and development purposes only.</p>
+            </div>
+        </section>
+
+        <!-- Data Management -->
+        <section id="data-management" class="docs-section">
+            <h2>💾 Data Management</h2>
+
+            <h3>Data Storage</h3>
+            <p>All tracking data is stored locally in VS Code's storage. Your data never leaves your machine.</p>
+
+            <h3>Exporting Data</h3>
+            <p>Use <code class="inline-code">SCTT: View Time Tracking Data</code> to export your data as JSON format. This includes:</p>
+            <ul>
+                <li>Date of each coding session</li>
+                <li>Project name</li>
+                <li>Git branch</li>
+                <li>Programming language</li>
+                <li>Time spent (in minutes)</li>
+            </ul>
+
+            <h3>Clearing Data</h3>
+            <p>To delete all tracking data:</p>
+            <ol>
+                <li>Run <code class="inline-code">SCTT: Clear All Time Tracking Data</code></li>
+                <li>Confirm the action in the dialog</li>
+                <li>All data will be permanently deleted</li>
+            </ol>
+
+            <div class="info-box warning">
+                <h4>⚠️ Warning</h4>
+                <p>Clearing data is permanent and cannot be undone. Export your data first if you want to keep a backup.</p>
+            </div>
+
+            <h3>Data Privacy</h3>
+            <ul>
+                <li>All data is stored locally on your machine</li>
+                <li>No data is sent to external servers</li>
+                <li>No analytics or telemetry is collected</li>
+                <li>You have full control over your data</li>
+            </ul>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section id="troubleshooting" class="docs-section">
+            <h2>🔧 Troubleshooting</h2>
+
+            <h3>Extension Not Tracking Time</h3>
+            <p><strong>Solution:</strong></p>
+            <ul>
+                <li>Check if VS Code window is focused</li>
+                <li>Ensure you're actively editing files</li>
+                <li>Verify extension is enabled in Extensions view</li>
+                <li>Reload VS Code window (<code class="inline-code">Ctrl+R</code> or <code class="inline-code">Cmd+R</code>)</li>
+            </ul>
+
+            <h3>Status Bar Not Showing</h3>
+            <p><strong>Solution:</strong></p>
+            <ul>
+                <li>Check if status bar is visible (View → Appearance → Status Bar)</li>
+                <li>Look for the clock icon on the right side of the status bar</li>
+                <li>Reload VS Code if necessary</li>
+            </ul>
+
+            <h3>Git Branch Not Detected</h3>
+            <p><strong>Solution:</strong></p>
+            <ul>
+                <li>Ensure your project is a Git repository</li>
+                <li>Check if Git is installed and accessible from command line</li>
+                <li>Verify you're on a valid branch (<code class="inline-code">git branch</code>)</li>
+            </ul>
+
+            <h3>Health Notifications Not Appearing</h3>
+            <p><strong>Solution:</strong></p>
+            <ul>
+                <li>Verify <code class="inline-code">health.enableNotifications</code> is set to <code class="inline-code">true</code></li>
+                <li>Ensure you've been coding for longer than the interval period</li>
+                <li>Check VS Code notification settings</li>
+                <li>Try toggling notifications off and on again</li>
+            </ul>
+
+            <h3>Performance Issues</h3>
+            <p><strong>Solution:</strong></p>
+            <ul>
+                <li>The extension is designed to be lightweight</li>
+                <li>If experiencing issues, try increasing inactivity timeout</li>
+                <li>Check VS Code's Output panel for any error messages</li>
+                <li>Report persistent issues on GitHub</li>
+            </ul>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="docs-section">
+            <h2>❓ Frequently Asked Questions</h2>
+
+            <h3>Does this extension send my data anywhere?</h3>
+            <p>No. All data is stored locally in VS Code's storage. Nothing is sent to external servers. Your privacy is fully protected.</p>
+
+            <h3>Will this slow down VS Code?</h3>
+            <p>No. The extension is designed to be lightweight and runs efficiently in the background without impacting performance.</p>
+
+            <h3>Can I use this for billing clients?</h3>
+            <p>Yes! The extension provides accurate time tracking that you can export and use for billing purposes. However, always review the tracked time before billing.</p>
+
+            <h3>What happens if I forget to close VS Code overnight?</h3>
+            <p>The smart activity detection will automatically pause tracking after the configured inactivity timeout (default: 2.5 minutes).</p>
+
+            <h3>Can I track time across multiple machines?</h3>
+            <p>Currently, data is stored locally per machine. To sync across machines, you would need to export and manually combine the data.</p>
+
+            <h3>How accurate is the time tracking?</h3>
+            <p>Very accurate! The extension tracks actual keyboard and mouse activity. It automatically excludes periods when you're away from your desk or not actively coding.</p>
+
+            <h3>Can I customize the charts and visualizations?</h3>
+            <p>The charts automatically adapt to your VS Code theme (light/dark). Currently, chart types are fixed, but we're considering adding customization options in future versions.</p>
+
+            <h3>Is my data backed up?</h3>
+            <p>Data is stored in VS Code's storage, which persists across sessions. However, it's not automatically backed up. Use the export feature to create manual backups.</p>
+        </section>
+
+        <!-- Footer Links -->
+        <div style="text-align: center; margin-top: 60px; padding: 40px 0; border-top: 2px solid var(--border-color);">
+            <h3>Need More Help?</h3>
+            <p style="margin-bottom: 20px;">Check out these additional resources:</p>
+            <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki" class="btn btn-secondary" target="_blank">Wiki Documentation</a>
+                <a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/issues" class="btn btn-secondary" target="_blank">Report an Issue</a>
+                <a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Simple Coding Time Tracker</h4>
+                    <p>Track and visualize your coding time with precision</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="documentation.html">Documentation</a></li>
+                        <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki" target="_blank">Wiki</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Install</h4>
+                    <ul>
+                        <li><a href="https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker" target="_blank">VS Code Marketplace</a></li>
+                        <li><a href="https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker" target="_blank">Open VSX Registry</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Simple Coding Time Tracker. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

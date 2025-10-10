@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Simple Coding Time Tracker - Track and visualize your coding time across projects with this powerful VS Code extension">
+    <meta name="keywords" content="VS Code, extension, time tracker, coding time, productivity, developer tools">
+    <meta name="author" content="Simple Coding Time Tracker Team">
+    <title>Simple Coding Time Tracker - Track Your Coding Time in VS Code</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="../icon-sctt.png">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <img src="../icon-sctt.png" alt="SCTT Logo" class="logo-img">
+                <span class="logo-text">Simple Coding Time Tracker</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#screenshots">Screenshots</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="documentation.html">Documentation</a></li>
+                <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker" class="github-link" target="_blank">GitHub</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Track Your Coding Time with Precision</h1>
+                <p class="hero-subtitle">A powerful VS Code extension that helps you monitor and analyze your coding time across projects, branches, and programming languages</p>
+                <div class="hero-buttons">
+                    <a href="https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker" class="btn btn-primary" target="_blank">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21.29 4.11L20.96 2h-2.09l.19 1.49c-1.86.42-3.48.97-5.06 1.59L12 2L9.98 5.09c-1.58-.62-3.2-1.17-5.06-1.59L5.13 2H3.04l-.33 2.11c-.57 3.64-.36 7.32 1.2 10.74l.1.25c.69 1.51 1.75 2.83 3.12 3.71 1.35.87 2.98 1.3 4.87 1.3 1.89 0 3.52-.43 4.87-1.3 1.37-.88 2.43-2.2 3.12-3.71l.1-.25c1.56-3.42 1.77-7.1 1.2-10.74zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
+                        </svg>
+                        Install from VS Code Marketplace
+                    </a>
+                    <a href="https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker" class="btn btn-secondary" target="_blank">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                        </svg>
+                        Install from Open VSX
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Languages Supported</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">Auto</div>
+                        <div class="stat-label">Branch Tracking</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">Smart</div>
+                        <div class="stat-label">Activity Detection</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">Everything you need to understand your coding habits</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⏱️</div>
+                    <h3>Automatic Time Tracking</h3>
+                    <p>Seamlessly tracks your coding time in the background. No manual start/stop needed.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🌿</div>
+                    <h3>Git Branch Tracking</h3>
+                    <p>Automatically tracks time spent on different Git branches for comprehensive analysis.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3>Language Detection</h3>
+                    <p>Supports 50+ programming languages with automatic detection based on file extensions.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Smart Activity Detection</h3>
+                    <p>Automatically pauses tracking during periods of inactivity with configurable timeouts.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Advanced Filtering</h3>
+                    <p>Filter data by date range, project, branch, and programming language for detailed insights.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Interactive Visualizations</h3>
+                    <p>Beautiful charts including project distribution, daily timeline, activity heatmap, and language breakdown.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Theme-Aware Design</h3>
+                    <p>Automatically adapts to VS Code's light and dark themes for a seamless experience.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💪</div>
+                    <h3>Health Notifications</h3>
+                    <p>Proactive reminders for eye rest (20-20-20 rule), stretching, and breaks based on scientific intervals.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Dedicated Settings View</h3>
+                    <p>Easy-to-use interface for configuring all extension options with validation and descriptions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="screenshots" class="screenshots">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <p class="section-subtitle">Beautiful, intuitive interface that adapts to your theme</p>
+            
+            <div class="screenshot-showcase">
+                <div class="screenshot-item">
+                    <h3>Light Theme - Comprehensive Dashboard</h3>
+                    <img src="https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-light.png" alt="Summary View Light Theme" class="screenshot-img">
+                    <p>View detailed reports with interactive charts, project distribution, and daily activity timeline</p>
+                </div>
+
+                <div class="screenshot-item">
+                    <h3>Dark Theme - Seamless Integration</h3>
+                    <img src="https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-dark.png" alt="Summary View Dark Theme" class="screenshot-img">
+                    <p>Theme-aware visualizations that perfectly match your VS Code appearance</p>
+                </div>
+
+                <div class="screenshot-features">
+                    <div class="screenshot-feature">
+                        <h4>Status Bar Integration</h4>
+                        <img src="https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/statusbar.png" alt="Status Bar" class="screenshot-small">
+                        <p>Real-time display of today's coding time, resets daily at midnight</p>
+                    </div>
+
+                    <div class="screenshot-feature">
+                        <h4>Detailed Tooltips</h4>
+                        <img src="https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/tooltip.png" alt="Tooltip" class="screenshot-small">
+                        <p>Hover for weekly, monthly, and all-time statistics</p>
+                    </div>
+
+                    <div class="screenshot-feature">
+                        <h4>Easy Settings Management</h4>
+                        <img src="https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/settings.png" alt="Settings View" class="screenshot-small">
+                        <p>Intuitive settings interface with clear descriptions and validation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2 class="section-title">Easy Installation</h2>
+            <p class="section-subtitle">Get started in seconds</p>
+            
+            <div class="installation-methods">
+                <div class="install-method">
+                    <h3>Method 1: VS Code Marketplace</h3>
+                    <ol>
+                        <li>Open Visual Studio Code</li>
+                        <li>Go to Extensions view (<code>Ctrl+Shift+X</code> or <code>Cmd+Shift+X</code> on macOS)</li>
+                        <li>Search for "Simple Coding Time Tracker"</li>
+                        <li>Click "Install"</li>
+                    </ol>
+                    <a href="https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker" class="btn btn-primary" target="_blank">Install from Marketplace</a>
+                </div>
+
+                <div class="install-method">
+                    <h3>Method 2: Open VSX Registry</h3>
+                    <p class="install-description">For Cursor, Windsurf, Trae, VS Codium, and other compatible editors</p>
+                    <ol>
+                        <li>Open your editor's extensions view</li>
+                        <li>Search for "Simple Coding Time Tracker"</li>
+                        <li>Click "Install"</li>
+                    </ol>
+                    <a href="https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker" class="btn btn-secondary" target="_blank">Install from Open VSX</a>
+                </div>
+            </div>
+
+            <div class="quick-start">
+                <h3>Quick Start Guide</h3>
+                <div class="quick-start-steps">
+                    <div class="quick-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Install the Extension</h4>
+                            <p>Use either VS Code Marketplace or Open VSX Registry</p>
+                        </div>
+                    </div>
+                    <div class="quick-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Start Coding</h4>
+                            <p>The extension automatically starts tracking when you begin coding</p>
+                        </div>
+                    </div>
+                    <div class="quick-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>View Your Stats</h4>
+                            <p>Click the status bar or run <code>SCTT: Show Coding Time Summary</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="use-cases">
+        <div class="container">
+            <h2 class="section-title">Perfect For</h2>
+            <div class="use-cases-grid">
+                <div class="use-case">
+                    <div class="use-case-icon">👨‍💻</div>
+                    <h3>Freelance Developers</h3>
+                    <p>Track billable hours accurately across multiple client projects</p>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">🏢</div>
+                    <h3>Development Teams</h3>
+                    <p>Understand project time allocation and improve team productivity</p>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">📚</div>
+                    <h3>Students & Learners</h3>
+                    <p>Monitor learning progress and maintain consistent coding practice</p>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-icon">📈</div>
+                    <h3>Productivity Enthusiasts</h3>
+                    <p>Analyze coding habits and optimize workflow efficiency</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Start Tracking Your Coding Time Today</h2>
+            <p>Join developers worldwide who are gaining insights into their coding habits</p>
+            <div class="cta-buttons">
+                <a href="https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker" class="btn btn-primary btn-large" target="_blank">Get Started Now</a>
+                <a href="documentation.html" class="btn btn-secondary btn-large">Read Documentation</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Simple Coding Time Tracker</h4>
+                    <p>Track and visualize your coding time with precision</p>
+                    <div class="footer-links">
+                        <a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker" target="_blank">GitHub</a>
+                        <a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki" target="_blank">Wiki</a>
+                        <a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/issues" target="_blank">Issues</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="documentation.html">Documentation</a></li>
+                        <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Health-Notifications">Health Guide</a></li>
+                        <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Time-Tracking">Time Tracking Guide</a></li>
+                        <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Test-Scenarios">Test Scenarios</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Install</h4>
+                    <ul>
+                        <li><a href="https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker" target="_blank">VS Code Marketplace</a></li>
+                        <li><a href="https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker" target="_blank">Open VSX Registry</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Simple Coding Time Tracker. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
