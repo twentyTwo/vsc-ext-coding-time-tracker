@@ -12,6 +12,7 @@ The site is hosted at: `https://twentytwo.github.io/vsc-ext-coding-time-tracker/
 docs/
 ├── index.html              # Main landing page
 ├── documentation.html      # Complete documentation
+├── statistics.html         # Interactive statistics dashboard
 ├── css/
 │   └── style.css          # Styles for all pages
 ├── js/
@@ -38,12 +39,12 @@ docs/
 - Troubleshooting section
 - FAQ
 
-### Statistics (Direct Link)
-- Live repository analytics and visitor statistics
-- Interactive charts showing traffic patterns  
-- Clone and view metrics over time
-- Links directly to the `stats-data` branch for always up-to-date data
-- Auto-generated reports using github-repo-stats (always current)
+### Statistics Page (`statistics.html`)
+- Interactive repository analytics dashboard
+- Live charts showing views, clones, stars, and forks over time
+- Data fetched directly from CSV files in the `stats-data` branch
+- Uses Chart.js for beautiful, responsive visualizations
+- Auto-updates when stats-data branch is updated
 
 ## 🎨 Design
 
@@ -80,12 +81,21 @@ Edit `css/style.css` to customize colors, fonts, layouts, etc.
 Update `js/main.js` for new interactive features.
 
 ### Statistics Integration
-The statistics links point directly to the live data in the `stats-data` branch:
-- **URL**: `https://raw.githubusercontent.com/twentyTwo/vsc-ext-coding-time-tracker/stats-data/twentyTwo/vsc-ext-coding-time-tracker/latest-report/report.html`
-- **Benefits**: Always shows current data, no manual updates required
-- **Updates**: Automatic when the `stats-data` branch is updated by GitHub Actions
+The statistics page fetches live data from CSV files in the `stats-data` branch:
 
-No maintenance required - the statistics are always live and current!
+**Data Sources:**
+- Views & Clones: `ghrs-data/views_clones_aggregate.csv`
+- Stars Timeline: `ghrs-data/stargazers.csv` 
+- Forks Timeline: `ghrs-data/forks.csv`
+
+**Features:**
+- Live data fetching from GitHub raw URLs
+- Interactive Chart.js visualizations
+- Responsive design with summary statistics
+- Automatic updates when stats-data branch changes
+- No manual maintenance required
+
+The page creates beautiful, interactive charts showing repository growth and engagement over time.
 
 ## 🌍 GitHub Pages Setup
 

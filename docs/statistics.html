@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Repository Statistics for Simple Coding Time Tracker">
+    <title>Statistics - Simple Coding Time Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="../icon-sctt.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .stats-header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-top: 40px;
+        }
+
+        .stats-header h1 {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-card h3 {
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+
+        .stat-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .summary-item {
+            background: var(--bg-gray);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-gray);
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #c53030;
+            margin-bottom: 20px;
+        }
+
+        .back-to-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+
+        .back-to-home:hover {
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-header h1 {
+                font-size: 2rem;
+            }
+            
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <img src="../icon-sctt.png" alt="SCTT Logo" class="logo-img">
+                <span class="logo-text">Simple Coding Time Tracker</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#features">Features</a></li>
+                <li><a href="index.html#installation">Installation</a></li>
+                <li><a href="documentation.html">Documentation</a></li>
+                <li><a href="statistics.html">Statistics</a></li>
+                <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker" class="github-link" target="_blank">GitHub</a></li>
+            </ul>
+            <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="stats-container">
+        <div class="stats-header">
+            <a href="index.html" class="back-to-home">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                Back to Home
+            </a>
+            <h1>Repository Statistics</h1>
+            <p>Live data from our GitHub repository analytics</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <p>Loading repository statistics...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h4>Error Loading Statistics</h4>
+            <p>Unable to fetch repository data. Please try again later.</p>
+        </div>
+
+        <div id="stats-content" style="display: none;">
+            <div class="stat-summary">
+                <div class="summary-item">
+                    <div class="summary-number" id="total-views">-</div>
+                    <div class="summary-label">Total Views</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" id="total-clones">-</div>
+                    <div class="summary-label">Total Clones</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" id="total-stars">-</div>
+                    <div class="summary-label">GitHub Stars</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" id="total-forks">-</div>
+                    <div class="summary-label">Repository Forks</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>📈 Views & Clones Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="viewsClonesChart"></canvas>
+                    </div>
+                    <p style="color: var(--text-gray); font-size: 0.9rem;">Repository traffic trends showing page views and clone activity</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>⭐ Stars Growth</h3>
+                    <div class="chart-container">
+                        <canvas id="starsChart"></canvas>
+                    </div>
+                    <p style="color: var(--text-gray); font-size: 0.9rem;">GitHub stars accumulated over time</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>🍴 Forks Timeline</h3>
+                    <div class="chart-container">
+                        <canvas id="forksChart"></canvas>
+                    </div>
+                    <p style="color: var(--text-gray); font-size: 0.9rem;">Repository forks created over time</p>
+                </div>
+
+                <div class="stat-card">
+                    <h3>📊 Traffic Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                    <p style="color: var(--text-gray); font-size: 0.9rem;">Views vs Clones comparison</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Simple Coding Time Tracker</h4>
+                    <p>Track and visualize your coding time with precision</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="documentation.html">Documentation</a></li>
+                        <li><a href="statistics.html">Statistics</a></li>
+                        <li><a href="https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki" target="_blank">Wiki</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Install</h4>
+                    <ul>
+                        <li><a href="https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker" target="_blank">VS Code Marketplace</a></li>
+                        <li><a href="https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker" target="_blank">Open VSX Registry</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Simple Coding Time Tracker. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // CSV parsing utility
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            const headers = lines[0].split(',');
+            const data = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header.trim()] = values[index] ? values[index].trim() : '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+
+        // Fetch CSV data
+        async function fetchCSVData(url) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                return parseCSV(csvText);
+            } catch (error) {
+                console.error('Error fetching CSV:', error);
+                throw error;
+            }
+        }
+
+        // Chart configuration
+        const chartConfig = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'MMM dd'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        };
+
+        // Initialize charts
+        async function initializeCharts() {
+            try {
+                // URLs for CSV data
+                const urls = {
+                    viewsClones: 'https://raw.githubusercontent.com/twentyTwo/vsc-ext-coding-time-tracker/refs/heads/stats-data/twentyTwo/vsc-ext-coding-time-tracker/ghrs-data/views_clones_aggregate.csv',
+                    stars: 'https://raw.githubusercontent.com/twentyTwo/vsc-ext-coding-time-tracker/refs/heads/stats-data/twentyTwo/vsc-ext-coding-time-tracker/ghrs-data/stargazers.csv',
+                    forks: 'https://raw.githubusercontent.com/twentyTwo/vsc-ext-coding-time-tracker/refs/heads/stats-data/twentyTwo/vsc-ext-coding-time-tracker/ghrs-data/forks.csv'
+                };
+
+                // Fetch all data
+                const [viewsClonesData, starsData, forksData] = await Promise.all([
+                    fetchCSVData(urls.viewsClones),
+                    fetchCSVData(urls.stars),
+                    fetchCSVData(urls.forks)
+                ]);
+
+                // Update summary numbers
+                updateSummaryNumbers(viewsClonesData, starsData, forksData);
+
+                // Create charts
+                createViewsClonesChart(viewsClonesData);
+                createStarsChart(starsData);
+                createForksChart(forksData);
+                createTrafficChart(viewsClonesData);
+
+                // Show content, hide loading
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('stats-content').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error initializing charts:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function updateSummaryNumbers(viewsClonesData, starsData, forksData) {
+            // Calculate totals
+            const totalViews = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.count_views) || 0), 0);
+            const totalClones = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.count_clones) || 0), 0);
+            const totalStars = starsData.length;
+            const totalForks = forksData.length;
+
+            document.getElementById('total-views').textContent = totalViews.toLocaleString();
+            document.getElementById('total-clones').textContent = totalClones.toLocaleString();
+            document.getElementById('total-stars').textContent = totalStars.toLocaleString();
+            document.getElementById('total-forks').textContent = totalForks.toLocaleString();
+        }
+
+        function createViewsClonesChart(data) {
+            const ctx = document.getElementById('viewsClonesChart').getContext('2d');
+            
+            const chartData = {
+                labels: data.map(row => row.time_iso8601),
+                datasets: [
+                    {
+                        label: 'Views',
+                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.count_views) || 0 })),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true
+                    },
+                    {
+                        label: 'Clones',
+                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.count_clones) || 0 })),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true
+                    }
+                ]
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: chartConfig
+            });
+        }
+
+        function createStarsChart(data) {
+            const ctx = document.getElementById('starsChart').getContext('2d');
+            
+            // Create cumulative star count
+            const cumulativeData = [];
+            let cumulative = 0;
+            
+            data.forEach(row => {
+                cumulative++;
+                cumulativeData.push({ x: row.starred_at, y: cumulative });
+            });
+
+            const chartData = {
+                labels: data.map(row => row.starred_at),
+                datasets: [{
+                    label: 'Total Stars',
+                    data: cumulativeData,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    fill: true
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: chartConfig
+            });
+        }
+
+        function createForksChart(data) {
+            const ctx = document.getElementById('forksChart').getContext('2d');
+            
+            // Create cumulative fork count
+            const cumulativeData = [];
+            let cumulative = 0;
+            
+            data.forEach(row => {
+                cumulative++;
+                cumulativeData.push({ x: row.forked_at, y: cumulative });
+            });
+
+            const chartData = {
+                labels: data.map(row => row.forked_at),
+                datasets: [{
+                    label: 'Total Forks',
+                    data: cumulativeData,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    fill: true
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: chartConfig
+            });
+        }
+
+        function createTrafficChart(data) {
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            
+            const totalViews = data.reduce((sum, row) => sum + (parseInt(row.count_views) || 0), 0);
+            const totalClones = data.reduce((sum, row) => sum + (parseInt(row.count_clones) || 0), 0);
+
+            const chartData = {
+                labels: ['Views', 'Clones'],
+                datasets: [{
+                    data: [totalViews, totalClones],
+                    backgroundColor: ['#6366f1', '#10b981'],
+                    borderColor: ['#4f46e5', '#059669'],
+                    borderWidth: 2
+                }]
+            };
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeCharts);
+    </script>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
