@@ -169,6 +169,11 @@ body {
     border-bottom-color: rgba(255, 255, 255, 0.6);
 }
 
+.nav-links a.active {
+    color: rgba(255, 255, 255, 1);
+    border-bottom-color: rgba(255, 255, 255, 0.8);
+}
+
 .github-link {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.24));
     color: rgba(255, 255, 255, 0.95) !important;

@@ -223,9 +223,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (navLink && scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
                 document.querySelectorAll('.nav-links a').forEach(link => {
-                    link.style.borderBottomColor = 'transparent';
+                    link.classList.remove('active');
                 });
-                navLink.style.borderBottomColor = 'var(--primary-color)';
+                navLink.classList.add('active');
             }
         });
     }
