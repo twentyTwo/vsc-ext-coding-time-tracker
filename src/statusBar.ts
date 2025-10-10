@@ -63,7 +63,7 @@ export class StatusBar implements vscode.Disposable {
         
         // Update notification status bar
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const notificationsEnabled = config.get('health.enableNotifications', true);
+        const notificationsEnabled = config.get('health.enableNotifications', false);
         const notificationIcon = notificationsEnabled ? '🔔' : '🔕';
         this.notificationItem.text = notificationIcon;
         this.notificationItem.tooltip = `Health Notifications: ${notificationsEnabled ? 'ON' : 'OFF'} (Click to toggle)`;
@@ -84,7 +84,7 @@ export class StatusBar implements vscode.Disposable {
         const currentProject = this.timeTracker.getCurrentProject();
 
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const notificationsEnabled = config.get('health.enableNotifications', true);
+        const notificationsEnabled = config.get('health.enableNotifications', false);
         const notificationStatus = notificationsEnabled ? 'ON' : 'OFF';
         
         return `${isActive ? 'Active' : 'Paused'} - Coding Time
@@ -102,7 +102,7 @@ Click to save session and show summary`;
     // Toggle notifications method
     private async toggleNotifications(): Promise<void> {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const currentEnabled = config.get('health.enableNotifications', true);
+        const currentEnabled = config.get('health.enableNotifications', false);
         
         // Toggle the setting
         await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
