@@ -341,6 +341,11 @@
                     fetchCSVData(urls.forks)
                 ]);
 
+                // Debug logging
+                console.log('Views/Clones data:', viewsClonesData.slice(0, 3));
+                console.log('Stars data:', starsData.slice(0, 3));
+                console.log('Forks data:', forksData.slice(0, 3));
+
                 // Update summary numbers
                 updateSummaryNumbers(viewsClonesData, starsData, forksData);
 
@@ -365,8 +370,9 @@
             // Calculate totals
             const totalViews = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.views_total) || 0), 0);
             const totalClones = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.clones_total) || 0), 0);
-            const totalStars = starsData.length;
-            const totalForks = forksData.length;
+            // Stars and forks CSVs have cumulative data, so get the latest (highest) number
+            const totalStars = starsData.length > 0 ? parseInt(starsData[starsData.length - 1].stars_cumulative) || 0 : 0;
+            const totalForks = forksData.length > 0 ? parseInt(forksData[forksData.length - 1].forks_cumulative) || 0 : 0;
 
             document.getElementById('total-views').textContent = totalViews.toLocaleString();
             document.getElementById('total-clones').textContent = totalClones.toLocaleString();
@@ -414,22 +420,14 @@
         function createStarsChart(data) {
             const ctx = document.getElementById('starsChart').getContext('2d');
             
-            // Create cumulative star count
-            const cumulativeData = [];
-            let cumulative = 0;
-            
-            data.forEach(row => {
-                cumulative++;
-                cumulativeData.push({ 
-                    x: new Date(row.starred_at), 
-                    y: cumulative 
-                });
-            });
-
+            // CSV already has cumulative data, just map it directly
             const chartData = {
                 datasets: [{
                     label: 'Total Stars',
-                    data: cumulativeData,
+                    data: data.map(row => ({ 
+                        x: new Date(row.time_iso8601), 
+                        y: parseInt(row.stars_cumulative) || 0 
+                    })),
                     borderColor: '#f59e0b',
                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
                     fill: true,
@@ -447,22 +445,14 @@
         function createForksChart(data) {
             const ctx = document.getElementById('forksChart').getContext('2d');
             
-            // Create cumulative fork count
-            const cumulativeData = [];
-            let cumulative = 0;
-            
-            data.forEach(row => {
-                cumulative++;
-                cumulativeData.push({ 
-                    x: new Date(row.forked_at), 
-                    y: cumulative 
-                });
-            });
-
+            // CSV already has cumulative data, just map it directly
             const chartData = {
                 datasets: [{
                     label: 'Total Forks',
-                    data: cumulativeData,
+                    data: data.map(row => ({ 
+                        x: new Date(row.time_iso8601), 
+                        y: parseInt(row.forks_cumulative) || 0 
+                    })),
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',
                     fill: true,
