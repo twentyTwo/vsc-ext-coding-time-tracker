@@ -18,6 +18,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
 - **Health Notification System**: Proactive reminders to promote healthy coding habits with scientifically backed intervals.
+- **Dedicated Settings View**: Comprehensive settings interface accessible via the summary view with easy-to-use controls for all configuration options.
 - **Interactive Data Visualization**:
   - Project Summary Chart: Visual breakdown of time spent on each project
   - Daily Activity Timeline: Interactive line chart showing your coding patterns
@@ -75,11 +76,19 @@ The charts and visualizations will automatically update to reflect your selected
 
 ### Configuration Options
 
-You can customize the extension's behavior through VS Code settings:
+You can customize the extension's behavior through VS Code settings or the dedicated Settings view:
 
+**Method 1: Using the Settings View (Recommended)**
+1. Open the Coding Time Summary view by clicking on the status bar or using the command `SCTT: Show Coding Time Summary`
+2. Click the "Settings" button in the top-right corner of the summary view
+3. Configure all settings through the user-friendly interface with descriptions and validation
+4. Click "Save Settings" to apply changes
+
+**Method 2: Using VS Code Settings**
 1. Open VS Code Settings (Ctrl+, or Cmd+, on macOS)
 2. Search for "Simple Coding Time Tracker"
-3. Available settings:  
+
+**Available settings:**  
    - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in minutes)
      - Default: 2.5 minutes
      - Lower values will stop tracking sooner when you're not actively coding
@@ -106,6 +115,7 @@ The summary page provides a detailed report of your coding activity with interac
 - Language distribution chart showing time spent in different programming languages
 - Theme-aware visualizations that adapt to your VS Code theme
 - Advanced search and filtering capabilities
+- Quick access to settings via the Settings button in the header
 
 ![Coding Summary](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-light.png)
 
@@ -122,7 +132,8 @@ Tooltip shows the total coding time weekly, monthly and all time basis.
 ![Tooltip](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/tooltip.png)
 
 
-#### Settings
+#### Settings View
+The dedicated settings view provides an easy-to-use interface for configuring all extension options. Access it by clicking the "Settings" button in the summary view header.
 ![Settings](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/settings.png)
 
 
@@ -157,6 +168,13 @@ For complete testing documentation, see [TECHNICAL.md](TECHNICAL.md).
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.6.3] - 2025-10-10
+- Added dedicated Settings View accessible from the summary view header
+- Implemented `SCTT: Open Settings` command for direct access to settings interface
+- Enhanced user experience with intuitive settings management through webview interface
+- Added Settings button to summary view header for quick access to configuration options
+- All extension settings now available through both traditional VS Code settings and the new dedicated view
 
 ### [0.6.1] - 2025-08-30
 - Added comprehensive test data generation commands for developers and testers
