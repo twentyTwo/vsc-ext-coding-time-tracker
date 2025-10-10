@@ -353,8 +353,8 @@
 
         function updateSummaryNumbers(viewsClonesData, starsData, forksData) {
             // Calculate totals
-            const totalViews = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.count_views) || 0), 0);
-            const totalClones = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.count_clones) || 0), 0);
+            const totalViews = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.views_total) || 0), 0);
+            const totalClones = viewsClonesData.reduce((sum, row) => sum + (parseInt(row.clones_total) || 0), 0);
             const totalStars = starsData.length;
             const totalForks = forksData.length;
 
@@ -372,14 +372,14 @@
                 datasets: [
                     {
                         label: 'Views',
-                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.count_views) || 0 })),
+                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.views_total) || 0 })),
                         borderColor: '#6366f1',
                         backgroundColor: 'rgba(99, 102, 241, 0.1)',
                         fill: true
                     },
                     {
                         label: 'Clones',
-                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.count_clones) || 0 })),
+                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.clones_total) || 0 })),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true
@@ -457,8 +457,8 @@
         function createTrafficChart(data) {
             const ctx = document.getElementById('trafficChart').getContext('2d');
             
-            const totalViews = data.reduce((sum, row) => sum + (parseInt(row.count_views) || 0), 0);
-            const totalClones = data.reduce((sum, row) => sum + (parseInt(row.count_clones) || 0), 0);
+            const totalViews = data.reduce((sum, row) => sum + (parseInt(row.views_total) || 0), 0);
+            const totalClones = data.reduce((sum, row) => sum + (parseInt(row.clones_total) || 0), 0);
 
             const chartData = {
                 labels: ['Views', 'Clones'],
