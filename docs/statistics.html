@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/png" href="../icon-sctt.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
         .stats-container {
             max-width: 1200px;
@@ -305,11 +306,20 @@
                         unit: 'day',
                         displayFormats: {
                             day: 'MMM dd'
-                        }
+                        },
+                        tooltipFormat: 'MMM dd, yyyy'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date'
                     }
                 },
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
                 }
             }
         };
@@ -368,21 +378,28 @@
             const ctx = document.getElementById('viewsClonesChart').getContext('2d');
             
             const chartData = {
-                labels: data.map(row => row.time_iso8601),
                 datasets: [
                     {
                         label: 'Views',
-                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.views_total) || 0 })),
+                        data: data.map(row => ({ 
+                            x: new Date(row.time_iso8601), 
+                            y: parseInt(row.views_total) || 0 
+                        })),
                         borderColor: '#6366f1',
                         backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true
+                        fill: true,
+                        tension: 0.4
                     },
                     {
                         label: 'Clones',
-                        data: data.map(row => ({ x: row.time_iso8601, y: parseInt(row.clones_total) || 0 })),
+                        data: data.map(row => ({ 
+                            x: new Date(row.time_iso8601), 
+                            y: parseInt(row.clones_total) || 0 
+                        })),
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true
+                        fill: true,
+                        tension: 0.4
                     }
                 ]
             };
@@ -403,17 +420,20 @@
             
             data.forEach(row => {
                 cumulative++;
-                cumulativeData.push({ x: row.starred_at, y: cumulative });
+                cumulativeData.push({ 
+                    x: new Date(row.starred_at), 
+                    y: cumulative 
+                });
             });
 
             const chartData = {
-                labels: data.map(row => row.starred_at),
                 datasets: [{
                     label: 'Total Stars',
                     data: cumulativeData,
                     borderColor: '#f59e0b',
                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    fill: true
+                    fill: true,
+                    tension: 0.4
                 }]
             };
 
@@ -433,17 +453,20 @@
             
             data.forEach(row => {
                 cumulative++;
-                cumulativeData.push({ x: row.forked_at, y: cumulative });
+                cumulativeData.push({ 
+                    x: new Date(row.forked_at), 
+                    y: cumulative 
+                });
             });
 
             const chartData = {
-                labels: data.map(row => row.forked_at),
                 datasets: [{
                     label: 'Total Forks',
                     data: cumulativeData,
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    fill: true
+                    fill: true,
+                    tension: 0.4
                 }]
             };
 
