@@ -41,6 +41,110 @@ jobs:
           else
             echo "TYPE=release" >> $GITHUB_OUTPUT
           fi
+          
+      - name: Extract release notes from README
+        id: extract_notes
+        run: |
+          # Extract the latest changelog entry from README.md
+          # Look for version pattern like [0.6.3] or similar
+          VERSION_PATTERN=$(echo "${{ steps.get_version.outputs.VERSION }}" | sed 's/\./\\./g')
+          
+          # Try to find the specific version entry first
+          LATEST_ENTRY=$(awk -v version="$VERSION_PATTERN" '
+            /^### \['"$VERSION_PATTERN"'\]/ { found=1; next }
+            found && /^### \[/ { exit }
+            found && !/^$/ { print }
+          ' README.md)
+          
+          # If specific version not found, get the first changelog entry
+          if [ -z "$LATEST_ENTRY" ]; then
+            LATEST_ENTRY=$(awk '/^### \[/ { if (found) exit; found=1; next } found && /^### \[/ { exit } found && !/^$/ { print }' README.md)
+          fi
+          
+          # Clean up formatting and special characters
+          CLEANED_NOTES=$(echo "$LATEST_ENTRY" | \
+            sed 's/[^\x00-\x7F]//g' | \
+            sed 's/^- /• /' | \
+            sed 's/^  - /  • /' | \
+            sed '/^$/d' | \
+            head -15)
+          
+          # If no changelog found, generate from recent commits
+          if [ -z "$CLEANED_NOTES" ]; then
+            echo "No changelog entry found for v${{ steps.get_version.outputs.VERSION }}, generating from commits..."
+            CLEANED_NOTES=$(git log --pretty=format:"• %s" --since="7 days ago" --grep="feat\|fix\|add\|improve\|update" | head -10)
+            
+            # If still no commits, provide a default message
+            if [ -z "$CLEANED_NOTES" ]; then
+              CLEANED_NOTES="• Bug fixes and improvements"
+            fi
+          fi
+          
+          # Create multiline output
+          {
+            echo 'RELEASE_NOTES<<EOF'
+            echo "$CLEANED_NOTES"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+          
+      - name: Get related PR information
+        id: get_pr_info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+        run: |
+          # Try to get recent merged PRs for context
+          PR_INFO=""
+          
+          # Get PRs merged in the last 30 days that might be related to this release
+          if command -v gh &> /dev/null; then
+            PR_INFO=$(gh pr list --state merged --limit 8 \
+              --json number,title,mergedAt,author,labels \
+              --jq '.[] | select(.mergedAt | fromdateiso8601 > (now - 2592000)) | "• [PR #\(.number)](\(.url)): \(.title) by @\(.author.login)"' 2>/dev/null || echo "")
+          fi
+          
+          # If gh command failed or no PRs found, try git log approach
+          if [ -z "$PR_INFO" ]; then
+            # Look for merge commits that contain PR numbers
+            PR_INFO=$(git log --oneline --merges --since="30 days ago" | \
+              grep -E "#[0-9]+" | \
+              sed -E 's/.*#([0-9]+).*/• Merged PR #\1/' | \
+              head -5)
+          fi
+          
+          # Format PR information
+          if [ -n "$PR_INFO" ]; then
+            {
+              echo 'PR_LIST<<EOF'
+              echo "$PR_INFO"
+              echo 'EOF'
+            } >> $GITHUB_OUTPUT
+          else
+            echo 'PR_LIST=' >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Validate and clean release notes
+        id: clean_notes
+        run: |
+          # Remove any remaining problematic Unicode characters
+          CLEAN_RELEASE_NOTES=$(echo "${{ steps.extract_notes.outputs.RELEASE_NOTES }}" | \
+            iconv -c -f utf-8 -t ascii//IGNORE | \
+            sed 's/â€¢/•/g' | \
+            sed 's/â€"/–/g' | \
+            sed 's/â€™/'"'"'/g' | \
+            sed 's/â€œ/"/g' | \
+            sed 's/â€/"/g')
+          
+          # Ensure we have some content
+          if [ -z "$CLEAN_RELEASE_NOTES" ]; then
+            CLEAN_RELEASE_NOTES="• Minor bug fixes and improvements"
+          fi
+          
+          {
+            echo 'FINAL_NOTES<<EOF'
+            echo "$CLEAN_RELEASE_NOTES"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
         
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -48,24 +152,48 @@ jobs:
           files: "*.vsix"
           draft: false
           prerelease: ${{ steps.get_version.outputs.TYPE == 'beta' }}
-          name: "${{ steps.get_version.outputs.TYPE == 'beta' && 'Beta Release' || 'Release' }} ${{ steps.get_version.outputs.VERSION }}"
+          name: "${{ steps.get_version.outputs.TYPE == 'beta' && 'Beta Release' || 'Release' }} v${{ steps.get_version.outputs.VERSION }}"
           body: |
-            ${{ steps.get_version.outputs.TYPE == 'beta' && '🧪 Beta Release' || '🚀 Release' }} ${{ steps.get_version.outputs.VERSION }}
+            # ${{ steps.get_version.outputs.TYPE == 'beta' && '🧪 Beta Release' || '✨ What''s New in' }} v${{ steps.get_version.outputs.VERSION }}
             
-            ${{ steps.get_version.outputs.TYPE == 'beta' && '⚠️ This is a beta release for testing purposes. Please report any issues.' || '✅ This is a stable release.' }}
+            ${{ steps.get_version.outputs.TYPE == 'beta' && '⚠️ **This is a beta release for testing purposes. Please report any issues.**' || '🎉 **This is a stable release with new features and improvements!**' }}
             
-            For a full list of changes, please see the [CHANGELOG](CHANGELOG.md).
+            ## 📋 Changes in this Release
+            ${{ steps.clean_notes.outputs.FINAL_NOTES || '• Bug fixes and improvements' }}
+            
+            ${{ steps.get_pr_info.outputs.PR_LIST && '## 🔗 Related Pull Requests' || '' }}
+            ${{ steps.get_pr_info.outputs.PR_LIST }}
+            
+            ## 🔗 Links
+            * 📖 [Complete Documentation](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki)
+            * 🐛 [Report Issues](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/issues)
+            * 💬 [Discussions](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/discussions)
+            
+            ## 📦 Installation
+            * **VS Code**: [Install from Marketplace](https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker)
+            * **Other Editors**: [Download from Open VSX](https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker)
+            
+            ---
+            **Full Changelog**: https://github.com/twentyTwo/vsc-ext-coding-time-tracker/compare/v${{ steps.get_version.outputs.VERSION }}...HEAD
           token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Post to LinkedIn
+        if: steps.get_version.outputs.TYPE == 'release'
         uses: garygrossgarten/github-action-linkedin@v1
         with:
           clientId: ${{ secrets.LINKEDIN_CLIENT_ID }}
           clientSecret: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
           accessToken: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           message: |
-            🚀 New release published: v${{ steps.get_version.outputs.VERSION }}
-            👉 Check it out on GitHub: https://github.com/twentyTwo/vsc-ext-coding-time-tracker/releases/tag/v${{ steps.get_version.outputs.VERSION }}
+            🚀 New Simple Coding Time Tracker release published: v${{ steps.get_version.outputs.VERSION }}
+            
+            ✨ What's new:
+            ${{ steps.clean_notes.outputs.FINAL_NOTES || '• Bug fixes and improvements' }}
+            
+            � Install from VS Code Marketplace or check it out on GitHub:
+            https://github.com/twentyTwo/vsc-ext-coding-time-tracker/releases/tag/v${{ steps.get_version.outputs.VERSION }}
+            
+            #VSCode #Extension #TimeTracking #Productivity
         env:
           LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
           LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
