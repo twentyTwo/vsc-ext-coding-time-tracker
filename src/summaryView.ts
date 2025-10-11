@@ -789,9 +789,57 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         position: relative;
                         height: 300px;
                         width: 100%;
+                        display: flex;
+                        align-items: center;
                     }
                     .search-results-chart {
                         height: 400px;
+                    }
+                    .search-results-chart .chart-wrapper {
+                        height: 350px;
+                    }
+                    .chart-canvas {
+                        flex: 1;
+                        max-width: 60%;
+                    }
+                    .custom-legend {
+                        max-height: 300px;
+                        overflow-y: auto;
+                        overflow-x: hidden;
+                        padding-right: 5px;
+                        padding-left: 10px;
+                    }
+                    .search-results-chart .custom-legend {
+                        max-height: 350px;
+                    }
+                    .custom-legend::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .custom-legend::-webkit-scrollbar-track {
+                        background: var(--vscode-scrollbarSlider-background);
+                        border-radius: 3px;
+                    }
+                    .custom-legend::-webkit-scrollbar-thumb {
+                        background: var(--vscode-scrollbarSlider-hoverBackground);
+                        border-radius: 3px;
+                    }
+                    .custom-legend::-webkit-scrollbar-thumb:hover {
+                        background: var(--vscode-scrollbarSlider-activeBackground);
+                    }
+                    .legend-item {
+                        display: flex;
+                        align-items: center;
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                        font-weight: 500;
+                        color: var(--vscode-foreground);
+                    }
+                    .legend-color {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                        margin-right: 8px;
+                        border: 1px solid var(--vscode-panel-border);
                     }
                 </style>
             </head>
@@ -913,7 +961,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="chart-container search-results-chart" style="display: none;">
                             <div class="chart-title">Search Results</div>
                             <div class="chart-wrapper">
-                                <canvas id="searchChart"></canvas>
+                                <div class="chart-canvas">
+                                    <canvas id="searchChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2122,7 +2172,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 <div class="chart-container search-results-chart">
                                     <div class="chart-title">Project Distribution</div>
                                     <div class="chart-wrapper">
-                                        <canvas id="searchChart"></canvas>
+                                        <div class="chart-canvas">
+                                            <canvas id="searchChart"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2232,7 +2284,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const allProjectData = Object.entries(data.projectSummary)
                             .sort((a, b) => b[1] - a[1]);
                         
-                        new Chart(searchCtx, {
+                        const searchChart = new Chart(searchCtx, {
                             type: 'pie',
                             data: {
                                 labels: allProjectData.map(([project]) => project),
@@ -2242,18 +2294,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                         hours: Math.floor(minutes / 60),
                                         mins: Math.round(minutes % 60)
                                     })),
-                                    backgroundColor: [
-                                        'rgba(255, 99, 132, 0.7)',    // Red
-                                        'rgba(54, 162, 235, 0.7)',   // Blue
-                                        'rgba(255, 206, 86, 0.7)',   // Yellow
-                                        'rgba(75, 192, 192, 0.7)',   // Teal
-                                        'rgba(153, 102, 255, 0.7)',  // Purple
-                                        'rgba(255, 159, 64, 0.7)',   // Orange
-                                        'rgba(199, 199, 199, 0.7)',  // Gray
-                                        'rgba(83, 102, 255, 0.7)',   // Indigo
-                                        'rgba(40, 167, 69, 0.7)',    // Green
-                                        'rgba(220, 53, 69, 0.7)'     // Dark Red
-                                    ],
+                                    backgroundColor: generateChartColors(allProjectData.length),
                                     borderColor: chartColors.background,
                                     borderWidth: 1
                                 }]
@@ -2263,16 +2304,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 maintainAspectRatio: false,
                                 plugins: {
                                     legend: {
-                                        position: 'right',
-                                        labels: {
-                                            color: chartColors.text,
-                                            font: {
-                                                size: 12,
-                                                weight: '500'
-                                            },
-                                            padding: 20,
-                                            usePointStyle: true
-                                        }
+                                        display: false
                                     },
                                     tooltip: {
                                         backgroundColor: isDarkTheme ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
@@ -2291,6 +2323,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 }
                             }
                         });
+                        
+                        // Create custom scrollable legend
+                        createCustomLegend(searchChart, allProjectData, chartColors);
                     }
 
                     function displaySearchResult(entries) {
@@ -2358,7 +2393,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             <div class="chart-container">
                                 <div class="chart-title">Project Distribution (Total Time: \${formatTime(totalTime)})</div>
                                 <div class="chart-wrapper">
-                                    <canvas id="searchChart"></canvas>
+                                    <div class="chart-canvas">
+                                        <canvas id="searchChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         \`;
@@ -2481,7 +2518,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const searchChartData = Object.entries(projectData)
                             .sort((a, b) => b[1] - a[1]);
                     
-                        new Chart(searchCtx, {
+                        const searchChart2 = new Chart(searchCtx, {
                             type: 'pie',
                             data: {
                                 labels: searchChartData.map(([project]) => project),
@@ -2491,18 +2528,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                         hours: Math.floor(minutes / 60),
                                         mins: Math.round(minutes % 60)
                                     })),
-                                    backgroundColor: [
-                                        'rgba(255, 99, 132, 0.7)',    // Red
-                                        'rgba(54, 162, 235, 0.7)',    // Blue
-                                        'rgba(255, 206, 86, 0.7)',    // Yellow
-                                        'rgba(75, 192, 192, 0.7)',    // Teal
-                                        'rgba(153, 102, 255, 0.7)',   // Purple
-                                        'rgba(255, 159, 64, 0.7)',    // Orange
-                                        'rgba(199, 199, 199, 0.7)',   // Gray
-                                        'rgba(83, 102, 255, 0.7)',    // Indigo
-                                        'rgba(40, 167, 69, 0.7)',     // Green
-                                        'rgba(220, 53, 69, 0.7)'      // Dark Red
-                                    ],
+                                    backgroundColor: generateChartColors(searchChartData.length),
                                     borderColor: chartColors.background,
                                     borderWidth: 1
                                 }]
@@ -2512,16 +2538,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 maintainAspectRatio: false,
                                 plugins: {
                                     legend: {
-                                        position: 'right',
-                                        labels: {
-                                            color: chartColors.text,
-                                            font: {
-                                                size: 12,
-                                                weight: '500'
-                                            },
-                                            padding: 20,
-                                            usePointStyle: true
-                                        }
+                                        display: false
                                     },
                                     tooltip: {
                                         backgroundColor: isDarkTheme ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
@@ -2540,6 +2557,70 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 }
                             }
                         });
+                        
+                        // Create custom scrollable legend
+                        createCustomLegend(searchChart2, searchChartData, chartColors);
+                    }
+
+                    function generateChartColors(count) {
+                        const baseColors = [
+                            'rgba(255, 99, 132, 0.7)',    // Red
+                            'rgba(54, 162, 235, 0.7)',    // Blue
+                            'rgba(255, 206, 86, 0.7)',    // Yellow
+                            'rgba(75, 192, 192, 0.7)',    // Teal
+                            'rgba(153, 102, 255, 0.7)',   // Purple
+                            'rgba(255, 159, 64, 0.7)',    // Orange
+                            'rgba(199, 199, 199, 0.7)',   // Gray
+                            'rgba(83, 102, 255, 0.7)',    // Indigo
+                            'rgba(40, 167, 69, 0.7)',     // Green
+                            'rgba(220, 53, 69, 0.7)'      // Dark Red
+                        ];
+                        
+                        const colors = [];
+                        for (let i = 0; i < count; i++) {
+                            if (i < baseColors.length) {
+                                colors.push(baseColors[i]);
+                            } else {
+                                // Generate additional colors using HSL
+                                const hue = (i * 137.5) % 360; // Golden angle approximation
+                                const saturation = 70;
+                                const lightness = 50;
+                                colors.push(\`hsla(\${hue}, \${saturation}%, \${lightness}%, 0.7)\`);
+                            }
+                        }
+                        return colors;
+                    }
+
+                    function createCustomLegend(chart, projectData, chartColors) {
+                        // Find the chart wrapper (parent of chart-canvas)
+                        const chartWrapper = chart.canvas.parentElement.parentElement;
+                        
+                        // Create legend container
+                        const legendContainer = document.createElement('div');
+                        legendContainer.className = 'custom-legend';
+                        
+                        // Create legend items
+                        projectData.forEach(([project, minutes], index) => {
+                            const hours = Math.floor(minutes / 60);
+                            const mins = Math.round(minutes % 60);
+                            
+                            const legendItem = document.createElement('div');
+                            legendItem.className = 'legend-item';
+                            
+                            const colorDot = document.createElement('div');
+                            colorDot.className = 'legend-color';
+                            colorDot.style.backgroundColor = chart.data.datasets[0].backgroundColor[index];
+                            
+                            const label = document.createElement('span');
+                            label.textContent = \`\${project}: \${hours}h \${mins}m\`;
+                            
+                            legendItem.appendChild(colorDot);
+                            legendItem.appendChild(label);
+                            legendContainer.appendChild(legendItem);
+                        });
+                        
+                        // Insert legend into the chart wrapper
+                        chartWrapper.appendChild(legendContainer);
                     }
 
                     function formatTime(minutes) {
