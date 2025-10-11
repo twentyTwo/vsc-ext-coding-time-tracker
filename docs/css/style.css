@@ -216,7 +216,7 @@ a:hover {
 
 /* Hero Section */
 .hero {
-    padding: 140px 0 110px;
+    padding: 100px 0;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -457,6 +457,7 @@ a:hover {
 /* Features Section */
 .features {
     position: relative;
+    overflow: hidden;
 }
 
 .features-header-panel {
@@ -471,31 +472,32 @@ a:hover {
 .features-header-panel::before {
     content: '';
     position: absolute;
-    top: -120px;
-    right: -140px;
+    top: 20px;
+    right: -60px;
     width: 320px;
     height: 320px;
     background: radial-gradient(circle, rgba(249, 130, 108, 0.3), transparent 70%);
     filter: blur(25px);
     opacity: 0.8;
+    z-index: -1;
 }
 
 .features-header-panel::after {
     content: '';
     position: absolute;
-    bottom: -160px;
-    left: -120px;
+    bottom: 20px;
+    left: -60px;
     width: 280px;
     height: 280px;
     background: radial-gradient(circle, rgba(102, 126, 234, 0.28), transparent 70%);
     filter: blur(30px);
     opacity: 0.7;
+    z-index: -1;
 }
 
 .features-header-panel .section-title,
 .features-header-panel .section-subtitle {
     position: relative;
-    z-index: 2;
 }
 
 .section-title {

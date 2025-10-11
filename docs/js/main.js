@@ -125,15 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Parallax effect for hero section (subtle)
-    const hero = document.querySelector('.hero');
-    if (hero) {
-        window.addEventListener('scroll', () => {
-            const scrolled = window.pageYOffset;
-            const rate = scrolled * 0.5;
-            hero.style.transform = `translate3d(0, ${rate}px, 0)`;
-        });
-    }
+    // Parallax effect disabled to prevent section overlapping
 
     // Copy code snippets functionality (if needed in future)
     const codeBlocks = document.querySelectorAll('code');
