@@ -454,6 +454,44 @@ a:hover {
     opacity: 0.9;
 }
 
+/* Extension Stats - Side by Side */
+.extension-stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin: 2rem 0;
+    padding: 1rem 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.15));
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    box-shadow: 0 15px 35px rgba(8, 15, 35, 0.35);
+    animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+
+.extension-stats .stat-item {
+    text-align: center;
+    min-width: 100px;
+}
+
+.extension-stats .stat-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 6px 15px rgba(8, 15, 35, 0.4);
+}
+
+.extension-stats .stat-label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
 /* Features Section */
 .features {
     position: relative;
@@ -1030,6 +1068,20 @@ a:hover {
     .hero-stats {
         flex-direction: column;
         gap: 1.5rem;
+    }
+
+    .extension-stats {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    .extension-stats .stat-item {
+        min-width: auto;
+    }
+
+    .extension-stats .stat-number {
+        font-size: 1.8rem;
     }
 
     .features,
