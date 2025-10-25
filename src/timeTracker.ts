@@ -3,7 +3,7 @@ import { Database, TimeEntry } from './database';
 import { simpleGit, SimpleGit } from 'simple-git';
 import { Logger } from './logger';
 import { HealthNotificationManager } from './healthNotifications';
-import { detectLanguageFromFile, detectLanguageFromLanguageId } from './utils';
+import { detectLanguageFromFile, detectLanguageFromLanguageId, detectActivityFromUri } from './utils';
 
 type GitWatcher = {
     git: SimpleGit;
@@ -33,6 +33,8 @@ export class TimeTracker implements vscode.Disposable {
     private lastUpdateTime: number = Date.now();
     private lastFocusTime: number = Date.now();
     private healthManager: HealthNotificationManager;
+    private trackTerminal: boolean = true;
+    private trackAIChat: boolean = true;
     // Track time between updates for validation
 
     constructor(database: Database) {
@@ -98,14 +100,20 @@ export class TimeTracker implements vscode.Disposable {
                     // Window regained focus within the timeout period
                     clearTimeout(this.focusTimeoutHandle);
                     this.focusTimeoutHandle = null;
-                    
-                    // Save current session before starting new one
-                    if (this.isTracking) {
-                        await this.saveCurrentSession('window focus gained');
-                    }
+                }
+                
+                // Save current session if tracking (but don't restart immediately)
+                if (this.isTracking) {
+                    await this.saveCurrentSession('window focus gained');
+                }
+                
+                // Start or continue tracking
+                if (!this.isTracking) {
                     this.startTracking('focus regained');
                 }
+                
                 this.lastFocusTime = now;
+                this.lastCursorActivity = now; // Update activity on focus
             } else {
                 // Save session when losing focus
                 if (this.isTracking) {
@@ -122,6 +130,14 @@ export class TimeTracker implements vscode.Disposable {
                 }, this.focusTimeoutSeconds * 1000);
             }
         });
+
+        // Track terminal focus changes - simplified approach
+        vscode.window.onDidChangeActiveTerminal((terminal) => {
+            if (terminal && this.trackTerminal) {
+                this.updateCurrentLanguage();
+                this.updateCursorActivity();
+            }
+        });
     }
 
     public updateConfiguration() {
@@ -130,6 +146,8 @@ export class TimeTracker implements vscode.Disposable {
         // Convert from minutes to seconds for internal use
         this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 2.5) * 60;
         this.focusTimeoutSeconds = config.get('focusTimeout', 3) * 60;
+        this.trackTerminal = config.get('trackTerminalActivity', true);
+        this.trackAIChat = config.get('trackAIChatActivity', true);
         
         // Update health notification settings
         if (this.healthManager) {
@@ -161,17 +179,43 @@ export class TimeTracker implements vscode.Disposable {
 
     private updateCurrentLanguage() {
         const activeEditor = vscode.window.activeTextEditor;
+        
+        // SIMPLIFIED APPROACH: Check what has focus and what user is actively doing
+        
+        // First check if there's an active text editor (could be AI chat, code file, etc.)
         if (activeEditor) {
-            // Try to get language from VS Code language ID first (most accurate)
+            // Check for AI Chat and special activities first
+            if (this.trackAIChat) {
+                const activityType = detectActivityFromUri(
+                    activeEditor.document.uri.toString(),
+                    activeEditor.document.languageId
+                );
+                
+                if (activityType !== 'unknown') {
+                    this.currentLanguage = activityType;
+                    return;
+                }
+            }
+            
+            // Regular code editor - detect language from file
             if (activeEditor.document.languageId) {
-                this.currentLanguage = detectLanguageFromLanguageId(activeEditor.document.languageId);
+                const detectedLanguage = detectLanguageFromLanguageId(activeEditor.document.languageId);
+                this.currentLanguage = detectedLanguage;
             } else {
                 // Fall back to file extension detection
                 this.currentLanguage = detectLanguageFromFile(activeEditor.document.fileName);
             }
-        } else {
-            this.currentLanguage = 'unknown';
+            return;
         }
+        
+        // No active text editor - check if terminal has focus
+        if (this.trackTerminal && vscode.window.activeTerminal) {
+            this.currentLanguage = 'Terminal';
+            return;
+        }
+        
+        // Nothing has focus
+        this.currentLanguage = 'unknown';
     }
 
     private setupCursorTracking() {
@@ -389,6 +433,10 @@ export class TimeTracker implements vscode.Disposable {
     private lastSaveTime: number = 0;
 
     public async saveCurrentSession(reason?: string) {
+        if (!this.isTracking) {
+            return; // Don't save if not tracking
+        }
+
         const now = Date.now();
         let duration = (now - this.startTime) / 60000; // Convert to minutes
         
@@ -401,7 +449,8 @@ export class TimeTracker implements vscode.Disposable {
             duration = Math.max(0, duration - this.focusTimeoutSeconds / 60);
         }
 
-        if (duration > 0) {
+        // Only save if duration is at least 1 second (prevent micro-sessions)
+        if (duration >= 0.0167) { // 1 second = 0.0167 minutes
             // Log the session being saved
             this.logger.logEvent('session_saved', {
                 reason: reason || 'periodic',
@@ -416,6 +465,11 @@ export class TimeTracker implements vscode.Disposable {
             await this.database.addEntry(new Date(), this.currentProject, duration, this.currentBranch, this.currentLanguage);
             this.startTime = now; // Reset start time for next session
             this.lastSaveTime = now;
+            this.lastCursorActivity = now; // Update last activity to prevent immediate inactivity
+        } else {
+            // For very short durations, just reset the start time without saving
+            this.startTime = now;
+            this.lastCursorActivity = now;
         }
     }    
     
@@ -577,6 +631,8 @@ export class TimeTracker implements vscode.Disposable {
         // Ensure git watcher is completely stopped
         this.stopGitWatcher();
         
+        // Stop terminal monitoring (no longer needed with simplified approach)
+        
         // Dispose health notifications
         this.healthManager.dispose();
         
@@ -734,4 +790,5 @@ export class TimeTracker implements vscode.Disposable {
         }
         this.gitWatcher = null;
     }
+
 }

@@ -225,10 +225,154 @@ export function detectLanguageFromLanguageId(languageId: string): string {
         'gradle': 'Gradle',
         'properties': 'Properties',
         'plaintext': 'Text',
-        'text': 'Text'
+        'text': 'Text',
+        
+        // Special activity types
+        'terminal': 'Terminal',
+        'copilot-chat': 'Copilot Chat',
+        'github-copilot-chat': 'Copilot Chat',
+        'interactive': 'AI Chat',
+        'chat': 'AI Chat',
+        'cursor-chat': 'Cursor Chat',
+        'claude-code': 'Claude Code',
+        'gemini-cli': 'Gemini CLI',
+        'cline': 'Cline',
+        'aider': 'Aider',
+        'continue': 'Continue',
+        'kilocode': 'Kilo Code',
+        'codeium-chat': 'Codeium Chat',
+        'tabnine-chat': 'Tabnine Chat',
+        'amazon-q': 'Amazon Q',
+        'cody': 'Cody',
+        'bito': 'Bito AI',
+        'mintlify': 'Mintlify',
+        'pieces': 'Pieces',
+        'blackbox': 'Blackbox AI'
     };
 
     return languageIdMap[languageId.toLowerCase()] || 'Other';
+}
+
+/**
+ * Simple terminal activity detection - no longer needed with focus-based approach
+ * This function is kept for backward compatibility but no longer used
+ */
+export function detectTerminalActivityType(commandText?: string): string {
+    // Simplified approach - just return 'Terminal' for any terminal activity
+    // The complex command parsing is no longer needed since we use focus-based detection
+    return 'Terminal';
+}
+
+/**
+ * Detects activity type from URI scheme and document properties
+ * Returns special activity types like 'Terminal', 'Copilot Chat', etc.
+ */
+export function detectActivityFromUri(uri: string, languageId?: string): string {
+    if (!uri) {
+        return 'unknown';
+    }
+
+    const uriLower = uri.toLowerCase();
+    
+    // Check for terminal-related schemes
+    if (uriLower.includes('output:') && uriLower.includes('terminal')) {
+        return 'Terminal';
+    }
+    
+    // Check for GitHub Copilot Chat
+    if (uriLower.includes('copilot') || uriLower.includes('github.copilot')) {
+        return 'Copilot Chat';
+    }
+    
+    // Check for Cline (formerly Claude Dev)
+    if (uriLower.includes('cline') || uriLower.includes('saoudrizwan.claude-dev')) {
+        return 'Cline';
+    }
+    
+    // Check for Continue
+    if (uriLower.includes('continue') || uriLower.includes('continue.continue')) {
+        return 'Continue';
+    }
+    
+    // Check for Aider
+    if (uriLower.includes('aider')) {
+        return 'Aider';
+    }
+    
+    // Check for Kilo Code
+    if (uriLower.includes('kilocode') || uriLower.includes('kilo-code') || uriLower.includes('kilocode.kilocode')) {
+        return 'Kilo Code';
+    }
+    
+    // Check for Codeium Chat
+    if (uriLower.includes('codeium')) {
+        return 'Codeium Chat';
+    }
+    
+    // Check for Tabnine Chat
+    if (uriLower.includes('tabnine')) {
+        return 'Tabnine Chat';
+    }
+    
+    // Check for Amazon Q
+    if (uriLower.includes('amazon') && uriLower.includes('q')) {
+        return 'Amazon Q';
+    }
+    
+    // Check for Cody (Sourcegraph)
+    if (uriLower.includes('cody') || uriLower.includes('sourcegraph')) {
+        return 'Cody';
+    }
+    
+    // Check for Bito AI
+    if (uriLower.includes('bito')) {
+        return 'Bito AI';
+    }
+    
+    // Check for Mintlify
+    if (uriLower.includes('mintlify')) {
+        return 'Mintlify';
+    }
+    
+    // Check for Pieces
+    if (uriLower.includes('pieces')) {
+        return 'Pieces';
+    }
+    
+    // Check for Blackbox AI
+    if (uriLower.includes('blackbox')) {
+        return 'Blackbox AI';
+    }
+    
+    // Check for Cursor-specific schemes
+    if (uriLower.includes('cursor')) {
+        return 'Cursor Chat';
+    }
+    
+    // Check for Claude
+    if (uriLower.includes('claude')) {
+        return 'Claude Code';
+    }
+    
+    // Generic interactive/chat windows (fallback)
+    if (uriLower.includes('interactive') || uriLower.includes('chat')) {
+        return 'AI Chat';
+    }
+    
+    // If languageId hints at chat/interactive, use it
+    if (languageId) {
+        const detectedFromId = detectLanguageFromLanguageId(languageId);
+        const aiActivityTypes = [
+            'Terminal', 'Copilot Chat', 'AI Chat', 'Cursor Chat', 'Claude Code', 
+            'Gemini CLI', 'Cline', 'Aider', 'Continue', 'Kilo Code', 'Codeium Chat',
+            'Tabnine Chat', 'Amazon Q', 'Cody', 'Bito AI', 'Mintlify', 'Pieces', 'Blackbox AI'
+        ];
+        if (aiActivityTypes.includes(detectedFromId)) {
+            return detectedFromId;
+        }
+    }
+    
+    return 'unknown';
 }
 
 // Add other utility functions as needed

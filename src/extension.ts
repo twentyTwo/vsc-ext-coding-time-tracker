@@ -19,6 +19,16 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 
+    // Track visible text editors (important for AI chat windows)
+    context.subscriptions.push(
+        vscode.window.onDidChangeVisibleTextEditors((editors) => {
+            // Update tracking when visible editors change (e.g., chat panels)
+            if (editors.length > 0) {
+                timeTracker.updateCursorActivity();
+            }
+        })
+    );
+
     // Register configuration change listener
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
@@ -225,7 +235,7 @@ export function activate(context: vscode.ExtensionContext) {
     let deleteTestDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.deleteTestData', async () => {
         // Check if dev commands are enabled
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const enableDevCommands = config.get<boolean>('enableDevCommands', false) || 
+        const enableDevCommands = config.get<boolean>('enableDevCommands', false) ||
                                   context.extensionMode === vscode.ExtensionMode.Development;
         
         if (!enableDevCommands) {
@@ -262,6 +272,18 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // View terminal command history
+    let viewTerminalHistoryCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.viewTerminalHistory', async () => {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const trackTerminal = config.get('trackTerminalActivity', true);
+        
+        if (trackTerminal) {
+            vscode.window.showInformationMessage('Terminal command history feature is available when terminal tracking is enabled.');
+        } else {
+            vscode.window.showInformationMessage('Terminal tracking is disabled. Enable it in settings to view command history.');
+        }
+    });
+
     context.subscriptions.push(clearDataCommand);
     context.subscriptions.push(toggleHealthCommand);
     context.subscriptions.push(openSettingsCommand);
@@ -269,6 +291,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(testNotificationCommand);
     context.subscriptions.push(generateTestDataCommand);
     context.subscriptions.push(deleteTestDataCommand);
+    context.subscriptions.push(viewTerminalHistoryCommand);
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(viewStorageDisposable);

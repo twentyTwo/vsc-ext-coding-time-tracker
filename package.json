@@ -34,6 +34,16 @@
           "maximum": 60,
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing."
         },
+        "simpleCodingTimeTracker.trackTerminalActivity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Track time spent in the VS Code terminal. Terminal activity will be tracked as 'Terminal' language."
+        },
+        "simpleCodingTimeTracker.trackAIChatActivity": {
+          "type": "boolean",
+          "default": true,
+          "description": "Track time spent in AI chat tools (Copilot Chat, Claude Code, Cursor Chat, etc.). Activity will be tracked under specific tool names."
+        },
         "simpleCodingTimeTracker.health.enableNotifications": {
           "type": "boolean",
           "default": false,
