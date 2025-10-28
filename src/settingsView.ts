@@ -75,21 +75,45 @@ export class SettingsViewProvider {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
 
         try {
-            await config.update('inactivityTimeout', settings.inactivityTimeout, vscode.ConfigurationTarget.Global);
-            await config.update('focusTimeout', settings.focusTimeout, vscode.ConfigurationTarget.Global);
-            await config.update('health.enableNotifications', settings.healthEnableNotifications, vscode.ConfigurationTarget.Global);
-            await config.update('health.modalNotifications', settings.healthModalNotifications, vscode.ConfigurationTarget.Global);
-            await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, vscode.ConfigurationTarget.Global);
-            await config.update('health.stretchInterval', settings.healthStretchInterval, vscode.ConfigurationTarget.Global);
-            await config.update('health.breakThreshold', settings.healthBreakThreshold, vscode.ConfigurationTarget.Global);
+            // Validate and convert values
+            const inactivityTimeout = parseFloat(settings.inactivityTimeout);
+            const focusTimeout = parseFloat(settings.focusTimeout);
+            
+            console.log('Saving settings:', {
+                inactivityTimeout,
+                focusTimeout,
+                original: settings
+            });
+
+            // Determine target scope for most settings
+            const target = vscode.workspace.workspaceFolders ? 
+                vscode.ConfigurationTarget.Workspace : 
+                vscode.ConfigurationTarget.Global;
+
+            // Save settings that can be workspace-scoped
+            await config.update('inactivityTimeout', inactivityTimeout, target);
+            await config.update('focusTimeout', focusTimeout, target);
+            await config.update('health.enableNotifications', settings.healthEnableNotifications, target);
+            await config.update('health.modalNotifications', settings.healthModalNotifications, target);
+            await config.update('health.eyeRestInterval', parseInt(settings.healthEyeRestInterval), target);
+            await config.update('health.stretchInterval', parseInt(settings.healthStretchInterval), target);
+            await config.update('health.breakThreshold', parseInt(settings.healthBreakThreshold), target);
+            
+            // enableDevCommands has "scope": "application" - must be saved to Global only
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
 
-            vscode.window.showInformationMessage('✅ Settings saved successfully!');
+            // Verify the save
+            const newConfig = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+            const savedValue = newConfig.get('inactivityTimeout');
+            console.log('Verified saved inactivityTimeout:', savedValue);
+
+            vscode.window.showInformationMessage(`✅ Settings saved successfully! Inactivity timeout: ${savedValue} minutes`);
             
             if (this.panel) {
                 this.panel.webview.postMessage({ command: 'saveSuccess' });
             }
         } catch (error) {
+            console.error('Failed to save settings:', error);
             vscode.window.showErrorMessage(`Failed to save settings: ${error}`);
         }
     }
