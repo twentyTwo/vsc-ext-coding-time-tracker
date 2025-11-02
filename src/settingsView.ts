@@ -75,21 +75,30 @@ export class SettingsViewProvider {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
 
         try {
-            await config.update('inactivityTimeout', settings.inactivityTimeout, vscode.ConfigurationTarget.Global);
-            await config.update('focusTimeout', settings.focusTimeout, vscode.ConfigurationTarget.Global);
-            await config.update('health.enableNotifications', settings.healthEnableNotifications, vscode.ConfigurationTarget.Global);
-            await config.update('health.modalNotifications', settings.healthModalNotifications, vscode.ConfigurationTarget.Global);
-            await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, vscode.ConfigurationTarget.Global);
-            await config.update('health.stretchInterval', settings.healthStretchInterval, vscode.ConfigurationTarget.Global);
-            await config.update('health.breakThreshold', settings.healthBreakThreshold, vscode.ConfigurationTarget.Global);
+            // Most settings should be saved to Workspace scope (default behavior in package.json)
+            await config.update('inactivityTimeout', settings.inactivityTimeout, vscode.ConfigurationTarget.Workspace);
+            await config.update('focusTimeout', settings.focusTimeout, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.enableNotifications', settings.healthEnableNotifications, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.modalNotifications', settings.healthModalNotifications, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.stretchInterval', settings.healthStretchInterval, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.breakThreshold', settings.healthBreakThreshold, vscode.ConfigurationTarget.Workspace);
+            
+            // Only enableDevCommands has "scope": "application" in package.json, so it must be saved to Global
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
 
+            console.log('Settings saved successfully:', settings);
             vscode.window.showInformationMessage('✅ Settings saved successfully!');
             
             if (this.panel) {
                 this.panel.webview.postMessage({ command: 'saveSuccess' });
             }
+            
+            // Trigger a configuration change event manually if needed
+            // The onDidChangeConfiguration should fire automatically, but we log for debugging
+            console.log('Configuration should update automatically via onDidChangeConfiguration event');
         } catch (error) {
+            console.error('Failed to save settings:', error);
             vscode.window.showErrorMessage(`Failed to save settings: ${error}`);
         }
     }
@@ -98,13 +107,16 @@ export class SettingsViewProvider {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
 
         try {
-            await config.update('inactivityTimeout', undefined, vscode.ConfigurationTarget.Global);
-            await config.update('focusTimeout', undefined, vscode.ConfigurationTarget.Global);
-            await config.update('health.enableNotifications', undefined, vscode.ConfigurationTarget.Global);
-            await config.update('health.modalNotifications', undefined, vscode.ConfigurationTarget.Global);
-            await config.update('health.eyeRestInterval', undefined, vscode.ConfigurationTarget.Global);
-            await config.update('health.stretchInterval', undefined, vscode.ConfigurationTarget.Global);
-            await config.update('health.breakThreshold', undefined, vscode.ConfigurationTarget.Global);
+            // Reset workspace-scoped settings
+            await config.update('inactivityTimeout', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('focusTimeout', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.enableNotifications', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.modalNotifications', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.eyeRestInterval', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.stretchInterval', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('health.breakThreshold', undefined, vscode.ConfigurationTarget.Workspace);
+            
+            // Reset global-scoped settings
             await config.update('enableDevCommands', undefined, vscode.ConfigurationTarget.Global);
 
             vscode.window.showInformationMessage('✅ Settings reset to defaults!');
