@@ -254,16 +254,6 @@ export function detectLanguageFromLanguageId(languageId: string): string {
 }
 
 /**
- * Simple terminal activity detection - no longer needed with focus-based approach
- * This function is kept for backward compatibility but no longer used
- */
-export function detectTerminalActivityType(commandText?: string): string {
-    // Simplified approach - just return 'Terminal' for any terminal activity
-    // The complex command parsing is no longer needed since we use focus-based detection
-    return 'Terminal';
-}
-
-/**
  * Detects activity type from URI scheme and document properties
  * Returns special activity types like 'Terminal', 'Copilot Chat', etc.
  */

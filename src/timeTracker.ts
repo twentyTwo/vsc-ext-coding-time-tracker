@@ -35,6 +35,8 @@ export class TimeTracker implements vscode.Disposable {
     private healthManager: HealthNotificationManager;
     private trackTerminal: boolean = true;
     private trackAIChat: boolean = true;
+    private lastTerminalActivity: number = 0;
+    private terminalCheckInterval: NodeJS.Timeout | null = null;
     // Track time between updates for validation
 
     constructor(database: Database) {
@@ -131,13 +133,64 @@ export class TimeTracker implements vscode.Disposable {
             }
         });
 
-        // Track terminal focus changes - simplified approach
+        // Track terminal activity - but only update language, not activity
+        // Activity will be updated by shell execution events or periodic check
         vscode.window.onDidChangeActiveTerminal((terminal) => {
             if (terminal && this.trackTerminal) {
+                // Don't set lastTerminalActivity here - wait for actual commands
+                this.updateCurrentLanguage();
+                // Only trigger activity if we were already tracking in terminal recently
+                const timeSinceTerminalActivity = Date.now() - this.lastTerminalActivity;
+                if (timeSinceTerminalActivity < 10000) {
+                    this.updateCursorActivity();
+                }
+            }
+        });
+
+        // Track when terminal opens - just update language
+        vscode.window.onDidOpenTerminal((terminal) => {
+            if (this.trackTerminal) {
+                this.updateCurrentLanguage();
+                // Don't automatically start tracking just because terminal opened
+            }
+        });
+
+        // Track terminal state changes (like becoming active)
+        vscode.window.onDidChangeTerminalState((terminal) => {
+            if (this.trackTerminal && terminal === vscode.window.activeTerminal) {
+                this.updateCurrentLanguage();
+                // Don't automatically update activity on state change
+            }
+        });
+
+        // Track terminal shell integration events for actual command execution
+        vscode.window.onDidStartTerminalShellExecution?.(() => {
+            if (this.trackTerminal) {
+                this.lastTerminalActivity = Date.now();
                 this.updateCurrentLanguage();
                 this.updateCursorActivity();
             }
         });
+
+        vscode.window.onDidEndTerminalShellExecution?.(() => {
+            if (this.trackTerminal) {
+                this.lastTerminalActivity = Date.now();
+                this.updateCurrentLanguage();
+                this.updateCursorActivity();
+            }
+        });
+
+        // Track terminal shell integration changes
+        vscode.window.onDidChangeTerminalShellIntegration?.(() => {
+            if (this.trackTerminal) {
+                this.lastTerminalActivity = Date.now();
+                this.updateCurrentLanguage();
+                this.updateCursorActivity();
+            }
+        });
+
+        // Start periodic check for terminal activity
+        this.startTerminalActivityMonitoring();
     }
 
     public updateConfiguration() {
@@ -153,6 +206,30 @@ export class TimeTracker implements vscode.Disposable {
         if (this.healthManager) {
             this.healthManager.updateSettings();
         }
+    }
+
+    private startTerminalActivityMonitoring() {
+        // Stop any existing monitoring
+        if (this.terminalCheckInterval) {
+            clearInterval(this.terminalCheckInterval);
+        }
+
+        // Check every 2 seconds if terminal is active AND there was recent activity
+        this.terminalCheckInterval = setInterval(() => {
+            if (this.trackTerminal && vscode.window.activeTerminal) {
+                const now = Date.now();
+                const timeSinceTerminalActivity = now - this.lastTerminalActivity;
+                
+                // Only treat as activity if:
+                // 1. Terminal had actual activity in the last 5 seconds (from shell events)
+                // 2. AND there's no active text editor (terminal has focus)
+                if (timeSinceTerminalActivity < 5000 && !vscode.window.activeTextEditor) {
+                    this.updateCurrentLanguage();
+                    // Only update cursor activity if there was recent actual terminal activity
+                    this.updateCursorActivity();
+                }
+            }
+        }, 2000);
     }
 
     private updateCurrentBranch() {
@@ -631,7 +708,11 @@ export class TimeTracker implements vscode.Disposable {
         // Ensure git watcher is completely stopped
         this.stopGitWatcher();
         
-        // Stop terminal monitoring (no longer needed with simplified approach)
+        // Stop terminal monitoring
+        if (this.terminalCheckInterval) {
+            clearInterval(this.terminalCheckInterval);
+            this.terminalCheckInterval = null;
+        }
         
         // Dispose health notifications
         this.healthManager.dispose();

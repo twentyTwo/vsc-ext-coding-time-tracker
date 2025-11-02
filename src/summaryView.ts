@@ -934,14 +934,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
                     
-                    <h2>Terminal Activity Breakdown</h2>
-                    <div class="chart-container">
-                        <div class="chart-title">Terminal Command Categories</div>
-                        <div class="chart-wrapper">
-                            <canvas id="terminalActivityChart"></canvas>
-                        </div>
-                    </div>
-                    
                     <div class="search-form">
                         <input type="date" id="start-date-search" name="start-date-search">
                         <input type="date" id="end-date-search" name="end-date-search">
@@ -2193,9 +2185,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         // Create heatmap
                         createHeatmap(data);
                         
-                        // Create terminal activity breakdown chart
-                        createTerminalActivityChart();
-                        
                         // Project summary chart
                         const projectCtx = document.getElementById('projectChart').getContext('2d');
                         const projectData = Object.entries(data.projectSummary)
@@ -2786,77 +2775,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         if (minutes < 360) return 3; // 3-6 hours
                         return 4; // More than 6 hours
                     }
-                    function createTerminalActivityChart() {
-                        // Get terminal command history from time tracker
-                        vscode.postMessage({ command: 'getTerminalHistory' });
-                    }
-
-                    // Handle terminal history response
-                    window.addEventListener('message', event => {
-                        const message = event.data;
-                        if (message.command === 'terminalHistory') {
-                            const terminalHistory = message.data;
-                            displayTerminalActivityChart(terminalHistory);
-                        }
-                    });
-
-                    function displayTerminalActivityChart(terminalHistory) {
-                        const ctx = document.getElementById('terminalActivityChart').getContext('2d');
-                        
-                        // Group commands by category
-                        const categoryCounts = {};
-                        terminalHistory.forEach(entry => {
-                            const category = entry.category || 'Other';
-                            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-                        });
-
-                        // Prepare data for chart
-                        const labels = Object.keys(categoryCounts);
-                        const data = Object.values(categoryCounts);
-                        
-                        // Generate colors for each category
-                        const colors = generateChartColors(labels.length);
-                        
-                        // Create doughnut chart
-                        new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    data: data,
-                                    backgroundColor: colors,
-                                    borderColor: chartColors.background,
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'right',
-                                        labels: {
-                                            color: chartColors.text,
-                                            font: {
-                                                size: 12
-                                            },
-                                            padding: 15
-                                        }
-                                    },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: function(context) {
-                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                                const percentage = ((context.raw / total) * 100).toFixed(1);
-                                                return `${context.label}: ${context.raw} commands (${percentage}%)`;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-
 
                     // Request a refresh when the webview becomes visible
                     vscode.postMessage({ command: 'refresh' });

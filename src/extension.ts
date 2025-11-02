@@ -272,18 +272,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // View terminal command history
-    let viewTerminalHistoryCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.viewTerminalHistory', async () => {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const trackTerminal = config.get('trackTerminalActivity', true);
-        
-        if (trackTerminal) {
-            vscode.window.showInformationMessage('Terminal command history feature is available when terminal tracking is enabled.');
-        } else {
-            vscode.window.showInformationMessage('Terminal tracking is disabled. Enable it in settings to view command history.');
-        }
-    });
-
     context.subscriptions.push(clearDataCommand);
     context.subscriptions.push(toggleHealthCommand);
     context.subscriptions.push(openSettingsCommand);
@@ -291,7 +279,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(testNotificationCommand);
     context.subscriptions.push(generateTestDataCommand);
     context.subscriptions.push(deleteTestDataCommand);
-    context.subscriptions.push(viewTerminalHistoryCommand);
 
     context.subscriptions.push(disposable);
     context.subscriptions.push(viewStorageDisposable);
