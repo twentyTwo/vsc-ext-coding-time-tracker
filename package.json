@@ -34,6 +34,11 @@
           "maximum": 60,
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing."
         },
+        "simpleCodingTimeTracker.statusBar.showSeconds": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show seconds in the status bar time display (disable to reduce distractions)"
+        },
         "simpleCodingTimeTracker.health.enableNotifications": {
           "type": "boolean",
           "default": false,

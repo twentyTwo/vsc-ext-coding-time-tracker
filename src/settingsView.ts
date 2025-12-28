@@ -57,6 +57,7 @@ export class SettingsViewProvider {
         const settings = {
             inactivityTimeout: config.get('inactivityTimeout', 2.5),
             focusTimeout: config.get('focusTimeout', 3),
+            statusBarShowSeconds: config.get('statusBar.showSeconds', true),
             healthEnableNotifications: config.get('health.enableNotifications', true),
             healthModalNotifications: config.get('health.modalNotifications', true),
             healthEyeRestInterval: config.get('health.eyeRestInterval', 20),
@@ -78,6 +79,7 @@ export class SettingsViewProvider {
             // Most settings should be saved to Workspace scope (default behavior in package.json)
             await config.update('inactivityTimeout', settings.inactivityTimeout, vscode.ConfigurationTarget.Workspace);
             await config.update('focusTimeout', settings.focusTimeout, vscode.ConfigurationTarget.Workspace);
+            await config.update('statusBar.showSeconds', settings.statusBarShowSeconds, vscode.ConfigurationTarget.Workspace);
             await config.update('health.enableNotifications', settings.healthEnableNotifications, vscode.ConfigurationTarget.Workspace);
             await config.update('health.modalNotifications', settings.healthModalNotifications, vscode.ConfigurationTarget.Workspace);
             await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, vscode.ConfigurationTarget.Workspace);
@@ -110,6 +112,7 @@ export class SettingsViewProvider {
             // Reset workspace-scoped settings
             await config.update('inactivityTimeout', undefined, vscode.ConfigurationTarget.Workspace);
             await config.update('focusTimeout', undefined, vscode.ConfigurationTarget.Workspace);
+            await config.update('statusBar.showSeconds', undefined, vscode.ConfigurationTarget.Workspace);
             await config.update('health.enableNotifications', undefined, vscode.ConfigurationTarget.Workspace);
             await config.update('health.modalNotifications', undefined, vscode.ConfigurationTarget.Workspace);
             await config.update('health.eyeRestInterval', undefined, vscode.ConfigurationTarget.Workspace);
@@ -288,6 +291,18 @@ export class SettingsViewProvider {
     </div>
 
     <div class="setting-group">
+        <h2>📊 Status Bar Display Settings</h2>
+        
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="statusBarShowSeconds" />
+                <label for="statusBarShowSeconds" style="margin: 0;">Show Seconds</label>
+            </div>
+            <div class="description">Display seconds in the status bar time (HH:MM:SS). Disable to reduce distractions and show only hours and minutes.</div>
+        </div>
+    </div>
+
+    <div class="setting-group">
         <h2>🔔 Health Notification Settings</h2>
         
         <div class="setting-item">
@@ -368,6 +383,7 @@ export class SettingsViewProvider {
         function loadSettings(settings) {
             document.getElementById('inactivityTimeout').value = settings.inactivityTimeout;
             document.getElementById('focusTimeout').value = settings.focusTimeout;
+            document.getElementById('statusBarShowSeconds').checked = settings.statusBarShowSeconds;
             document.getElementById('healthEnableNotifications').checked = settings.healthEnableNotifications;
             document.getElementById('healthModalNotifications').checked = settings.healthModalNotifications;
             document.getElementById('healthEyeRestInterval').value = settings.healthEyeRestInterval;
@@ -380,6 +396,7 @@ export class SettingsViewProvider {
             return {
                 inactivityTimeout: parseFloat(document.getElementById('inactivityTimeout').value),
                 focusTimeout: parseFloat(document.getElementById('focusTimeout').value),
+                statusBarShowSeconds: document.getElementById('statusBarShowSeconds').checked,
                 healthEnableNotifications: document.getElementById('healthEnableNotifications').checked,
                 healthModalNotifications: document.getElementById('healthModalNotifications').checked,
                 healthEyeRestInterval: parseInt(document.getElementById('healthEyeRestInterval').value),

@@ -9,6 +9,7 @@ export class StatusBar implements vscode.Disposable {
     private timeTracker: TimeTracker;
     private summaryView: SummaryViewProvider;
     private updateInterval: NodeJS.Timeout;
+    private configChangeListener: vscode.Disposable;
     private readonly commandId = 'simpleCodingTimeTracker.manualSave';
     private readonly notificationCommandId = 'simpleCodingTimeTracker.toggleNotifications';
 
@@ -50,6 +51,14 @@ export class StatusBar implements vscode.Disposable {
         this.notificationItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         this.notificationItem.show();
         
+        // Listen for configuration changes to update immediately
+        this.configChangeListener = vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('simpleCodingTimeTracker.statusBar') ||
+                e.affectsConfiguration('simpleCodingTimeTracker.health.enableNotifications')) {
+                void this.updateStatusBar();
+            }
+        });
+        
         void this.updateStatusBar();
         this.updateInterval = setInterval(() => void this.updateStatusBar(), 1000); // Update every second
     }    private async updateStatusBar() {
@@ -57,23 +66,34 @@ export class StatusBar implements vscode.Disposable {
         const currentProjectTime = await this.timeTracker.getCurrentProjectTime();
         const isActive = this.timeTracker.isActive();
         
+        // Get configuration settings
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const showSeconds = config.get('statusBar.showSeconds', true);
+        
         // Update main status bar (time tracker only)
-        this.statusBarItem.text = `${isActive ? '💻' : '⏸️'} ${this.formatTime(todayTotal)}`;
+        const timeDisplay = this.formatTime(todayTotal, showSeconds);
+        const icon = isActive ? '💻' : '⏸️';
+        this.statusBarItem.text = `${icon} ${timeDisplay}`;
+        
         this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
         
         // Update notification status bar
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         const notificationsEnabled = config.get('health.enableNotifications', false);
         const notificationIcon = notificationsEnabled ? '🔔' : '🔕';
         this.notificationItem.text = notificationIcon;
         this.notificationItem.tooltip = `Health Notifications: ${notificationsEnabled ? 'ON' : 'OFF'} (Click to toggle)`;
     }
 
-    private formatTime(minutes: number): string {
+    private formatTime(minutes: number, showSeconds: boolean = true): string {
         const hours = Math.floor(minutes / 60);
         const mins = Math.floor(minutes % 60);
         const secs = Math.floor((minutes * 60) % 60);
-        return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        
+        if (showSeconds) {
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        } else {
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
     }    
     
     private async getTooltipText(isActive: boolean, currentProjectTime: number): Promise<string> {
@@ -124,6 +144,7 @@ Click to save session and show summary`;
     dispose() {
         this.statusBarItem.dispose();
         this.notificationItem.dispose();
+        this.configChangeListener.dispose();
         clearInterval(this.updateInterval);
     }
 }
