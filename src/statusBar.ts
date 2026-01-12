@@ -69,11 +69,20 @@ export class StatusBar implements vscode.Disposable {
         // Get configuration settings
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         const showSeconds = config.get('statusBar.showSeconds', true);
+        const customIcon = config.get('statusBar.icon', '💻');
+        const customColor = config.get('statusBar.color', '');
         
         // Update main status bar (time tracker only)
         const timeDisplay = this.formatTime(todayTotal, showSeconds);
-        const icon = isActive ? '💻' : '⏸️';
+        const icon = isActive ? customIcon : '⏸️';
         this.statusBarItem.text = `${icon} ${timeDisplay}`;
+        
+        // Apply custom color if configured
+        if (customColor) {
+            this.statusBarItem.color = customColor;
+        } else {
+            this.statusBarItem.color = undefined;
+        }
         
         this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
         

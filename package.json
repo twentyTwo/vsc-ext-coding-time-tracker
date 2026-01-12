@@ -39,6 +39,16 @@
           "default": true,
           "description": "Show seconds in the status bar time display (disable to reduce distractions)"
         },
+        "simpleCodingTimeTracker.statusBar.icon": {
+          "type": "string",
+          "default": "💻",
+          "description": "Icon or Codicon name to display before the timer (e.g., '$(clock)', '$(rocket)', or any emoji)"
+        },
+        "simpleCodingTimeTracker.statusBar.color": {
+          "type": "string",
+          "default": "",
+          "description": "Custom color for the timer text in hex format (e.g., '#FFAA00') or a VS Code theme color reference"
+        },
         "simpleCodingTimeTracker.health.enableNotifications": {
           "type": "boolean",
           "default": false,
