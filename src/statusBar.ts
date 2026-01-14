@@ -71,6 +71,7 @@ export class StatusBar implements vscode.Disposable {
         const showSeconds = config.get('statusBar.showSeconds', true);
         const customIcon = config.get('statusBar.icon', '💻');
         const customColor = config.get('statusBar.color', '');
+        const backgroundStyle = config.get('statusBar.backgroundStyle', 'warning');
         
         // Update main status bar (time tracker only)
         const timeDisplay = this.formatTime(todayTotal, showSeconds);
@@ -82,6 +83,15 @@ export class StatusBar implements vscode.Disposable {
             this.statusBarItem.color = customColor;
         } else {
             this.statusBarItem.color = undefined;
+        }
+
+        // Apply background style selection
+        if (backgroundStyle === 'warning') {
+            this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        } else if (backgroundStyle === 'error') {
+            this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+        } else {
+            this.statusBarItem.backgroundColor = undefined;
         }
         
         this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
