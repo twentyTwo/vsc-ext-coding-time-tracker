@@ -85,14 +85,18 @@ export class StatusBar implements vscode.Disposable {
             this.statusBarItem.color = undefined;
         }
 
-        // Apply background style selection
+        // Apply background style selection to both status bar items
+        let backgroundColor: vscode.ThemeColor | undefined;
         if (backgroundStyle === 'warning') {
-            this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+            backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         } else if (backgroundStyle === 'error') {
-            this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+            backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
         } else {
-            this.statusBarItem.backgroundColor = undefined;
+            backgroundColor = undefined;
         }
+        
+        this.statusBarItem.backgroundColor = backgroundColor;
+        this.notificationItem.backgroundColor = backgroundColor;
         
         this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
         
