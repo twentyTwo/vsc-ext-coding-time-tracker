@@ -41,8 +41,8 @@
         },
         "simpleCodingTimeTracker.statusBar.icon": {
           "type": "string",
-          "default": "💻",
-          "description": "Icon or Codicon name to display before the timer (e.g., '$(clock)', '$(rocket)', or any emoji)"
+          "default": "$(code)",
+          "description": "Icon or Codicon name to display before the timer (e.g., '$(code)', '$(clock)', '$(rocket)', or any emoji)"
         },
         "simpleCodingTimeTracker.statusBar.backgroundStyle": {
           "type": "string",
