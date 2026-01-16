@@ -167,8 +167,30 @@ export function activate(context: vscode.ExtensionContext) {
             'php', 'ruby', 'swift', 'kotlin', 'html', 'css', 'scss', 'json', 'yaml', 'markdown', 'sql', 'bash'
         ];
 
+        const value = await vscode.window.showInputBox({
+            title: 'Enter the number of days which should be generated',
+            prompt: 'Please enter the number of days',
+            placeHolder: '90 to generate entries for the last 90 days',
+            validateInput: (input) => {
+                if(isNaN(Number(input))) {
+                    return 'Must be a number';
+                }
+                // Only Positive integers without 0
+                if(!(/^[1-9][[0-9]*$/.test(input))) {
+                    return 'Enter an integer greater than 0';
+                }
+                return null
+            }
+        })
+
+        if (value == undefined) {
+            // user cancelled the input
+            return;
+        }
+
         const today = new Date();
         let totalEntries = 0;
+        const days = Number(value);
 
         await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -176,8 +198,8 @@ export function activate(context: vscode.ExtensionContext) {
             cancellable: false
         }, async (progress) => {
             try {
-                // Generate data for the last 90 days
-                for (let i = 0; i < 90; i++) {
+                // Generate data for the last x days
+                for (let i = 0; i < days; i++) {
                     const date = new Date(today);
                     date.setDate(date.getDate() - i);
                     
@@ -200,7 +222,7 @@ export function activate(context: vscode.ExtensionContext) {
                     }
                     
                     // Update progress
-                    progress.report({ increment: (1/90) * 100 });
+                    progress.report({ increment: (1/days) * 100 });
                 }
 
                 // Add some special test cases for yesterday and today
@@ -218,7 +240,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
 
-        vscode.window.showInformationMessage(`✅ Generated ${totalEntries} test entries successfully!`);
+        vscode.window.showInformationMessage(`✅ Generated ${totalEntries} test entries for ${days} days successfully!`);
     });
 
     // Delete test data command
