@@ -1738,7 +1738,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
                     function updateDailyAverageAnalytics(data, allEntries) {
                         const last30Days = getLast30DaysData(allEntries);
-                        const avgTime = last30Days.reduce((sum, day) => sum + day.time, 0) / 30;
+                        let firstActiveDay = last30Days.findIndex((value, index, obj) => value.time > 0);
+                        const numberOfDays = Math.min(30, 30 - firstActiveDay);
+                        const avgTime = last30Days.reduce((sum, day) => sum + day.time, 0) / numberOfDays;
                         
                         document.getElementById('daily-average').textContent = formatTime(avgTime);
                         
