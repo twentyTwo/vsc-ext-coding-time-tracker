@@ -1312,10 +1312,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                     y: { 
                                         display: true,
                                         ticks: {
+                                            autoSkip: false,
                                             font: {
                                                 size: 9
                                             },
-                                            color: 'var(--vscode-foreground)',
+                                            color: getComputedStyle(document.documentElement).getPropertyValue('--vscode-foreground') || '#000',
                                             padding: 5
                                         },
                                         grid: {
