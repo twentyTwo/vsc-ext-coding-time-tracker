@@ -21,15 +21,33 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
 - **Health Notification System**: Proactive reminders to promote healthy coding habits with scientifically backed intervals.
 - **Dedicated Settings View**: Comprehensive settings interface accessible via the summary view with easy-to-use controls for all configuration options.
+- **Customizable Status Bar**:
+  - Show/Hide Seconds: Toggle seconds display to reduce distractions
+  - Custom Icons: Choose any emoji or VS Code Codicon as the timer icon
+  - Background Styles: Select from default, warning (yellow), or error (red) backgrounds
+  - Custom Colors: Apply custom hex colors or theme color references to the status bar text
+  - Combined Display: Timer and notification status in a single status bar item
+  - Quick Actions: Click timer to save session and open summary, view notification status via bell icon
+- **Developer Insights Dashboard**:
+  - Most Productive Day: Shows your best coding day with average time
+  - Languages Used: Count of languages with most-used language highlight
+  - Projects Worked: Number of projects with most active project highlight
+  - Longest Streak: Track your coding streak with animated flame indicator
+- **Coding Time Analytics**:
+  - Time Summary: Horizontal bar chart comparing today, week, month, year, and all-time totals
+  - Daily Average: Visual breakdown of daily coding patterns
+  - Weekly Progress: Line chart showing weekly trends
+  - Monthly Trend: Area chart displaying monthly progression
 - **Interactive Data Visualization**:
   - Project Summary Chart: Visual breakdown of time spent on each project
-  - Daily Activity Timeline: Interactive line chart showing your coding patterns
-  - Activity Heatmap: 3-month calendar view showing coding intensity
+  - Daily Activity Timeline: Interactive line chart showing your coding patterns (last 30 days)
+  - Activity Heatmap: 3-month calendar view showing coding intensity with detailed tooltips
   - Language Distribution Chart: Visual breakdown of time spent in different programming languages
   - Theme-Aware Charts: Automatically adapts to VS Code's light/dark themes
 - **Advanced Search & Filtering**:
   - Date Range Selection: Filter data by specific time periods
   - Project Filtering: Focus on specific projects
+  - Branch Filtering: Filter by Git branches (dynamically updates based on selected project)
   - Language Filtering: Focus on specific programming languages
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
@@ -91,38 +109,76 @@ You can customize the extension's behavior through VS Code settings or the dedic
 2. Search for "Simple Coding Time Tracker"
 
 **Available settings:**  
-   - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in minutes)
-     - Default: 2.5 minutes
-     - Lower values will stop tracking sooner when you're not actively coding
-     - Higher values will continue tracking for longer during breaks
-   - **Focus Timeout**: How long to continue tracking after VS Code loses focus (in minutes)
-     - Default: 3 minutes
-     - Determines how long to keep tracking when you switch to other applications
-     - Useful for when you're referencing documentation or testing your application
+   - **Time Tracking Settings**:
+     - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in minutes)
+       - Default: 2.5 minutes
+       - Lower values will stop tracking sooner when you're not actively coding
+       - Higher values will continue tracking for longer during breaks
+     - **Focus Timeout**: How long to continue tracking after VS Code loses focus (in minutes)
+       - Default: 3 minutes
+       - Determines how long to keep tracking when you switch to other applications
+       - Useful for when you're referencing documentation or testing your application
+   
+   - **Status Bar Display Settings**:
+     - **Show Seconds**: Display seconds in the status bar time (HH:MM:SS)
+       - Default: true
+       - Disable to reduce distractions and show only hours and minutes (HH:MM)
+     - **Status Bar Icon**: Icon or Codicon name to display before the timer
+       - Default: '$(code)'
+       - Supports emojis (e.g., '💻', '⏱️') or VS Code Codicons (e.g., '$(clock)', '$(rocket)')
+     - **Background Style**: Background color style for the timer in the status bar
+       - Default: 'warning' (yellow)
+       - Options: 'default' (theme color), 'warning' (yellow), 'error' (red)
+     - **Custom Color**: Custom color for the timer text
+       - Default: '' (empty, uses theme default)
+       - Supports hex colors (e.g., '#FFAA00') or VS Code theme color references (e.g., 'editor.foreground')
+   
    - **Health Notifications**: Configure health reminder settings
+     - **Enable Notifications**: Enable/disable all health notifications (default: false)
      - **Modal Notifications**: Enable/disable modal behavior for health notifications (default: true)
-     - **Enable Notifications**: Enable/disable all health notifications (default: true)
      - **Eye Rest Interval**: Frequency of eye rest reminders in minutes (default: 20) - Based on 20-20-20 rule
      - **Stretch Interval**: Frequency of stretch reminders in minutes (default: 30) - Recommended for posture health
      - **Break Threshold**: Coding duration before suggesting a break in minutes (default: 90) - Based on ultradian rhythms
+   
+   - **Developer Settings**:
+     - **Enable Dev Commands**: Enable development commands for testing (default: false)
+       - Only enable this for testing purposes
+       - When enabled, adds 'Generate Test Data' and 'Delete Test Data' commands
 
 
 ## Screenshots
 
 ### Coding time summary
 The summary page provides a detailed report of your coding activity with interactive charts and visualizations:
-- Project distribution chart showing time allocation across projects
-- Daily activity timeline with interactive tooltips
-- 3-month activity heatmap for long-term pattern analysis
-- Language distribution chart showing time spent in different programming languages
-- Theme-aware visualizations that adapt to your VS Code theme
-- Advanced search and filtering capabilities
-- Quick access to settings via the Settings button in the header
+- **Developer Insights Dashboard**:
+  - Most Productive Day with average time breakdown
+  - Languages Used count with most-used language highlight
+  - Projects Worked count with most active project highlight
+  - Longest Streak tracking with animated flame indicator
+- **Coding Time Analytics**:
+  - Time Summary comparing today, week, month, year, and all-time totals
+  - Daily Average showing coding patterns over last 30 days
+  - Weekly Progress line chart with trend visualization
+  - Monthly Trend area chart displaying progression
+- **Interactive Charts**:
+  - Project distribution chart showing time allocation across projects
+  - Daily activity timeline with interactive tooltips (last 30 days)
+  - 3-month activity heatmap for long-term pattern analysis
+  - Language distribution chart showing time spent in different programming languages
+  - Theme-aware visualizations that adapt to your VS Code theme
+- **Advanced Search & Filtering**:
+  - Date range selection for specific time periods
+  - Project and branch filtering with dynamic branch updates
+  - Quick reset button to clear all filters
+- **Quick Access**:
+  - Settings button in header for instant configuration access
+  - Click status bar timer to save session and open summary
+  - Bell icon shows health notification status at a glance
 
 ![Coding Summary](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-light.png)
 
 #### Dark theme
-![Coding Summary Dark Theme](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-dark.png))
+![Coding Summary Dark Theme](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-dark.png)
 
 
 #### Status Bar
@@ -170,6 +226,48 @@ For complete testing documentation, see [TECHNICAL.md](TECHNICAL.md).
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.7.0] - 2026-1-18
+- Added comprehensive status bar customization options
+- Implemented show/hide seconds toggle for reduced distractions
+- Added custom icon support (emojis and VS Code Codicons)
+- Implemented background style selection (default, warning, error)
+- Added custom color picker for status bar text
+- Combined timer and notification status in single status bar item
+- Enhanced tooltip with health notification status display
+- Added click-to-save functionality on status bar timer
+
+### [0.6.6] - 2025-11-28
+- Added Developer Insights dashboard with productivity analytics
+- Implemented Most Productive Day tracking with average time
+- Added Languages Used counter with most-used language highlight
+- Implemented Projects Worked counter with most active project
+- Added Longest Streak tracking with animated flame indicator
+- Enhanced summary view with new analytics widgets
+- Added Coding Time Analytics section with multiple charts
+- Implemented Time Summary horizontal bar chart
+- Added Daily Average visualization with 30-day history
+- Implemented Weekly Progress line chart with trend analysis
+- Added Monthly Trend area chart for progression tracking
+- Enhanced 3-month activity heatmap with detailed tooltips
+- Improved chart responsiveness and interactivity
+
+### [0.6.5] - 2025-11-10
+- Enhanced summary view with improved data visualization
+- Added Settings button in summary view header for quick access
+- Improved daily activity timeline to show last 30 days
+- Enhanced project distribution chart with better sorting
+- Improved search and filtering UX with dynamic branch updates
+- Added better tooltips and hover effects on charts
+- Enhanced theme compatibility for all visualizations
+
+### [0.6.4] - 2025-10-25
+- Improved status bar display with better formatting
+- Enhanced notification status indicator with bell icon
+- Added comprehensive tooltip information including project and branch
+- Improved time formatting consistency across all displays
+- Enhanced data persistence and reliability
+- Improved error handling and logging
 
 ### [0.6.3] - 2025-10-10
 - Added dedicated Settings View accessible from the summary view header
