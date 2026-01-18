@@ -19,6 +19,7 @@ export interface SummaryData {
 export class Database {
     private context: vscode.ExtensionContext;
     private entries: TimeEntry[] | null = null;
+    private writeLock: Promise<void> = Promise.resolve();
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
@@ -62,32 +63,37 @@ export class Database {
             return;
         }
 
-        const dateString = this.getLocalDateString(date);
-        const entries = this.getEntries();
-        
-        const existingEntryIndex = entries.findIndex(entry => 
-            entry.date === dateString && 
-            entry.project === project && 
-            entry.branch === branch &&
-            entry.language === language
-        );
+        // Use a write lock to prevent concurrent modifications
+        this.writeLock = this.writeLock.then(async () => {
+            const dateString = this.getLocalDateString(date);
+            const entries = this.getEntries();
+            
+            const existingEntryIndex = entries.findIndex(entry => 
+                entry.date === dateString && 
+                entry.project === project && 
+                entry.branch === branch &&
+                entry.language === language
+            );
 
-        // Round to 2 decimal places to avoid floating point issues
-        const roundedTime = Math.round(timeSpent * 100) / 100;
+            // Round to 2 decimal places to avoid floating point issues
+            const roundedTime = Math.round(timeSpent * 100) / 100;
 
-        if (existingEntryIndex !== -1) {
-            entries[existingEntryIndex].timeSpent += roundedTime;
-        } else {
-            entries.push({ date: dateString, project, timeSpent: roundedTime, branch, language });
-        }
+            if (existingEntryIndex !== -1) {
+                entries[existingEntryIndex].timeSpent += roundedTime;
+            } else {
+                entries.push({ date: dateString, project, timeSpent: roundedTime, branch, language });
+            }
 
-        try {
-            await this.updateEntries(entries);
-            console.log(`Saved ${roundedTime}min for ${project}/${branch}/${language} on ${dateString}`);
-        } catch (error) {
-            console.error('Error saving entry:', error);
-            vscode.window.showErrorMessage('Failed to save time entry');
-        }
+            try {
+                await this.updateEntries(entries);
+                console.log(`Saved ${roundedTime}min for ${project}/${branch}/${language} on ${dateString}`);
+            } catch (error) {
+                console.error('Error saving entry:', error);
+                vscode.window.showErrorMessage('Failed to save time entry');
+            }
+        });
+
+        await this.writeLock;
     }
 
     getEntries(): TimeEntry[] {
