@@ -2,7 +2,7 @@
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
   "description": "Track and visualize your coding time across projects",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -38,6 +38,22 @@
           "type": "boolean",
           "default": true,
           "description": "Show seconds in the status bar time display (disable to reduce distractions)"
+        },
+        "simpleCodingTimeTracker.statusBar.icon": {
+          "type": "string",
+          "default": "$(code)",
+          "description": "Icon or Codicon name to display before the timer (e.g., '$(code)', '$(clock)', '$(rocket)', or any emoji)"
+        },
+        "simpleCodingTimeTracker.statusBar.backgroundStyle": {
+          "type": "string",
+          "enum": ["default", "warning", "error"],
+          "default": "warning",
+          "description": "Background style for the timer in the status bar: default (theme), warning (yellow), or error (red)."
+        },
+        "simpleCodingTimeTracker.statusBar.color": {
+          "type": "string",
+          "default": "",
+          "description": "Custom color for the timer text in hex format (e.g., '#FFAA00') or a VS Code theme color reference"
         },
         "simpleCodingTimeTracker.health.enableNotifications": {
           "type": "boolean",

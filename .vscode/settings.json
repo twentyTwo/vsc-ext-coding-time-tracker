@@ -6,5 +6,8 @@
     "simpleCodingTimeTracker.statusBar.showSeconds": true,
     "simpleCodingTimeTracker.health.enableNotifications": false,
     "simpleCodingTimeTracker.health.modalNotifications": true,
-    "simpleCodingTimeTracker.health.breakThreshold": 90
+    "simpleCodingTimeTracker.health.breakThreshold": 90,
+    "simpleCodingTimeTracker.statusBar.icon": "$(clock)",
+    "simpleCodingTimeTracker.statusBar.color": "#0bef5b",
+    "simpleCodingTimeTracker.statusBar.backgroundStyle": "remote"
 }

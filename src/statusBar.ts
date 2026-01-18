@@ -5,7 +5,6 @@ import { SummaryViewProvider } from './summaryView';
 
 export class StatusBar implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
-    private notificationItem: vscode.StatusBarItem;
     private timeTracker: TimeTracker;
     private summaryView: SummaryViewProvider;
     private updateInterval: NodeJS.Timeout;
@@ -16,10 +15,10 @@ export class StatusBar implements vscode.Disposable {
     constructor(timeTracker: TimeTracker, summaryView: SummaryViewProvider) {
         this.timeTracker = timeTracker;
         this.summaryView = summaryView;
+        // Single combined status bar item at higher priority
         this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-        this.notificationItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99.9999);
         
-        // Register manual save command (clicking anywhere saves session)
+        // Register manual save command (clicking timer saves session)
         const commandDisposable = vscode.commands.registerCommand(this.commandId, () => {
             if (this.timeTracker.isActive()) {
                 // Save current session with manual save reason
@@ -33,23 +32,17 @@ export class StatusBar implements vscode.Disposable {
             }
         });
         
-        // Register notification toggle command
+        // Register notification toggle command (clicking bell toggles notifications)
         const notificationCommandDisposable = vscode.commands.registerCommand(this.notificationCommandId, () => {
             this.toggleNotifications();
         });
         
         
-        // Set up main status bar item
+        // Set up combined status bar item
         this.statusBarItem.command = this.commandId;
-        this.statusBarItem.tooltip = 'Click to save current session and show summary';
+        this.statusBarItem.tooltip = 'Click to save current session and show summary | Right-click for notifications menu';
         this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         this.statusBarItem.show();
-        
-        // Set up notification status bar item
-        this.notificationItem.command = this.notificationCommandId;
-        this.notificationItem.tooltip = 'Click to toggle health notifications';
-        this.notificationItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-        this.notificationItem.show();
         
         // Listen for configuration changes to update immediately
         this.configChangeListener = vscode.workspace.onDidChangeConfiguration(e => {
@@ -69,19 +62,40 @@ export class StatusBar implements vscode.Disposable {
         // Get configuration settings
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         const showSeconds = config.get('statusBar.showSeconds', true);
+        const customIcon = config.get('statusBar.icon', '$(code)');
+        const customColor = config.get('statusBar.color', '');
+        const backgroundStyle = config.get('statusBar.backgroundStyle', 'warning');
         
-        // Update main status bar (time tracker only)
+        // Format time display
         const timeDisplay = this.formatTime(todayTotal, showSeconds);
-        const icon = isActive ? '💻' : '⏸️';
-        this.statusBarItem.text = `${icon} ${timeDisplay}`;
+        const timerIcon = isActive ? customIcon : '$(coffee)'; // VS Code pause icon
         
-        this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime);
-        
-        // Update notification status bar
+        // Get notification status and icon
         const notificationsEnabled = config.get('health.enableNotifications', false);
-        const notificationIcon = notificationsEnabled ? '🔔' : '🔕';
-        this.notificationItem.text = notificationIcon;
-        this.notificationItem.tooltip = `Health Notifications: ${notificationsEnabled ? 'ON' : 'OFF'} (Click to toggle)`;
+        const notificationIcon = notificationsEnabled ? '$(bell)' : '$(bell-slash)'; // VS Code bell icons
+        
+        // Combined display: timer + notifications in one status bar item
+        this.statusBarItem.text = `${timerIcon} ${timeDisplay}  ${notificationIcon}`;
+        
+        // Apply custom color if configured
+        if (customColor) {
+            this.statusBarItem.color = customColor;
+        } else {
+            this.statusBarItem.color = undefined;
+        }
+
+        // Apply background style
+        let backgroundColor: vscode.ThemeColor | undefined;
+        if (backgroundStyle === 'warning') {
+            backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        } else if (backgroundStyle === 'error') {
+            backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+        } else {
+            backgroundColor = undefined;
+        }
+        
+        this.statusBarItem.backgroundColor = backgroundColor;
+        this.statusBarItem.tooltip = await this.getTooltipText(isActive, currentProjectTime, notificationsEnabled);
     }
 
     private formatTime(minutes: number, showSeconds: boolean = true): string {
@@ -96,15 +110,13 @@ export class StatusBar implements vscode.Disposable {
         }
     }    
     
-    private async getTooltipText(isActive: boolean, currentProjectTime: number): Promise<string> {
+    private async getTooltipText(isActive: boolean, currentProjectTime: number, notificationsEnabled: boolean): Promise<string> {
         const weeklyTotal = await this.timeTracker.getWeeklyTotal();
         const monthlyTotal = await this.timeTracker.getMonthlyTotal();
         const allTimeTotal = await this.timeTracker.getAllTimeTotal();
         const currentBranch = this.timeTracker.getCurrentBranch();
         const currentProject = this.timeTracker.getCurrentProject();
 
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
-        const notificationsEnabled = config.get('health.enableNotifications', false);
         const notificationStatus = notificationsEnabled ? 'ON' : 'OFF';
         
         return `${isActive ? 'Active' : 'Paused'} - Coding Time
@@ -114,8 +126,8 @@ Current Project Today: ${formatTime(currentProjectTime)}
 This week total: ${formatTime(weeklyTotal)}
 This month total: ${formatTime(monthlyTotal)}
 All Time total: ${formatTime(allTimeTotal)}
-Notifications: ${notificationStatus}
-Click to save session and show summary`;
+Health Notifications: ${notificationStatus}
+Click timer to save session | Hover bell icon for notification status`;
     }
 
 
@@ -130,10 +142,10 @@ Click to save session and show summary`;
         // Update the visual state
         await this.updateStatusBar();
         
-        // Show brief feedback message
+        // Show brief feedback message with VS Code icon
+        const icon = !currentEnabled ? '$(bell)' : '$(bell-slash)';
         const status = !currentEnabled ? 'enabled' : 'disabled';
-        const icon = !currentEnabled ? '🔔' : '🔕';
-        vscode.window.showInformationMessage(`${icon} Health notifications ${status}`);
+        vscode.window.showInformationMessage(`Health notifications ${status}`);
     }
 
     // Public method to force immediate update
@@ -143,7 +155,6 @@ Click to save session and show summary`;
 
     dispose() {
         this.statusBarItem.dispose();
-        this.notificationItem.dispose();
         this.configChangeListener.dispose();
         clearInterval(this.updateInterval);
     }

@@ -10,6 +10,9 @@ export class SettingsViewProvider {
 
     public show() {
         if (this.panel) {
+            // Refresh HTML so newly added settings render for existing panels
+            this.panel.webview.html = this.getHtmlContent();
+            void this.sendCurrentSettings();
             this.panel.reveal(vscode.ViewColumn.One);
             return;
         }
@@ -58,6 +61,9 @@ export class SettingsViewProvider {
             inactivityTimeout: config.get('inactivityTimeout', 2.5),
             focusTimeout: config.get('focusTimeout', 3),
             statusBarShowSeconds: config.get('statusBar.showSeconds', true),
+            statusBarIcon: config.get('statusBar.icon', '💻'),
+            statusBarBackgroundStyle: config.get('statusBar.backgroundStyle', 'warning'),
+            statusBarColor: config.get('statusBar.color', ''),
             healthEnableNotifications: config.get('health.enableNotifications', true),
             healthModalNotifications: config.get('health.modalNotifications', true),
             healthEyeRestInterval: config.get('health.eyeRestInterval', 20),
@@ -80,6 +86,9 @@ export class SettingsViewProvider {
             await config.update('inactivityTimeout', settings.inactivityTimeout, vscode.ConfigurationTarget.Workspace);
             await config.update('focusTimeout', settings.focusTimeout, vscode.ConfigurationTarget.Workspace);
             await config.update('statusBar.showSeconds', settings.statusBarShowSeconds, vscode.ConfigurationTarget.Workspace);
+            await config.update('statusBar.icon', settings.statusBarIcon, vscode.ConfigurationTarget.Workspace);
+            await config.update('statusBar.backgroundStyle', settings.statusBarBackgroundStyle, vscode.ConfigurationTarget.Workspace);
+            await config.update('statusBar.color', settings.statusBarColor, vscode.ConfigurationTarget.Workspace);
             await config.update('health.enableNotifications', settings.healthEnableNotifications, vscode.ConfigurationTarget.Workspace);
             await config.update('health.modalNotifications', settings.healthModalNotifications, vscode.ConfigurationTarget.Workspace);
             await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, vscode.ConfigurationTarget.Workspace);
@@ -190,7 +199,7 @@ export class SettingsViewProvider {
             line-height: 1.4;
         }
 
-        input[type="number"] {
+        input[type="number"], input[type="text"], select {
             width: 100%;
             max-width: 200px;
             padding: 6px 10px;
@@ -201,8 +210,23 @@ export class SettingsViewProvider {
             font-size: 13px;
         }
 
-        input[type="number"]:focus {
+        input[type="number"]:focus, input[type="text"]:focus, select:focus {
             outline: 1px solid var(--vscode-focusBorder);
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 320px;
+        }
+
+        input[type="color"] {
+            width: 42px;
+            height: 32px;
+            padding: 0;
+            border: 1px solid var(--vscode-input-border);
+            background: transparent;
         }
 
         .checkbox-container {
@@ -300,6 +324,34 @@ export class SettingsViewProvider {
             </div>
             <div class="description">Display seconds in the status bar time (HH:MM:SS). Disable to reduce distractions and show only hours and minutes.</div>
         </div>
+
+        <div class="setting-item">
+            <label for="statusBarIcon">Status Bar Icon</label>
+            <div class="description">Icon or Codicon name to display before the timer. Examples: '💻' (default), '$(clock)', '$(rocket)', or any emoji.</div>
+            <input type="text" id="statusBarIcon" placeholder="💻" style="width: 100%; max-width: 300px;" />
+            <div class="range-info">Supports emojis, text, or VS Code Codicons like $(clock)</div>
+        </div>
+
+        <div class="setting-item">
+            <label for="statusBarBackgroundStyle">Status Bar Background</label>
+            <div class="description">Choose the background style for the timer: use the default status bar color, a warning highlight, or an error highlight.</div>
+            <select id="statusBarBackgroundStyle" style="max-width: 220px;">
+                <option value="default">Default (theme)</option>
+                <option value="warning">Warning (yellow)</option>
+                <option value="error">Error (red)</option>
+            </select>
+            <div class="range-info">Matches VS Code theme colors: status bar default, warning, or error background</div>
+        </div>
+
+        <div class="setting-item">
+            <label for="statusBarColor">Status Bar Font Color</label>
+            <div class="description">Pick a font color for the timer text, or enter a hex/theme color. Leave empty for default.</div>
+            <div class="color-row">
+                <input type="color" id="statusBarColorPicker" aria-label="Pick status bar font color" />
+                <input type="text" id="statusBarColor" placeholder="#FFAA00 or theme color" style="flex: 1; max-width: 260px;" />
+            </div>
+            <div class="range-info">Examples: #FFAA00 (orange), #00FF00 (green), or theme color (e.g., editor.foreground). Leave blank for default.</div>
+        </div>
     </div>
 
     <div class="setting-group">
@@ -384,6 +436,9 @@ export class SettingsViewProvider {
             document.getElementById('inactivityTimeout').value = settings.inactivityTimeout;
             document.getElementById('focusTimeout').value = settings.focusTimeout;
             document.getElementById('statusBarShowSeconds').checked = settings.statusBarShowSeconds;
+            document.getElementById('statusBarIcon').value = settings.statusBarIcon;
+            document.getElementById('statusBarBackgroundStyle').value = settings.statusBarBackgroundStyle;
+            syncTextAndPicker(settings.statusBarColor || '');
             document.getElementById('healthEnableNotifications').checked = settings.healthEnableNotifications;
             document.getElementById('healthModalNotifications').checked = settings.healthModalNotifications;
             document.getElementById('healthEyeRestInterval').value = settings.healthEyeRestInterval;
@@ -397,6 +452,9 @@ export class SettingsViewProvider {
                 inactivityTimeout: parseFloat(document.getElementById('inactivityTimeout').value),
                 focusTimeout: parseFloat(document.getElementById('focusTimeout').value),
                 statusBarShowSeconds: document.getElementById('statusBarShowSeconds').checked,
+                statusBarIcon: document.getElementById('statusBarIcon').value,
+                statusBarBackgroundStyle: document.getElementById('statusBarBackgroundStyle').value,
+                statusBarColor: document.getElementById('statusBarColor').value,
                 healthEnableNotifications: document.getElementById('healthEnableNotifications').checked,
                 healthModalNotifications: document.getElementById('healthModalNotifications').checked,
                 healthEyeRestInterval: parseInt(document.getElementById('healthEyeRestInterval').value),
@@ -405,6 +463,49 @@ export class SettingsViewProvider {
                 enableDevCommands: document.getElementById('enableDevCommands').checked
             };
         }
+
+        const hexRegex = /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/;
+
+        function normalizeHexToSix(value) {
+            const trimmed = value.trim();
+            if (!trimmed) return '';
+            const withHash = trimmed.startsWith('#') ? trimmed : '#' + trimmed;
+            if (!hexRegex.test(withHash)) return '';
+            const hex = withHash.replace('#', '');
+            if (hex.length === 3) {
+                return '#' + hex.split('').map(c => c + c).join('').toLowerCase();
+            }
+            return '#' + hex.toLowerCase();
+        }
+
+        function syncTextAndPicker(value) {
+            const textInput = document.getElementById('statusBarColor');
+            const pickerInput = document.getElementById('statusBarColorPicker');
+            textInput.value = value;
+            const normalized = normalizeHexToSix(value);
+            if (normalized) {
+                pickerInput.value = normalized;
+            } else {
+                pickerInput.value = '#ffaa00'; // fallback visible color
+            }
+        }
+
+        // Keep text input and picker in sync
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('statusBarColor');
+            const pickerInput = document.getElementById('statusBarColorPicker');
+
+            pickerInput.addEventListener('input', () => {
+                textInput.value = pickerInput.value;
+            });
+
+            textInput.addEventListener('input', () => {
+                const normalized = normalizeHexToSix(textInput.value);
+                if (normalized) {
+                    pickerInput.value = normalized;
+                }
+            });
+        });
 
         document.getElementById('saveButton').addEventListener('click', () => {
             const settings = getSettings();
