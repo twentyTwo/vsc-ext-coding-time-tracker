@@ -1,0 +1,203 @@
+name: Beta Release
+on:
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - '.github/workflows/**'
+      - '**.md'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      force_publish:
+        description: 'Force beta publish (ignore checks)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  # Build and create beta release
+  build-beta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      beta_version: ${{ steps.package.outputs.beta_version }}
+      vsix_name: ${{ steps.build.outputs.vsix_name }}
+      should_publish: ${{ steps.verify.outputs.should_publish }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Verify changes
+        id: verify
+        run: |
+          # For manual triggers with force flag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force_publish }}" = "true" ]; then
+            echo "🚀 Manual workflow dispatch with force publish - proceeding with beta release"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Get changed files
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | tr '\n' ' ')
+          elif [ -z "${{ github.event.before }}" ] || [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git ls-files | tr '\n' ' ')
+          else
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | tr '\n' ' ')
+          fi
+          
+          echo "📋 Changed files: $CHANGED_FILES"
+          
+          # Check if only documentation or workflow files were changed
+          SKIP_PUBLISH=true
+          for file in $CHANGED_FILES; do
+            if [[ ! $file =~ \.(md|txt)$ ]] && [[ ! $file =~ ^docs/ ]] && [[ ! $file =~ ^\.github/workflows/ ]]; then
+              SKIP_PUBLISH=false
+              break
+            fi
+          done
+          
+          if [[ "$SKIP_PUBLISH" == "true" ]]; then
+            echo "📚 Only documentation or workflow files changed - skipping beta release"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Code changes detected - proceeding with beta release"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get package info and create beta version
+        id: package
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+          BETA_VERSION="${VERSION}-beta.${TIMESTAMP}"
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "beta_version=$BETA_VERSION" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          
+          echo "📦 Base version: $VERSION"
+          echo "🔬 Beta version: $BETA_VERSION"
+
+      - name: Update package.json with beta version
+        if: steps.verify.outputs.should_publish == 'true'
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ steps.package.outputs.beta_version }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          echo "✅ Updated package.json to beta version"
+
+      - name: Build VSIX package
+        id: build
+        if: steps.verify.outputs.should_publish == 'true'
+        run: |
+          npm install -g @vscode/vsce@latest
+          rm -f *.vsix
+          vsce package --pre-release
+          
+          VSIX_NAME="simple-coding-time-tracker-${{ steps.package.outputs.beta_version }}.vsix"
+          echo "vsix_name=$VSIX_NAME" >> $GITHUB_OUTPUT
+          
+          # Validate VSIX
+          if [ ! -f "$VSIX_NAME" ]; then
+            echo "❌ VSIX build failed"
+            exit 1
+          fi
+          
+          # Get file size
+          SIZE=$(stat -c%s "$VSIX_NAME" 2>/dev/null || stat -f%z "$VSIX_NAME")
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          
+          echo "📦 Package size: ${SIZE_MB}MB"
+          echo "✅ Beta VSIX built successfully - $VSIX_NAME"
+
+      - name: Upload VSIX artifact
+        if: steps.verify.outputs.should_publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-vsix-beta-${{ steps.package.outputs.beta_version }}
+          path: ${{ steps.build.outputs.vsix_name }}
+          retention-days: 30
+
+  # Create GitHub Release for beta
+  create-beta-release:
+    needs: build-beta
+    if: needs.build-beta.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-vsix-beta-${{ needs.build-beta.outputs.beta_version }}
+
+      - name: Create GitHub Beta Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.build-beta.outputs.beta_version }}
+          name: Beta Release v${{ needs.build-beta.outputs.beta_version }}
+          body: |
+            🔬 **Beta Release** 
+            
+            This is a pre-release build from the `develop` branch for testing purposes.
+            
+            **Base Version:** ${{ needs.build-beta.outputs.version }}
+            **Beta Version:** ${{ needs.build-beta.outputs.beta_version }}
+            **Branch:** develop
+            **Commit:** ${{ github.sha }}
+            
+            ### Installation
+            Download the `.vsix` file and install manually:
+            1. Download `${{ needs.build-beta.outputs.vsix_name }}`
+            2. Open VS Code
+            3. Go to Extensions view (Ctrl+Shift+X)
+            4. Click on "..." menu → Install from VSIX...
+            5. Select the downloaded file
+            
+            ### ⚠️ Warning
+            This is a beta release and may contain bugs or incomplete features. Use at your own risk.
+            
+            ### Feedback
+            Please report any issues or feedback on the [GitHub Issues](https://github.com/${{ github.repository }}/issues) page.
+          files: ${{ needs.build-beta.outputs.vsix_name }}
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "### 🎉 Beta Release Created Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.build-beta.outputs.beta_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** v${{ needs.build-beta.outputs.beta_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**VSIX:** ${{ needs.build-beta.outputs.vsix_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.build-beta.outputs.beta_version }})" >> $GITHUB_STEP_SUMMARY
