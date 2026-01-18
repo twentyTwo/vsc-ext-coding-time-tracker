@@ -31,6 +31,39 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify develop commits included
+        run: |
+          # Get current branch name
+          CURRENT_BRANCH="${GITHUB_REF#refs/heads/}"
+          echo "🔍 Current branch: $CURRENT_BRANCH"
+          
+          # Skip check if we're on develop branch itself
+          if [ "$CURRENT_BRANCH" = "develop" ]; then
+            echo "✅ Running on develop branch - skipping verification"
+            exit 0
+          fi
+          
+          # Fetch develop branch
+          git fetch origin develop 2>/dev/null || true
+          if ! git rev-parse --verify origin/develop >/dev/null 2>&1; then
+            echo "⚠️ Develop branch not found - skipping verification"
+            exit 0
+          fi
+          
+          # Check if develop is an ancestor of current branch (all develop commits are included)
+          if git merge-base --is-ancestor origin/develop HEAD; then
+            echo "✅ All commits from develop are included in $CURRENT_BRANCH"
+          else
+            echo "❌ ERROR: Current branch is missing commits from develop!"
+            echo ""
+            echo "Please merge or rebase develop into your feature branch:"
+            echo "  git checkout $CURRENT_BRANCH"
+            echo "  git merge origin/develop"
+            echo "  # or"
+            echo "  git rebase origin/develop"
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
