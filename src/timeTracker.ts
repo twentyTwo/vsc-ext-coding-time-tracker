@@ -29,7 +29,7 @@ export class TimeTracker implements vscode.Disposable {
     private focusTimeoutSeconds: number = 180; // Default 3 minutes * 60 = 180 seconds
     private gitWatcher: GitWatcher | null = null;
     private branchCheckInterval: NodeJS.Timeout | null = null;
-    private isCheckingBranch: boolean = false;
+    private branchCheckPromise: Promise<void> | null = null;
     private lastUpdateTime: number = Date.now();
     private lastFocusTime: number = Date.now();
     private healthManager: HealthNotificationManager;
@@ -661,11 +661,14 @@ export class TimeTracker implements vscode.Disposable {
 
             // Check for branch changes less frequently to reduce CPU load
             // Changed from 1 second to 5 seconds to reduce the number of git processes spawned
+            // Only set interval if git setup was successful
             this.branchCheckInterval = setInterval(async () => {
                 await this.checkBranchChanges();
             }, 5000);
 
         } catch (error) {
+            // Ensure interval is not running if git setup failed
+            this.stopGitWatcher();
             this.logger.logEvent('branch_check_error', {
                 project: this.currentProject,
                 currentBranch: this.currentBranch,
@@ -681,50 +684,59 @@ export class TimeTracker implements vscode.Disposable {
 
     private async checkBranchChanges() {
         // Prevent concurrent executions of branch checking
-        if (this.isCheckingBranch || !this.gitWatcher || !this.isTracking) {
+        if (this.branchCheckPromise || !this.gitWatcher || !this.isTracking) {
             return;
         }
 
-        try {
-            this.isCheckingBranch = true;
-            const branchInfo = await this.gitWatcher.git.branch();
-            const currentBranch = branchInfo.current || 'unknown';
+        // Create a promise chain to serialize branch checks
+        this.branchCheckPromise = (async () => {
+            try {
+                const branchInfo = await this.gitWatcher!.git.branch();
+                const currentBranch = branchInfo.current || 'unknown';
 
-            // If branch has changed
-            if (currentBranch !== this.gitWatcher.lastKnownBranch) {
-                // Log branch change event
-                this.logger.logEvent('branch_changed', {
+                // If branch has changed
+                if (currentBranch !== this.gitWatcher!.lastKnownBranch) {
+                    // Log branch change event
+                    this.logger.logEvent('branch_changed', {
+                        project: this.currentProject,
+                        language: this.currentLanguage,
+                        oldBranch: this.gitWatcher!.lastKnownBranch,
+                        newBranch: currentBranch
+                    });
+
+                    // Save the current session with the old branch
+                    await this.saveCurrentSession(`branch change from ${this.gitWatcher!.lastKnownBranch} to ${currentBranch}`);
+
+                    // Update branch tracking only after save completes
+                    this.gitWatcher!.lastKnownBranch = currentBranch;
+                    this.currentBranch = currentBranch;
+
+                    // Start a new session from this point
+                    this.startTime = Date.now();
+                }
+            } catch (error) {
+                this.logger.logEvent('branch_check_error', {
                     project: this.currentProject,
-                    language: this.currentLanguage,
-                    oldBranch: this.gitWatcher.lastKnownBranch,
-                    newBranch: currentBranch
+                    currentBranch: this.currentBranch,
+                    currentLanguage: this.currentLanguage,
+                    error: error instanceof Error ? 
+                        `Branch check error: ${error.message}` : 
+                        'Unknown branch check error',
+                    location: 'checkBranchChanges'
                 });
-
-                // Save the current session with the old branch
-                await this.saveCurrentSession(`branch change from ${this.gitWatcher.lastKnownBranch} to ${currentBranch}`);
-
-                // Update branch tracking
-                this.gitWatcher.lastKnownBranch = currentBranch;
-                this.currentBranch = currentBranch;
-
-                // Start a new session from this point
-                this.startTime = Date.now();
+                console.error('Error checking branch changes:', error);
+                
+                // Stop git watcher on persistent errors to prevent resource waste
+                if (error instanceof Error && error.message.includes('Not a git repository')) {
+                    this.stopGitWatcher();
+                }
+            } finally {
+                // Always reset the promise to allow future checks
+                this.branchCheckPromise = null;
             }
-        } catch (error) {
-            this.logger.logEvent('branch_check_error', {
-                project: this.currentProject,
-                currentBranch: this.currentBranch,
-                currentLanguage: this.currentLanguage,
-                error: error instanceof Error ? 
-                    `Branch check error: ${error.message}` : 
-                    'Unknown branch check error',
-                location: 'checkBranchChanges'
-            });
-            console.error('Error checking branch changes:', error);
-        } finally {
-            // Always reset the flag to allow future checks
-            this.isCheckingBranch = false;
-        }
+        })();
+
+        await this.branchCheckPromise;
     }
 
     private stopGitWatcher() {
