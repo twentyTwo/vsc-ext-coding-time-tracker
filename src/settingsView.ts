@@ -82,18 +82,24 @@ export class SettingsViewProvider {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
 
         try {
-            // Most settings should be saved to Workspace scope (default behavior in package.json)
-            await config.update('inactivityTimeout', settings.inactivityTimeout, vscode.ConfigurationTarget.Workspace);
-            await config.update('focusTimeout', settings.focusTimeout, vscode.ConfigurationTarget.Workspace);
-            await config.update('statusBar.showSeconds', settings.statusBarShowSeconds, vscode.ConfigurationTarget.Workspace);
-            await config.update('statusBar.icon', settings.statusBarIcon, vscode.ConfigurationTarget.Workspace);
-            await config.update('statusBar.backgroundStyle', settings.statusBarBackgroundStyle, vscode.ConfigurationTarget.Workspace);
-            await config.update('statusBar.color', settings.statusBarColor, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.enableNotifications', settings.healthEnableNotifications, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.modalNotifications', settings.healthModalNotifications, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.stretchInterval', settings.healthStretchInterval, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.breakThreshold', settings.healthBreakThreshold, vscode.ConfigurationTarget.Workspace);
+            // Determine the target scope: Workspace if available, otherwise Global
+            // This prevents "Unable to write to Workspace Settings because no workspace is opened" error
+            const hasWorkspace = vscode.workspace.workspaceFile !== undefined;
+            const configTarget = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+
+            // Most settings should be saved to Workspace scope if available (default behavior in package.json)
+            // Otherwise fall back to Global scope
+            await config.update('inactivityTimeout', settings.inactivityTimeout, configTarget);
+            await config.update('focusTimeout', settings.focusTimeout, configTarget);
+            await config.update('statusBar.showSeconds', settings.statusBarShowSeconds, configTarget);
+            await config.update('statusBar.icon', settings.statusBarIcon, configTarget);
+            await config.update('statusBar.backgroundStyle', settings.statusBarBackgroundStyle, configTarget);
+            await config.update('statusBar.color', settings.statusBarColor, configTarget);
+            await config.update('health.enableNotifications', settings.healthEnableNotifications, configTarget);
+            await config.update('health.modalNotifications', settings.healthModalNotifications, configTarget);
+            await config.update('health.eyeRestInterval', settings.healthEyeRestInterval, configTarget);
+            await config.update('health.stretchInterval', settings.healthStretchInterval, configTarget);
+            await config.update('health.breakThreshold', settings.healthBreakThreshold, configTarget);
             
             // Only enableDevCommands has "scope": "application" in package.json, so it must be saved to Global
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
@@ -118,15 +124,22 @@ export class SettingsViewProvider {
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
 
         try {
-            // Reset workspace-scoped settings
-            await config.update('inactivityTimeout', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('focusTimeout', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('statusBar.showSeconds', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.enableNotifications', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.modalNotifications', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.eyeRestInterval', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.stretchInterval', undefined, vscode.ConfigurationTarget.Workspace);
-            await config.update('health.breakThreshold', undefined, vscode.ConfigurationTarget.Workspace);
+            // Determine the target scope: Workspace if available, otherwise Global
+            const hasWorkspace = vscode.workspace.workspaceFile !== undefined;
+            const configTarget = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+
+            // Reset workspace-scoped settings (or global if no workspace)
+            await config.update('inactivityTimeout', undefined, configTarget);
+            await config.update('focusTimeout', undefined, configTarget);
+            await config.update('statusBar.showSeconds', undefined, configTarget);
+            await config.update('statusBar.icon', undefined, configTarget);
+            await config.update('statusBar.backgroundStyle', undefined, configTarget);
+            await config.update('statusBar.color', undefined, configTarget);
+            await config.update('health.enableNotifications', undefined, configTarget);
+            await config.update('health.modalNotifications', undefined, configTarget);
+            await config.update('health.eyeRestInterval', undefined, configTarget);
+            await config.update('health.stretchInterval', undefined, configTarget);
+            await config.update('health.breakThreshold', undefined, configTarget);
             
             // Reset global-scoped settings
             await config.update('enableDevCommands', undefined, vscode.ConfigurationTarget.Global);
