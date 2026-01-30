@@ -37,6 +37,10 @@ export class StatusBar implements vscode.Disposable {
             this.toggleNotifications();
         });
         
+        // Register refresh command for explicit status bar refresh after settings save
+        const refreshCommandDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.refreshStatusBar', () => {
+            void this.updateStatusBar();
+        });
         
         // Set up combined status bar item
         this.statusBarItem.command = this.commandId;

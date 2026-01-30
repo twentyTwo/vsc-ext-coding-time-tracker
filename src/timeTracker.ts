@@ -420,11 +420,6 @@ export class TimeTracker implements vscode.Disposable {
     }    
     
     getCurrentProject(): string {
-        // If we have a current project name, keep using it
-        if (this.currentProject && this.currentProject !== 'Unknown Project') {
-            return this.currentProject;
-        }
-
         const workspaceFolders = vscode.workspace.workspaceFolders;
         
         // No workspace folders open
@@ -432,22 +427,27 @@ export class TimeTracker implements vscode.Disposable {
             return 'Unknown Project';
         }
 
-        // Single workspace
+        // Single workspace - always return the folder name
         if (workspaceFolders.length === 1) {
             return workspaceFolders[0].name;
         }
 
-        // Multi-root workspace
-        const workspaceName = vscode.workspace.name || 'Default Workspace';
+        // Multi-root workspace - detect project from active editor
         const activeEditor = vscode.window.activeTextEditor;
         if (activeEditor) {
             const workspaceFolder = vscode.workspace.getWorkspaceFolder(activeEditor.document.uri);
             if (workspaceFolder) {
-                return `${workspaceName}/${workspaceFolder.name}`;
+                // Return just the folder name for multi-root workspaces
+                // This ensures each project in the workspace is tracked separately
+                return workspaceFolder.name;
             }
         }
 
-        // Default to first workspace if no active editor
+        // No active editor - return cached project if available, otherwise first folder
+        if (this.currentProject && this.currentProject !== 'Unknown Project') {
+            return this.currentProject;
+        }
+
         return workspaceFolders[0].name;
     }
 
