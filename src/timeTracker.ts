@@ -210,6 +210,26 @@ export class TimeTracker implements vscode.Disposable {
             return;
         }
 
+        // Detect sleep/hibernate gap before updating lastCursorActivity
+        const now = Date.now();
+        const timeSinceLastActivity = now - this.lastCursorActivity;
+        const maxAllowedGap = this.inactivityTimeoutSeconds * 1000;
+
+        if (this.isTracking && timeSinceLastActivity > maxAllowedGap) {
+            // System likely slept/hibernated - save session excluding the gap and restart fresh
+            this.logger.logEvent('sleep_gap_detected', {
+                project: this.currentProject,
+                branch: this.currentBranch,
+                language: this.currentLanguage,
+                gapDurationSeconds: timeSinceLastActivity / 1000,
+                thresholdSeconds: this.inactivityTimeoutSeconds,
+                lastActivityTime: new Date(this.lastCursorActivity).toISOString()
+            });
+            await this.saveCurrentSession('sleep_gap');
+            this.stopTracking('sleep_gap');
+            // Fall through to start fresh tracking below
+        }
+
         if (!this.isTracking) {
             await this.startTracking('cursor activity');
             return;
@@ -225,7 +245,7 @@ export class TimeTracker implements vscode.Disposable {
             this.startTime = Date.now();
         }
 
-        this.lastCursorActivity = Date.now();
+        this.lastCursorActivity = now;
         this.setupCursorTracking();
     }
 
@@ -390,15 +410,23 @@ export class TimeTracker implements vscode.Disposable {
 
     public async saveCurrentSession(reason?: string) {
         const now = Date.now();
-        let duration = (now - this.startTime) / 60000; // Convert to minutes
+        let duration: number;
         
-        // Adjust duration based on the reason for session end
-        if (reason === 'inactivity' && this.inactivityTimeoutSeconds) {
-            // Subtract the inactivity timeout period
-            duration = Math.max(0, duration - this.inactivityTimeoutSeconds / 60);
-        } else if (reason === 'focus timeout' && this.focusTimeoutSeconds) {
-            // Subtract the focus timeout period
-            duration = Math.max(0, duration - this.focusTimeoutSeconds / 60);
+        // For sleep_gap, calculate duration based on last activity, not current time
+        if (reason === 'sleep_gap') {
+            // Only count time up to the last known activity
+            duration = (this.lastCursorActivity - this.startTime) / 60000;
+        } else {
+            duration = (now - this.startTime) / 60000; // Convert to minutes
+            
+            // Adjust duration based on the reason for session end
+            if (reason === 'inactivity' && this.inactivityTimeoutSeconds) {
+                // Subtract the inactivity timeout period
+                duration = Math.max(0, duration - this.inactivityTimeoutSeconds / 60);
+            } else if (reason === 'focus timeout' && this.focusTimeoutSeconds) {
+                // Subtract the focus timeout period
+                duration = Math.max(0, duration - this.focusTimeoutSeconds / 60);
+            }
         }
 
         if (duration > 0) {
