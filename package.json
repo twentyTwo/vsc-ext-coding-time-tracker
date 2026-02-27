@@ -44,14 +44,14 @@
           "default": 2.5,
           "minimum": 0.5,
           "maximum": 60,
-          "description": "Pause tracking if there is no keyboard or mouse activity in VS Code for this many minutes."
+          "description": "Pause tracking after this many minutes of no keyboard/mouse activity in VS Code. Time accumulated during the pause is NOT counted - when you resume, the timer continues from where it stopped, not from when you left."
         },
         "simpleCodingTimeTracker.focusTimeout": {
           "type": "number",
           "default": 3,
           "minimum": 0.5,
           "maximum": 60,
-          "description": "If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing."
+          "description": "Continue tracking for up to this many minutes after switching away from VS Code, then pause. Time accumulated after the pause is NOT counted."
         },
         "simpleCodingTimeTracker.statusBar.showSeconds": {
           "type": "boolean",

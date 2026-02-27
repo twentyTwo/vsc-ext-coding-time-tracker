@@ -448,14 +448,14 @@ export class SettingsViewProvider {
         
         <div class="setting-item">
             <label for="inactivityTimeout">Inactivity Timeout (minutes)</label>
-            <div class="description">Pause tracking if there is no keyboard or mouse activity in VS Code for this many minutes.</div>
+            <div class="description">Pause tracking after this many minutes of no keyboard/mouse activity. <strong>Time during the pause is NOT counted</strong> - when you resume, the timer continues from where it stopped.</div>
             <input type="number" id="inactivityTimeout" min="0.5" max="60" step="0.5" />
             <div class="range-info">Range: 0.5 - 60 minutes</div>
         </div>
 
         <div class="setting-item">
             <label for="focusTimeout">Focus Timeout (minutes)</label>
-            <div class="description">If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing.</div>
+            <div class="description">Continue tracking for up to this many minutes after switching away from VS Code, then pause. <strong>Time after the pause is NOT counted.</strong></div>
             <input type="number" id="focusTimeout" min="0.5" max="60" step="0.5" />
             <div class="range-info">Range: 0.5 - 60 minutes</div>
         </div>

@@ -104,6 +104,8 @@ export class TimeTracker implements vscode.Disposable {
                         await this.saveCurrentSession('window focus gained');
                     }
                     this.startTracking('focus regained');
+                    // Update lastCursorActivity so getTodayTotal uses correct time
+                    this.lastCursorActivity = now;
                 }
                 this.lastFocusTime = now;
             } else {
@@ -212,6 +214,8 @@ export class TimeTracker implements vscode.Disposable {
 
         if (!this.isTracking) {
             await this.startTracking('cursor activity');
+            // Update lastCursorActivity after starting so getTodayTotal uses correct time
+            this.lastCursorActivity = Date.now();
             return;
         }
 
