@@ -397,12 +397,15 @@ export class TimeTracker implements vscode.Disposable {
         let duration = (now - this.startTime) / 60000; // Convert to minutes
         
         // Adjust duration based on the reason for session end
-        if (reason === 'inactivity' && this.inactivityTimeoutSeconds) {
-            // Subtract the inactivity timeout period
-            duration = Math.max(0, duration - this.inactivityTimeoutSeconds / 60);
-        } else if (reason === 'focus timeout' && this.focusTimeoutSeconds) {
-            // Subtract the focus timeout period
-            duration = Math.max(0, duration - this.focusTimeoutSeconds / 60);
+        if (reason === 'inactivity') {
+            // Subtract the actual inactive time (not just the timeout constant).
+            // This correctly handles sleep/hibernate where the timeout fires late.
+            const actualInactiveMinutes = (now - this.lastCursorActivity) / 60000;
+            duration = Math.max(0, duration - actualInactiveMinutes);
+        } else if (reason === 'focus timeout') {
+            // Session was already saved when focus was lost. Any time accumulated
+            // since then (including sleep/hibernate) should not be counted.
+            duration = 0;
         }
 
         if (duration > 0) {
