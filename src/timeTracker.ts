@@ -99,6 +99,11 @@ export class TimeTracker implements vscode.Disposable {
                     clearTimeout(this.focusTimeoutHandle);
                     this.focusTimeoutHandle = null;
                     
+                    const timeSinceLastActivity = now - this.lastCursorActivity;
+                    if (this.isTracking && timeSinceLastActivity >= this.inactivityTimeoutSeconds * 1000) {
+                        this.stopTracking('inactivity');
+                    }
+                    
                     // Save current session before starting new one
                     if (this.isTracking) {
                         await this.saveCurrentSession('window focus gained');
@@ -210,6 +215,20 @@ export class TimeTracker implements vscode.Disposable {
         if (this.isPaused) {
             console.log('Timer is manually paused - not auto-resuming');
             return;
+        }
+
+        const now = Date.now();
+        const timeSinceLastActivity = now - this.lastCursorActivity;
+
+        if (this.isTracking && timeSinceLastActivity >= this.inactivityTimeoutSeconds * 1000) {
+            this.logger.logEvent('inactivity_detected', {
+                project: this.currentProject,
+                branch: this.currentBranch,
+                language: this.currentLanguage,
+                inactivityDuration: timeSinceLastActivity / 1000,
+                lastActivityTime: new Date(this.lastCursorActivity).toISOString()
+            });
+            this.stopTracking('inactivity');
         }
 
         if (!this.isTracking) {
