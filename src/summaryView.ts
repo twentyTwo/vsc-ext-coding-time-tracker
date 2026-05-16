@@ -721,16 +721,20 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         .analytics-grid {
                             grid-template-columns: repeat(2, 1fr);
                         }
+                    }
+                    @media (max-width: 1000px) {
                         .chart-grid {
-                            grid-template-columns: 1fr 1fr;
+                            grid-template-columns: repeat(2, 1fr);
                         }
                     }
                     @media (max-width: 900px) {
-                        .chart-grid {
-                            grid-template-columns: 1fr;
-                        }
                         .filter-group {
                             flex: 1 1 120px;
+                        }
+                    }
+                    @media (max-width: 560px) {
+                        .chart-grid {
+                            grid-template-columns: 1fr;
                         }
                     }
                     @media (max-width: 800px) {
@@ -838,7 +842,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .chart-grid {
                         display: grid;
-                        grid-template-columns: 1fr 1fr 300px;
+                        grid-template-columns: repeat(3, 1fr);
                         gap: 16px;
                         margin-bottom: 20px;
                     }
