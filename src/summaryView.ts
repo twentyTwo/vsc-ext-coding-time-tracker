@@ -189,7 +189,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         background-color: var(--background-color);
                         color: var(--text-color);
                         line-height: 1.6;
-                        max-width: 800px;
+                        max-width: 1600px;
                         margin: 0 auto;
                         padding: 20px;
                     }
@@ -228,33 +228,68 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     .search-form {
                         display: flex;
                         flex-wrap: wrap;
-                        gap: 10px;
-                        align-items: center;
+                        gap: 12px;
+                        align-items: flex-end;
                         margin-bottom: 20px;
+                        padding: 16px;
+                        background: var(--vscode-editor-background);
+                        border: 1px solid var(--vscode-panel-border);
+                        border-radius: 6px;
+                    }
+                    .filter-group {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 5px;
+                        flex: 1 1 140px;
+                        min-width: 110px;
+                        max-width: 220px;
+                    }
+                    .filter-group.date-group {
+                        max-width: 160px;
+                    }
+                    .filter-label {
+                        font-size: 10px;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.6px;
+                        color: var(--vscode-descriptionForeground);
+                    }
+                    .filter-actions {
+                        display: flex;
+                        gap: 8px;
+                        align-items: flex-end;
+                        padding-bottom: 1px;
                     }
                     .search-form input,
-                    .search-form select,
-                    .search-form button {
-                        height: 32px;
+                    .search-form select {
+                        height: 30px;
                         padding: 0 8px;
                         border: 1px solid var(--vscode-input-border);
                         background-color: var(--vscode-input-background);
                         color: var(--vscode-input-foreground);
                         font-size: 13px;
-                        border-radius: 2px;
+                        border-radius: 3px;
+                        width: 100%;
+                        box-sizing: border-box;
                     }
                     .search-form input[type="date"] {
-                        padding: 0 4px;
+                        padding: 0 6px;
                     }
-                    .search-form select {
-                        padding-right: 24px;
+                    .search-form input:focus,
+                    .search-form select:focus {
+                        outline: 1px solid var(--vscode-focusBorder);
+                        border-color: var(--vscode-focusBorder);
                     }
                     .search-form button {
+                        height: 30px;
                         cursor: pointer;
                         background-color: var(--vscode-button-background);
                         color: var(--vscode-button-foreground);
                         border: none;
-                        padding: 0 12px;
+                        padding: 0 14px;
+                        border-radius: 3px;
+                        font-size: 13px;
+                        white-space: nowrap;
                     }
                     .search-form button:hover {
                         background-color: var(--vscode-button-hoverBackground);
@@ -686,6 +721,17 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         .analytics-grid {
                             grid-template-columns: repeat(2, 1fr);
                         }
+                        .chart-grid {
+                            grid-template-columns: 1fr 1fr;
+                        }
+                    }
+                    @media (max-width: 900px) {
+                        .chart-grid {
+                            grid-template-columns: 1fr;
+                        }
+                        .filter-group {
+                            flex: 1 1 120px;
+                        }
                     }
                     @media (max-width: 800px) {
                         .insights-grid, .analytics-grid {
@@ -695,6 +741,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     @media (max-width: 500px) {
                         .insights-grid, .analytics-grid {
                             grid-template-columns: 1fr;
+                        }
+                        .filter-group,
+                        .filter-group.date-group {
+                            max-width: 100%;
+                            flex: 1 1 100%;
                         }
                     }
                     
@@ -785,32 +836,32 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         color: var(--vscode-foreground);
                         margin-bottom: 15px;
                     }
+                    .chart-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr 300px;
+                        gap: 16px;
+                        margin-bottom: 20px;
+                    }
+                    .chart-grid > .chart-container {
+                        margin-bottom: 0;
+                    }
                     .chart-wrapper {
                         position: relative;
-                        height: 300px;
+                        height: clamp(220px, 28vh, 360px);
                         width: 100%;
                         display: flex;
                         align-items: center;
-                    }
-                    .search-results-chart {
-                        height: 400px;
-                    }
-                    .search-results-chart .chart-wrapper {
-                        height: 350px;
                     }
                     .chart-canvas {
                         flex: 1;
                         max-width: 60%;
                     }
                     .custom-legend {
-                        max-height: 300px;
+                        max-height: clamp(200px, 26vh, 340px);
                         overflow-y: auto;
                         overflow-x: hidden;
                         padding-right: 5px;
                         padding-left: 10px;
-                    }
-                    .search-results-chart .custom-legend {
-                        max-height: 350px;
                     }
                     .custom-legend::-webkit-scrollbar {
                         width: 6px;
@@ -932,37 +983,56 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         <div class="heatmap-wrapper">
                             <div class="months-container"></div>
                         </div>
-                    </div>                    <div class="search-form">
-                        <input type="date" id="start-date-search" name="start-date-search">
-                        <input type="date" id="end-date-search" name="end-date-search">
-                        <select id="project-search" name="project-search">
-                            <option value="">All Projects</option>
-                            ${projectOptions}
-                        </select>
-                        <select id="branch-search" name="branch-search">
-                            <option value="">All Branches</option>
-                        </select>
-                        <button id="search-button">Search</button>
-                        <button id="reload-button" class="reset-button">Reset</button>
+                    </div>
+
+                    <h2>Coding Analysis</h2>
+                    <div class="search-form">
+                        <div class="filter-group date-group">
+                            <span class="filter-label">From</span>
+                            <input type="date" id="start-date-search" name="start-date-search">
+                        </div>
+                        <div class="filter-group date-group">
+                            <span class="filter-label">To</span>
+                            <input type="date" id="end-date-search" name="end-date-search">
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Project</span>
+                            <select id="project-search" name="project-search">
+                                <option value="">All Projects</option>
+                                ${projectOptions}
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Branch</span>
+                            <select id="branch-search" name="branch-search">
+                                <option value="">All Branches</option>
+                            </select>
+                        </div>
+                        <div class="filter-actions">
+                            <button id="search-button">Search</button>
+                            <button id="reload-button" class="reset-button">Reset</button>
+                        </div>
                     </div>
                     <div id="content">
-                        <div class="chart-container">
-                            <div class="chart-title">Project Summary</div>
-                            <div class="chart-wrapper">
-                                <canvas id="projectChart"></canvas>
+                        <div class="chart-grid">
+                            <div class="chart-container">
+                                <div class="chart-title">Project Summary</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="projectChart"></canvas>
+                                </div>
                             </div>
-                        </div>
-                        <div class="chart-container">
-                            <div class="chart-title">Daily Summary (Last 7 Days)</div>
-                            <div class="chart-wrapper">
-                                <canvas id="dailyChart"></canvas>
+                            <div class="chart-container">
+                                <div class="chart-title">Daily Summary (Last 7 Days)</div>
+                                <div class="chart-wrapper">
+                                    <canvas id="dailyChart"></canvas>
+                                </div>
                             </div>
-                        </div>
-                        <div class="chart-container search-results-chart" style="display: none;">
-                            <div class="chart-title">Search Results</div>
-                            <div class="chart-wrapper">
-                                <div class="chart-canvas">
-                                    <canvas id="searchChart"></canvas>
+                            <div class="chart-container">
+                                <div class="chart-title">Project Distribution</div>
+                                <div class="chart-wrapper">
+                                    <div class="chart-canvas">
+                                        <canvas id="searchChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2167,18 +2237,20 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         
                         const content = document.getElementById('content');
                         content.innerHTML = \`
-                            <div class="chart-container">
-                                <div class="chart-title">Project Summary (Top 5)</div>
-                                <div class="chart-wrapper">
-                                    <canvas id="projectChart"></canvas>
+                            <div class="chart-grid">
+                                <div class="chart-container">
+                                    <div class="chart-title">Project Summary (Top 5)</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="projectChart"></canvas>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="chart-container">
-                                <div class="chart-title">Daily Summary (Last 30 Days)</div>
-                                <div class="chart-wrapper">
-                                    <canvas id="dailyChart"></canvas>
+                                <div class="chart-container">
+                                    <div class="chart-title">Daily Summary (Last 30 Days)</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="dailyChart"></canvas>
+                                    </div>
                                 </div>
-                                <div class="chart-container search-results-chart">
+                                <div class="chart-container">
                                     <div class="chart-title">Project Distribution</div>
                                     <div class="chart-wrapper">
                                         <div class="chart-canvas">
@@ -2387,23 +2459,25 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     
                         // Update the content with all three charts
                         content.innerHTML = \`
-                            <div class="chart-container">
-                                <div class="chart-title">Project Summary (Filtered)</div>
-                                <div class="chart-wrapper">
-                                    <canvas id="projectChart"></canvas>
+                            <div class="chart-grid">
+                                <div class="chart-container">
+                                    <div class="chart-title">Project Summary (Filtered)</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="projectChart"></canvas>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="chart-container">
-                                <div class="chart-title">Daily Summary (Filtered)</div>
-                                <div class="chart-wrapper">
-                                    <canvas id="dailyChart"></canvas>
+                                <div class="chart-container">
+                                    <div class="chart-title">Daily Summary (Filtered)</div>
+                                    <div class="chart-wrapper">
+                                        <canvas id="dailyChart"></canvas>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="chart-container">
-                                <div class="chart-title">Project Distribution (Total Time: \${formatTime(totalTime)})</div>
-                                <div class="chart-wrapper">
-                                    <div class="chart-canvas">
-                                        <canvas id="searchChart"></canvas>
+                                <div class="chart-container">
+                                    <div class="chart-title">Project Distribution — \${formatTime(totalTime)}</div>
+                                    <div class="chart-wrapper">
+                                        <div class="chart-canvas">
+                                            <canvas id="searchChart"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
