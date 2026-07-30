@@ -207,6 +207,31 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         border-bottom: 1px solid var(--border-color);
                         padding-bottom: 5px;
                     }
+                    .section-row {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        margin-top: 30px;
+                        margin-bottom: 10px;
+                        border-bottom: 1px solid var(--border-color);
+                        padding-bottom: 5px;
+                    }
+                    .section-row h2 {
+                        margin: 0;
+                        border: none;
+                        padding: 0;
+                        flex: 1;
+                    }
+                    .heatmap-months-select {
+                        height: 22px;
+                        padding: 0 6px;
+                        font-size: 11px;
+                        background: var(--vscode-input-background);
+                        color: var(--vscode-input-foreground);
+                        border: 1px solid var(--vscode-input-border);
+                        border-radius: 3px;
+                        cursor: pointer;
+                    }
                     table {
                         width: 100%;
                         border-collapse: collapse;
@@ -722,19 +747,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             grid-template-columns: repeat(2, 1fr);
                         }
                     }
-                    @media (max-width: 1000px) {
-                        .chart-grid {
-                            grid-template-columns: repeat(2, 1fr);
-                        }
-                    }
                     @media (max-width: 900px) {
                         .filter-group {
                             flex: 1 1 120px;
-                        }
-                    }
-                    @media (max-width: 560px) {
-                        .chart-grid {
-                            grid-template-columns: 1fr;
                         }
                     }
                     @media (max-width: 800px) {
@@ -842,7 +857,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
                     .chart-grid {
                         display: grid;
-                        grid-template-columns: repeat(3, 1fr);
+                        grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
                         gap: 16px;
                         margin-bottom: 20px;
                     }
@@ -982,7 +997,16 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
 
-                    <h2>Coding Activity</h2>
+                    <div class="section-row">
+                        <h2>Coding Activity</h2>
+                        <select id="heatmap-months-select" class="heatmap-months-select">
+                            <option value="1">1 month</option>
+                            <option value="2">2 months</option>
+                            <option value="3">3 months</option>
+                            <option value="6" selected>6 months</option>
+                            <option value="12">12 months</option>
+                        </select>
+                    </div>
                     <div class="heatmap-container">
                         <div class="heatmap-wrapper">
                             <div class="months-container"></div>
@@ -1044,6 +1068,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 </div>
                 <script>
                     const vscode = acquireVsCodeApi();
+                    let currentHeatmapData = null;
                     
                     // Get theme colors
                     const isDarkTheme = document.body.classList.contains('vscode-dark');
@@ -2230,6 +2255,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
 
                     function updateContent(data, allEntries = []) {
+                        currentHeatmapData = data;
                         // Update insight widgets first
                         updateInsightWidgets(data, allEntries);
                         
@@ -2265,8 +2291,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             </div>
                         \`;
                         
-                        // Create heatmap
-                        createHeatmap(data);
+                        // Create heatmap - respect current month selection
+                        const heatmapSel = document.getElementById('heatmap-months-select');
+                        createHeatmap(data, heatmapSel ? parseInt(heatmapSel.value) : 6);
                         
                         // Project summary chart
                         const projectCtx = document.getElementById('projectChart').getContext('2d');
@@ -2824,15 +2851,15 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         return monthGrid;
                     }
 
-                    function createHeatmap(data) {
+                    function createHeatmap(data, months) {
+                        months = months || 6;
                         const container = document.querySelector('.heatmap-container');
                         container.innerHTML = '<div class="heatmap-wrapper"><div class="months-container"></div></div>';
                         
                         const monthsContainer = container.querySelector('.months-container');
                         const now = new Date();
                         
-                        // Create grids for the last 3 months in reverse order (most recent first)
-                        for (let i = 2; i >= 0; i--) {
+                        for (let i = months - 1; i >= 0; i--) {
                             const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
                             const monthGrid = createMonthGrid(data, monthDate);
                             monthsContainer.appendChild(monthGrid);
@@ -2860,6 +2887,13 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         if (minutes < 360) return 3; // 3-6 hours
                         return 4; // More than 6 hours
                     }
+
+                    // Heatmap month selector
+                    document.getElementById('heatmap-months-select').addEventListener('change', function() {
+                        if (currentHeatmapData) {
+                            createHeatmap(currentHeatmapData, parseInt(this.value));
+                        }
+                    });
 
                     // Request a refresh when the webview becomes visible
                     vscode.postMessage({ command: 'refresh' });
