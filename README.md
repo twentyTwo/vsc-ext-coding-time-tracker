@@ -51,6 +51,36 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Language Filtering: Focus on specific programming languages
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
+- **Claude Code Usage**: A dedicated dashboard tab showing token usage, estimated cost, models, tools and sessions read from your local Claude Code logs. See [Claude Code Usage](#claude-code-usage) below.
+
+## Claude Code Usage
+
+If you use [Claude Code](https://claude.com/claude-code), the dashboard has a **Claude Code** tab alongside the coding-time view. It reads the session logs Claude Code already writes on your machine and shows:
+
+- Total input, output, cache-write and cache-read tokens, with an estimated cost
+- Tokens and cost per model, per project and per day
+- Tool usage counts and a recent-sessions table
+- A scope toggle for all projects vs. just the current workspace
+
+The tab loads only when you open it, so it never slows down the coding-time dashboard.
+
+### Three things worth knowing
+
+- **Cost is an estimate.** Claude Code does not record what a session cost. The figure shown is calculated from a bundled table of published API rates, so treat it as an *API-equivalent* estimate rather than a bill. If you are on a subscription plan, you are not charged per token at all and the real cost of the tokens shown is zero. Models missing from the price table are priced at a fallback rate and called out in the tab.
+- **No message content is ever read.** Only usage metadata is parsed: token counts, model names, timestamps, tool *names*, the working directory and the git branch. Prompts and responses are never parsed, stored or displayed, and nothing is sent anywhere — all processing is local.
+- **Parsing is best-effort.** Claude Code's on-disk log format is internal and can change at any time without notice. Unreadable files and malformed entries are skipped and reported in the tab rather than breaking the dashboard.
+
+### Configuration
+
+By default the extension looks in `CLAUDE_CONFIG_DIR`, falling back to `~/.claude`. If your data lives elsewhere, set:
+
+```json
+"simpleCodingTimeTracker.claude.dataPath": "/path/to/.claude"
+```
+
+If no Claude Code data is found, the tab says so and names the directory it searched.
+
+> This extension is not affiliated with or endorsed by Anthropic.
 
 ## Time Tracking Details
 The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance. The extension automatically detects the programming language you're working with based on file extensions and VS Code's language detection.

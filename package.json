@@ -105,6 +105,12 @@
           "maximum": 480,
           "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
         },
+        "simpleCodingTimeTracker.claude.dataPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to your Claude Code data directory for the Claude Code usage tab. Leave empty to use CLAUDE_CONFIG_DIR, or the default ~/.claude.",
+          "scope": "application"
+        },
         "simpleCodingTimeTracker.enableDevCommands": {
           "type": "boolean",
           "default": false,

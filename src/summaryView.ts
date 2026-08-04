@@ -3,17 +3,22 @@ import { Database, SummaryData, TimeEntry } from './database';
 import { ThemeIcon } from 'vscode';
 import { formatTime } from './utils';
 import { TimeTracker } from './timeTracker';
+import { ClaudeUsageReader } from './claudeUsage';
+import { UsageScope } from './claudeTypes';
+import { claudeTabBody, claudeTabScript, claudeTabStyles } from './claudeTab';
 
 export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private panel: vscode.WebviewPanel | undefined;
     private context: vscode.ExtensionContext;
     private database: Database;
     private timeTracker: TimeTracker;
+    private claudeUsage: ClaudeUsageReader;
 
     constructor(context: vscode.ExtensionContext, database: Database, timeTracker: TimeTracker) {
         this.context = context;
         this.database = database;
         this.timeTracker = timeTracker;
+        this.claudeUsage = new ClaudeUsageReader(context);
     }
 
     resolveWebviewView(
@@ -114,6 +119,19 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     } else if (message.command === 'openSettings') {
                         // Open settings view
                         vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                    } else if (message.command === 'claudeRefresh') {
+                        // Scanning session transcripts can fail on unreadable files;
+                        // report it in the tab rather than leaving it spinning.
+                        try {
+                            const scope: UsageScope = message.scope === 'workspace' ? 'workspace' : 'all';
+                            const usage = await this.claudeUsage.getSummary(scope);
+                            this.panel?.webview.postMessage({ command: 'claudeUsage', data: usage });
+                        } catch (error) {
+                            this.panel?.webview.postMessage({
+                                command: 'claudeUsage',
+                                error: error instanceof Error ? error.message : String(error)
+                            });
+                        }
                     }
                 },
                 undefined,
@@ -841,6 +859,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         margin-right: 8px;
                         border: 1px solid var(--vscode-panel-border);
                     }
+                    ${claudeTabStyles}
                 </style>
             </head>
             <body>
@@ -848,7 +867,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     <h1>Coding Time Summary</h1>
                     <button class="settings-button" id="open-settings-button">Settings</button>
                 </div>
-                <div class="container">
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="time" type="button">Coding Time</button>
+                    <button class="tab-btn" data-tab="claude" type="button">Claude Code</button>
+                </div>
+                <div class="container tab-panel" id="panel-time">
                     <h2>Developer Insights</h2>
                     <div class="insights-grid">
                         <div class="insight-box">
@@ -924,8 +947,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             </div>
                         </div>
                             </div>
-                        </div>
-                    </div>
 
                     <h2>Coding Activity</h2>
                     <div class="heatmap-container">
@@ -967,6 +988,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="container tab-panel" id="panel-claude" hidden>
+                    ${claudeTabBody}
                 </div>
                 <script>
                     const vscode = acquireVsCodeApi();
@@ -2785,6 +2809,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
                     // Request a refresh when the webview becomes visible
                     vscode.postMessage({ command: 'refresh' });
+
+                    ${claudeTabScript}
                 </script>
             </body>
             </html>
