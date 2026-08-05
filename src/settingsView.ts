@@ -69,6 +69,9 @@ export class SettingsViewProvider {
             healthEyeRestInterval: config.get('health.eyeRestInterval', 20),
             healthStretchInterval: config.get('health.stretchInterval', 30),
             healthBreakThreshold: config.get('health.breakThreshold', 90),
+            claudeShowTab: config.get('claude.showTab', true),
+            kilocodeShowTab: config.get('kilocode.showTab', true),
+            kilocodeDataPath: config.get('kilocode.dataPath', ''),
             enableDevCommands: config.get('enableDevCommands', false)
         };
 
@@ -103,8 +106,12 @@ export class SettingsViewProvider {
             await config.update('health.stretchInterval', settings.healthStretchInterval, configTarget);
             await config.update('health.breakThreshold', settings.healthBreakThreshold, configTarget);
             
-            // Only enableDevCommands has "scope": "application" in package.json, so it must be saved to Global
+            // enableDevCommands, claude.showTab, kilocode.showTab and kilocode.dataPath all have
+            // "scope": "application" in package.json, so they must be saved to Global
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showTab', settings.claudeShowTab, vscode.ConfigurationTarget.Global);
+            await config.update('kilocode.showTab', settings.kilocodeShowTab, vscode.ConfigurationTarget.Global);
+            await config.update('kilocode.dataPath', settings.kilocodeDataPath, vscode.ConfigurationTarget.Global);
 
             console.log('Settings saved successfully:', settings);
             vscode.window.showInformationMessage('✅ Settings saved successfully!');
@@ -148,6 +155,9 @@ export class SettingsViewProvider {
             
             // Reset global-scoped settings
             await config.update('enableDevCommands', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showTab', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('kilocode.showTab', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('kilocode.dataPath', undefined, vscode.ConfigurationTarget.Global);
 
             vscode.window.showInformationMessage('✅ Settings reset to defaults!');
             await this.sendCurrentSettings();
@@ -556,6 +566,32 @@ export class SettingsViewProvider {
     </div>
 
     <div class="setting-group">
+        <h2>📊 Dashboard Tabs</h2>
+
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="claudeShowTab" />
+                <label for="claudeShowTab" style="margin: 0;">Show Claude Code Usage Tab</label>
+            </div>
+            <div class="description">Show the Claude Code tab in the dashboard, with token and cost usage parsed from your local Claude Code session logs.</div>
+        </div>
+
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="kilocodeShowTab" />
+                <label for="kilocodeShowTab" style="margin: 0;">Show Kilo Code Usage Tab</label>
+            </div>
+            <div class="description">Show the Kilo Code tab in the dashboard, with token and cost usage parsed from your local Kilo Code task logs.</div>
+        </div>
+
+        <div class="setting-item">
+            <label for="kilocodeDataPath">Kilo Code Data Path</label>
+            <div class="description">Path to your Kilo Code data directory (the folder containing a "tasks" subfolder). Leave empty to use the kilocode.kilo-code folder next to this extension's own VS Code global storage.</div>
+            <input type="text" id="kilocodeDataPath" placeholder="Leave empty for the default location" style="max-width: 420px;" />
+        </div>
+    </div>
+
+    <div class="setting-group">
         <h2>🛠️ Developer Settings</h2>
         
         <div class="setting-item">
@@ -873,6 +909,9 @@ export class SettingsViewProvider {
             document.getElementById('healthEyeRestInterval').value = settings.healthEyeRestInterval;
             document.getElementById('healthStretchInterval').value = settings.healthStretchInterval;
             document.getElementById('healthBreakThreshold').value = settings.healthBreakThreshold;
+            document.getElementById('claudeShowTab').checked = settings.claudeShowTab;
+            document.getElementById('kilocodeShowTab').checked = settings.kilocodeShowTab;
+            document.getElementById('kilocodeDataPath').value = settings.kilocodeDataPath || '';
             document.getElementById('enableDevCommands').checked = settings.enableDevCommands;
         }
 
@@ -889,6 +928,9 @@ export class SettingsViewProvider {
                 healthEyeRestInterval: parseInt(document.getElementById('healthEyeRestInterval').value),
                 healthStretchInterval: parseInt(document.getElementById('healthStretchInterval').value),
                 healthBreakThreshold: parseInt(document.getElementById('healthBreakThreshold').value),
+                claudeShowTab: document.getElementById('claudeShowTab').checked,
+                kilocodeShowTab: document.getElementById('kilocodeShowTab').checked,
+                kilocodeDataPath: document.getElementById('kilocodeDataPath').value,
                 enableDevCommands: document.getElementById('enableDevCommands').checked
             };
         }

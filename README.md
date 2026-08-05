@@ -52,6 +52,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
 - **Claude Code Usage**: A dedicated dashboard tab showing token usage, estimated cost, models, tools and sessions read from your local Claude Code logs. See [Claude Code Usage](#claude-code-usage) below.
+- **Kilo Code Usage**: A dedicated dashboard tab showing token usage, cost, tools and tasks read from your local Kilo Code logs. See [Kilo Code Usage](#kilo-code-usage) below.
 
 ## Claude Code Usage
 
@@ -81,6 +82,42 @@ By default the extension looks in `CLAUDE_CONFIG_DIR`, falling back to `~/.claud
 If no Claude Code data is found, the tab says so and names the directory it searched.
 
 > This extension is not affiliated with or endorsed by Anthropic.
+
+## Kilo Code Usage
+
+If you use [Kilo Code](https://kilo.ai) in VS Code, the dashboard has a **Kilo Code** tab. It reads the task logs Kilo Code already writes on your machine (a sibling of this extension's own VS Code storage) and shows:
+
+- Total input, output, cache-write and cache-read tokens, with the cost Kilo Code itself recorded
+- Tokens and cost per API protocol (e.g. `openai`, `anthropic`) and per day
+- Tool usage counts and a recent-tasks table
+
+The tab loads only when you open it, so it never slows down the coding-time dashboard.
+
+### Things worth knowing
+
+- **Cost is Kilo Code's own figure, not an estimate.** Unlike the Claude Code tab, this extension does not compute cost itself — it sums the `cost` value Kilo Code already records for each request.
+- **No task prompts or responses are ever read.** Only usage metadata is parsed: token counts, cost, timestamps and tool *names*. The full task transcript (`api_conversation_history.json`) and the list of files touched (`task_metadata.json`) are never opened.
+- **There is no per-model or per-project breakdown.** Kilo Code's local task files do not record a model id or a workspace path per request, so usage is grouped by API protocol instead, and there is no "this workspace only" scope.
+- **Parsing is best-effort.** Kilo Code's on-disk log format is internal and can change at any time without notice. Unreadable or malformed task files are skipped and reported in the tab rather than breaking the dashboard.
+
+### Configuration
+
+By default the extension looks for a `kilocode.kilo-code` folder next to its own VS Code global storage. If your data lives elsewhere, set:
+
+```json
+"simpleCodingTimeTracker.kilocode.dataPath": "/path/to/kilocode.kilo-code"
+```
+
+Both the Claude Code and Kilo Code tabs can be hidden from the dashboard in Settings:
+
+```json
+"simpleCodingTimeTracker.claude.showTab": false,
+"simpleCodingTimeTracker.kilocode.showTab": false
+```
+
+If no Kilo Code data is found, the tab says so and names the directory it searched.
+
+> This extension is not affiliated with or endorsed by Kilo Code.
 
 ## Time Tracking Details
 The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance. The extension automatically detects the programming language you're working with based on file extensions and VS Code's language detection.

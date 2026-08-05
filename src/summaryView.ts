@@ -6,6 +6,8 @@ import { TimeTracker } from './timeTracker';
 import { ClaudeUsageReader } from './claudeUsage';
 import { UsageScope } from './claudeTypes';
 import { claudeTabBody, claudeTabScript, claudeTabStyles } from './claudeTab';
+import { KilocodeUsageReader } from './kilocodeUsage';
+import { kilocodeTabBody, kilocodeTabScript, kilocodeTabStyles } from './kilocodeTab';
 
 export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private panel: vscode.WebviewPanel | undefined;
@@ -13,12 +15,14 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private database: Database;
     private timeTracker: TimeTracker;
     private claudeUsage: ClaudeUsageReader;
+    private kilocodeUsage: KilocodeUsageReader;
 
     constructor(context: vscode.ExtensionContext, database: Database, timeTracker: TimeTracker) {
         this.context = context;
         this.database = database;
         this.timeTracker = timeTracker;
         this.claudeUsage = new ClaudeUsageReader(context);
+        this.kilocodeUsage = new KilocodeUsageReader(context);
     }
 
     resolveWebviewView(
@@ -57,6 +61,13 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         );
 
         this.show(webviewView.webview);
+    }
+
+    /** Re-renders the dashboard only if a panel is already open, without popping one open. */
+    async refreshIfOpen(): Promise<void> {
+        if (this.panel) {
+            await this.show(this.panel.webview);
+        }
     }
 
     // Add this method to get branches for a specific project
@@ -132,6 +143,18 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 error: error instanceof Error ? error.message : String(error)
                             });
                         }
+                    } else if (message.command === 'kilocodeRefresh') {
+                        // Scanning task logs can fail on unreadable files;
+                        // report it in the tab rather than leaving it spinning.
+                        try {
+                            const usage = await this.kilocodeUsage.getSummary();
+                            this.panel?.webview.postMessage({ command: 'kilocodeUsage', data: usage });
+                        } catch (error) {
+                            this.panel?.webview.postMessage({
+                                command: 'kilocodeUsage',
+                                error: error instanceof Error ? error.message : String(error)
+                            });
+                        }
                     }
                 },
                 undefined,
@@ -172,7 +195,24 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
     private getHtmlForWebview(projects: string[]): string {
         const projectOptions = projects.map(project => `<option value="${project}">${project}</option>`).join('');
-        
+
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const showClaudeTab = config.get<boolean>('claude.showTab', true);
+        const showKilocodeTab = config.get<boolean>('kilocode.showTab', true);
+
+        const claudeTabButton = showClaudeTab
+            ? '<button class="tab-btn" data-tab="claude" type="button">Claude Code</button>'
+            : '';
+        const kilocodeTabButton = showKilocodeTab
+            ? '<button class="tab-btn" data-tab="kilocode" type="button">Kilo Code</button>'
+            : '';
+        const claudeTabPanel = showClaudeTab
+            ? `<div class="container tab-panel" id="panel-claude" hidden>${claudeTabBody}</div>`
+            : '';
+        const kilocodeTabPanel = showKilocodeTab
+            ? `<div class="container tab-panel" id="panel-kilocode" hidden>${kilocodeTabBody}</div>`
+            : '';
+
         return `
             <!DOCTYPE html>
             <html lang="en">
@@ -860,6 +900,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         border: 1px solid var(--vscode-panel-border);
                     }
                     ${claudeTabStyles}
+                    ${kilocodeTabStyles}
                 </style>
             </head>
             <body>
@@ -869,7 +910,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 </div>
                 <div class="tab-bar">
                     <button class="tab-btn active" data-tab="time" type="button">Coding Time</button>
-                    <button class="tab-btn" data-tab="claude" type="button">Claude Code</button>
+                    ${claudeTabButton}
+                    ${kilocodeTabButton}
                 </div>
                 <div class="container tab-panel" id="panel-time">
                     <h2>Developer Insights</h2>
@@ -989,9 +1031,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
                 </div>
-                <div class="container tab-panel" id="panel-claude" hidden>
-                    ${claudeTabBody}
-                </div>
+                ${claudeTabPanel}
+                ${kilocodeTabPanel}
                 <script>
                     const vscode = acquireVsCodeApi();
                     
@@ -2811,6 +2852,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     vscode.postMessage({ command: 'refresh' });
 
                     ${claudeTabScript}
+                    ${kilocodeTabScript}
                 </script>
             </body>
             </html>

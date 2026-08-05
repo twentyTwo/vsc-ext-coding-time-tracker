@@ -387,12 +387,11 @@ export const claudeTabScript = `
         }
 
         function claudeSetTab(name) {
-            var timePanel = claudeEl('panel-time');
-            var claudePanel = claudeEl('panel-claude');
-            if (!timePanel || !claudePanel) { return; }
-            var isClaude = name === 'claude';
-            timePanel.hidden = isClaude;
-            claudePanel.hidden = !isClaude;
+            var panels = document.querySelectorAll('.tab-panel');
+            if (panels.length === 0) { return; }
+            for (var p = 0; p < panels.length; p++) {
+                panels[p].hidden = panels[p].id !== 'panel-' + name;
+            }
             var buttons = document.querySelectorAll('.tab-btn');
             for (var i = 0; i < buttons.length; i++) {
                 var active = buttons[i].getAttribute('data-tab') === name;
@@ -400,8 +399,10 @@ export const claudeTabScript = `
             }
             try { vscode.setState({ tab: name }); } catch (error) { /* state is optional */ }
             // Scanning session logs is deferred until the tab is actually opened,
-            // so the time-tracking dashboard never waits on it.
-            if (isClaude && !claudeState.requested) { claudeRequest(); }
+            // so the time-tracking dashboard never waits on it. Other tabs (e.g.
+            // the Kilo Code tab) listen for this event to defer their own scans.
+            try { window.dispatchEvent(new CustomEvent('tabActivated', { detail: name })); } catch (error) { /* older webviews without CustomEvent */ }
+            if (name === 'claude' && !claudeState.requested) { claudeRequest(); }
         }
 
         function claudeRenderTotals(data) {
@@ -703,7 +704,8 @@ export const claudeTabScript = `
             // is restored from webview state rather than kept in memory.
             var saved = null;
             try { saved = vscode.getState(); } catch (error) { saved = null; }
-            claudeSetTab(saved && saved.tab === 'claude' ? 'claude' : 'time');
+            var savedTab = saved && saved.tab ? saved.tab : 'time';
+            claudeSetTab(claudeEl('panel-' + savedTab) ? savedTab : 'time');
         }
 
         document.addEventListener('DOMContentLoaded', claudeWire);

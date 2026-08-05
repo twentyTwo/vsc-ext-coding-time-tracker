@@ -111,6 +111,24 @@
           "description": "Path to your Claude Code data directory for the Claude Code usage tab. Leave empty to use CLAUDE_CONFIG_DIR, or the default ~/.claude.",
           "scope": "application"
         },
+        "simpleCodingTimeTracker.claude.showTab": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Claude Code usage tab in the dashboard.",
+          "scope": "application"
+        },
+        "simpleCodingTimeTracker.kilocode.showTab": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Kilo Code usage tab in the dashboard.",
+          "scope": "application"
+        },
+        "simpleCodingTimeTracker.kilocode.dataPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to your Kilo Code data directory for the Kilo Code usage tab. Leave empty to use the kilocode.kilo-code folder next to this extension's own VS Code global storage.",
+          "scope": "application"
+        },
         "simpleCodingTimeTracker.enableDevCommands": {
           "type": "boolean",
           "default": false,
