@@ -123,7 +123,7 @@ export class StatusBar implements vscode.Disposable {
 
         const notificationStatus = notificationsEnabled ? 'ON' : 'OFF';
         
-        return `${isActive ? 'Active' : 'Paused'} - Coding Time
+        return `${isActive ? 'Active' : 'Paused'} - Coding Insights
 Project: ${currentProject}
 Branch: ${currentBranch}
 Current Project Today: ${formatTime(currentProjectTime)}

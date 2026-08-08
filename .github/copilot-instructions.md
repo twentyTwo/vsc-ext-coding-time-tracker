@@ -1,4 +1,4 @@
-# Copilot Instructions for Simple Coding Time Tracker
+# Copilot Instructions for Simple Coding Insights
 
 ## Project Overview
 VS Code extension that tracks coding time with visualization, health reminders, and git branch/language detection. Version 0.6.7, published to VS Code Marketplace and Open VSX.

@@ -30,8 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
                 }
                 // Re-render an already-open dashboard when a tab's visibility changes,
                 // so the toggle takes effect without a manual reload.
-                if (e.affectsConfiguration('simpleCodingTimeTracker.claude.showTab') ||
-                    e.affectsConfiguration('simpleCodingTimeTracker.kilocode.showTab')) {
+                if (e.affectsConfiguration('simpleCodingTimeTracker.claude.showTab')) {
                     void summaryView.refreshIfOpen();
                 }
             }

@@ -1,6 +1,6 @@
 # Technical Documentation
 
-This document contains technical details about the Simple Coding Time Tracker VS Code extension, including development setup, release processes, and internal architecture.
+This document contains technical details about the Simple Coding Insights VS Code extension, including development setup, release processes, and internal architecture.
 
 ## Current Status
 

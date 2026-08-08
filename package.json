@@ -1,7 +1,7 @@
 {
   "name": "simple-coding-time-tracker",
-  "displayName": "Simple Coding Time Tracker",
-  "description": "Automatic time tracking for VS Code — Track coding time per project, branch & language with smart activity detection, health reminders, and beautiful visualizations",
+  "displayName": "Simple Coding Insights",
+  "description": "Coding time tracking + AI usage insights for VS Code — Track coding time per project, branch & language, see Claude Code token/cost usage, with smart activity detection, health reminders, and beautiful visualizations",
   "version": "0.7.7",
   "publisher": "noorashuvo",
   "license": "MIT",
@@ -17,6 +17,12 @@
     "time tracker",
     "time tracking",
     "coding time",
+    "coding insights",
+    "developer insights",
+    "ai usage",
+    "ai cost",
+    "token usage",
+    "claude code",
     "productivity",
     "analytics",
     "statistics",
@@ -37,7 +43,7 @@
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Simple Coding Time Tracker",
+      "title": "Simple Coding Insights",
       "properties": {
         "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
@@ -117,18 +123,6 @@
           "description": "Show the Claude Code usage tab in the dashboard.",
           "scope": "application"
         },
-        "simpleCodingTimeTracker.kilocode.showTab": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show the Kilo Code usage tab in the dashboard.",
-          "scope": "application"
-        },
-        "simpleCodingTimeTracker.kilocode.dataPath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to your Kilo Code data directory for the Kilo Code usage tab. Leave empty to use the kilocode.kilo-code folder next to this extension's own VS Code global storage.",
-          "scope": "application"
-        },
         "simpleCodingTimeTracker.enableDevCommands": {
           "type": "boolean",
           "default": false,
@@ -140,36 +134,36 @@
     "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
-        "title": "SCTT: Show Coding Time Summary"
+        "title": "SCI: Show Coding Insights Summary"
       },
       {
         "command": "simpleCodingTimeTracker.viewStorageData",
-        "title": "SCTT: View Time Tracking Data"
+        "title": "SCI: View Time Tracking Data"
       },
       {
         "command": "simpleCodingTimeTracker.clearAllData",
-        "title": "SCTT: Clear All Time Tracking Data"
+        "title": "SCI: Clear All Time Tracking Data"
       },
       {
         "command": "simpleCodingTimeTracker.toggleNotifications",
-        "title": "SCTT: Toggle Notifications"
+        "title": "SCI: Toggle Notifications"
       },
       {
         "command": "simpleCodingTimeTracker.toggleHealthNotifications",
-        "title": "SCTT: Toggle Health Notifications"
+        "title": "SCI: Toggle Health Notifications"
       },
       {
         "command": "simpleCodingTimeTracker.openSettings",
-        "title": "SCTT: Open Settings"
+        "title": "SCI: Open Settings"
       },
       {
         "command": "simpleCodingTimeTracker.generateTestData",
-        "title": "SCTT: Generate Test Data (Dev)",
+        "title": "SCI: Generate Test Data (Dev)",
         "when": "config.simpleCodingTimeTracker.enableDevCommands"
       },
       {
         "command": "simpleCodingTimeTracker.deleteTestData",
-        "title": "SCTT: Delete Test Data (Dev)",
+        "title": "SCI: Delete Test Data (Dev)",
         "when": "config.simpleCodingTimeTracker.enableDevCommands"
       }
     ]

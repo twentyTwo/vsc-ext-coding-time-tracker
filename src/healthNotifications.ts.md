@@ -1,6 +1,6 @@
 # Health Notifications Implementation
 
-This document explains the implementation of the health notification system in the Simple Coding Time Tracker extension.
+This document explains the implementation of the health notification system in the Simple Coding Insights extension.
 
 ## Overview
 

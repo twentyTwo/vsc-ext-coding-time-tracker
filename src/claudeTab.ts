@@ -393,14 +393,17 @@ export const claudeTabScript = `
                 panels[p].hidden = panels[p].id !== 'panel-' + name;
             }
             var buttons = document.querySelectorAll('.tab-btn');
+            var title = document.getElementById('dashboard-title');
             for (var i = 0; i < buttons.length; i++) {
                 var active = buttons[i].getAttribute('data-tab') === name;
                 buttons[i].className = active ? 'tab-btn active' : 'tab-btn';
+                if (active && title && buttons[i].getAttribute('data-title')) {
+                    title.textContent = buttons[i].getAttribute('data-title');
+                }
             }
             try { vscode.setState({ tab: name }); } catch (error) { /* state is optional */ }
             // Scanning session logs is deferred until the tab is actually opened,
-            // so the time-tracking dashboard never waits on it. Other tabs (e.g.
-            // the Kilo Code tab) listen for this event to defer their own scans.
+            // so the time-tracking dashboard never waits on it.
             try { window.dispatchEvent(new CustomEvent('tabActivated', { detail: name })); } catch (error) { /* older webviews without CustomEvent */ }
             if (name === 'claude' && !claudeState.requested) { claudeRequest(); }
         }
