@@ -118,6 +118,13 @@ export interface SessionUsage {
     end: string;
     messages: number;
     isSubagent: boolean;
+    /**
+     * Sum of gaps between consecutive assistant turns that fall under the
+     * idle-gap threshold. Approximates real engaged time; unlike `end - start`
+     * it does not balloon when a session is left open for hours or days
+     * between messages.
+     */
+    activeMs: number;
 }
 
 /**

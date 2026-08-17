@@ -217,7 +217,7 @@ export const claudeTabBody = `
                         <th>Branch</th>
                         <th>Model</th>
                         <th>Turns</th>
-                        <th>Duration</th>
+                        <th title="Time actively spent in the conversation, excluding idle gaps longer than the configured threshold">Active Time</th>
                         <th>Tokens</th>
                         <th>Est. Cost</th>
                     </tr>
@@ -277,11 +277,10 @@ export const claudeTabScript = `
             return d.toLocaleDateString();
         }
 
-        function claudeFmtDuration(startIso, endIso) {
-            var start = new Date(startIso).getTime();
-            var end = new Date(endIso).getTime();
-            if (isNaN(start) || isNaN(end) || end < start) { return '-'; }
-            var minutes = Math.round((end - start) / 60000);
+        function claudeFmtDurationMs(ms) {
+            if (typeof ms !== 'number' || isNaN(ms) || ms < 0) { return '-'; }
+            var minutes = Math.round(ms / 60000);
+            if (minutes < 1) { return '<1m'; }
             if (minutes < 60) { return minutes + 'm'; }
             return Math.floor(minutes / 60) + 'h ' + (minutes % 60) + 'm';
         }
@@ -593,7 +592,7 @@ export const claudeTabScript = `
                         { text: session.branch },
                         { text: models.join(', ') },
                         { text: String(session.messages), numeric: true },
-                        { text: claudeFmtDuration(session.start, session.end), numeric: true },
+                        { text: claudeFmtDurationMs(session.activeMs), numeric: true },
                         { text: claudeFmtTokens(session.tokens), numeric: true },
                         { text: claudeFmtCost(session.costUsd), numeric: true }
                     ]

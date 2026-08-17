@@ -123,6 +123,14 @@
           "description": "Show the Claude Code usage tab in the dashboard.",
           "scope": "application"
         },
+        "simpleCodingTimeTracker.claude.idleGapMinutes": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Gaps between Claude Code messages longer than this (minutes) are treated as time away, not active session time.",
+          "scope": "application"
+        },
         "simpleCodingTimeTracker.enableDevCommands": {
           "type": "boolean",
           "default": false,

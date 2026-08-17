@@ -137,6 +137,18 @@ export class ClaudeUsageReader {
         return path.join(os.homedir(), '.claude');
     }
 
+    /**
+     * Gaps between assistant turns longer than this are treated as the user
+     * being away, not engaged — they contribute nothing to `activeMs` rather
+     * than being counted or capped.
+     */
+    private getIdleGapMs(): number {
+        const minutes = vscode.workspace
+            .getConfiguration('simpleCodingTimeTracker')
+            .get<number>('claude.idleGapMinutes', 10);
+        return Math.max(1, minutes) * 60000;
+    }
+
     private expandHome(target: string): string {
         if (target === '~') {
             return os.homedir();
@@ -528,6 +540,7 @@ export class ClaudeUsageReader {
         const days: { [date: string]: DayUsage } = {};
         const tools: { [name: string]: number } = {};
         const sessions: { [id: string]: SessionUsage } = {};
+        const sessionTimestamps: { [id: string]: number[] } = {};
         const unknown: { [model: string]: boolean } = {};
         let webSearch = 0;
         let webFetch = 0;
@@ -620,7 +633,8 @@ export class ClaudeUsageReader {
                     start: record.ts,
                     end: record.ts,
                     messages: 0,
-                    isSubagent: entry.isSubagent
+                    isSubagent: entry.isSubagent,
+                    activeMs: 0
                 });
                 session.tokens += tokens;
                 session.costUsd += cost;
@@ -635,7 +649,29 @@ export class ClaudeUsageReader {
                 if (record.ts && (!session.end || record.ts > session.end)) {
                     session.end = record.ts;
                 }
+                if (record.ts) {
+                    const ms = Date.parse(record.ts);
+                    if (!isNaN(ms)) {
+                        (sessionTimestamps[record.session] || (sessionTimestamps[record.session] = [])).push(ms);
+                    }
+                }
             }
+        }
+
+        // Active time is the sum of gaps between consecutive turns that stay
+        // under the idle threshold, so a session left open for hours between
+        // messages doesn't read as hours of engaged work.
+        const idleGapMs = this.getIdleGapMs();
+        for (const id of Object.keys(sessions)) {
+            const timestamps = (sessionTimestamps[id] || []).slice().sort((a, b) => a - b);
+            let activeMs = 0;
+            for (let i = 1; i < timestamps.length; i++) {
+                const gap = timestamps[i] - timestamps[i - 1];
+                if (gap > 0 && gap <= idleGapMs) {
+                    activeMs += gap;
+                }
+            }
+            sessions[id].activeMs = activeMs;
         }
 
         summary.totals.tokens =
