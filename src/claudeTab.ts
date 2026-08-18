@@ -83,6 +83,12 @@ export const claudeTabStyles = `
         grid-template-columns: repeat(2, 1fr);
         margin-bottom: 30px;
     }
+    .claude-grid-3 {
+        display: grid;
+        gap: 15px;
+        grid-template-columns: repeat(3, 1fr);
+        margin-bottom: 20px;
+    }
     .claude-card {
         background-color: var(--vscode-editor-background);
         border: 1px solid var(--vscode-panel-border);
@@ -130,8 +136,12 @@ export const claudeTabStyles = `
         opacity: 0.75;
     }
 
+    @media (max-width: 900px) {
+        .claude-grid-3 { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 600px) {
-        .claude-grid-2 { grid-template-columns: 1fr; }
+        .claude-grid-2,
+        .claude-grid-3 { grid-template-columns: 1fr; }
     }
 `;
 
@@ -193,6 +203,20 @@ export const claudeTabBody = `
         </div>
 
         <h2>Projects</h2>
+        <div class="claude-grid-3">
+            <div class="claude-card">
+                <h3>Sessions by Project</h3>
+                <div class="claude-chart claude-chart-tall"><canvas id="claudeProjectSessionsChart"></canvas></div>
+            </div>
+            <div class="claude-card">
+                <h3>Tokens by Project</h3>
+                <div class="claude-chart claude-chart-tall"><canvas id="claudeProjectTokensChart"></canvas></div>
+            </div>
+            <div class="claude-card">
+                <h3>Cost by Project</h3>
+                <div class="claude-chart claude-chart-tall"><canvas id="claudeProjectCostChart"></canvas></div>
+            </div>
+        </div>
         <div class="claude-table-wrap">
             <table class="claude-table" id="claude-projects-table">
                 <thead>
@@ -208,6 +232,10 @@ export const claudeTabBody = `
         </div>
 
         <h2>Recent Sessions</h2>
+        <div class="claude-card">
+            <h3>Recent Sessions Timeline</h3>
+            <div class="claude-chart claude-chart-tall"><canvas id="claudeSessionChart"></canvas></div>
+        </div>
         <div class="claude-table-wrap">
             <table class="claude-table" id="claude-sessions-table">
                 <thead>
@@ -542,22 +570,196 @@ export const claudeTabScript = `
         }
 
         function claudeRenderToolChart(data) {
-            var top = data.byTool.slice(0, 12);
+            // byTool arrives sorted desc by count. A pie only reads at a
+            // glance up to a handful of slices, so the long tail is folded
+            // into a single "Other" wedge rather than cycling colors past
+            // the fixed palette.
+            var top = data.byTool.slice(0, 6);
+            var rest = data.byTool.slice(6);
+            var labels = [];
+            var values = [];
+            var colors = [];
+            var total = 0;
+            for (var i = 0; i < top.length; i++) {
+                labels.push(top[i].name);
+                values.push(top[i].count);
+                colors.push(claudePalette[i]);
+                total += top[i].count;
+            }
+            var otherCount = 0;
+            for (var r = 0; r < rest.length; r++) { otherCount += rest[r].count; }
+            if (otherCount > 0) {
+                labels.push('Other (' + rest.length + ' tools)');
+                values.push(otherCount);
+                colors.push('rgba(148, 148, 148, 0.85)');
+                total += otherCount;
+            }
+            claudeMakeChart('claudeToolChart', {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: claudeTextStyle().text, boxWidth: 12, font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    var value = context.parsed || 0;
+                                    var pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return context.label + ': ' + value + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function claudeFmtCount(value) {
+            return String(Math.round(value || 0));
+        }
+
+        // Sessions, tokens and cost live on wildly different scales, so each
+        // metric gets its own small chart with a real-unit axis instead of
+        // one chart normalized to percent-of-max (which hid the actual
+        // numbers behind a tooltip). Each chart is independently sorted by
+        // its own metric, since the project that leads on sessions is not
+        // always the one that leads on tokens or cost.
+        function claudeRenderProjectMetricChart(canvasId, projects, metricKey, colorIndex, formatter) {
+            var sorted = projects.slice().sort(function (a, b) { return b[metricKey] - a[metricKey]; });
+            var top = sorted.slice(0, 8);
             var labels = [];
             var values = [];
             for (var i = 0; i < top.length; i++) {
                 labels.push(top[i].name);
-                values.push(top[i].count);
+                values.push(top[i][metricKey]);
             }
             var options = claudeBaseOptions(false);
             options.indexAxis = 'y';
-            claudeMakeChart('claudeToolChart', {
+            options.scales.x.ticks.callback = function (value) { return formatter(value); };
+            options.plugins.tooltip = {
+                callbacks: {
+                    label: function (context) { return formatter(context.parsed.x); }
+                }
+            };
+            claudeMakeChart(canvasId, {
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{ data: values, backgroundColor: claudePalette[5], borderWidth: 0 }]
+                    datasets: [{ data: values, backgroundColor: claudePalette[colorIndex], borderWidth: 0 }]
                 },
                 options: options
+            });
+        }
+
+        function claudeRenderProjectCharts(data) {
+            claudeRenderProjectMetricChart('claudeProjectSessionsChart', data.byProject, 'sessions', 0, claudeFmtCount);
+            claudeRenderProjectMetricChart('claudeProjectTokensChart', data.byProject, 'tokens', 1, claudeFmtTokens);
+            claudeRenderProjectMetricChart('claudeProjectCostChart', data.byProject, 'costUsd', 2, claudeFmtCost);
+        }
+
+        function claudeFmtAxisDate(ms) {
+            var d = new Date(ms);
+            if (isNaN(d.getTime())) { return ''; }
+            var month = d.getMonth() + 1;
+            var day = d.getDate();
+            return (month < 10 ? '0' + month : month) + '/' + (day < 10 ? '0' + day : day);
+        }
+
+        function claudeRenderSessionChart(data) {
+            // Sessions arrive newest-first; walk backwards so time flows
+            // left to right on the chart.
+            var chronological = [];
+            for (var i = data.sessions.length - 1; i >= 0; i--) {
+                var session = data.sessions[i];
+                var ms = Date.parse(session.end);
+                if (!isNaN(ms)) { chronological.push({ session: session, ms: ms }); }
+            }
+            var maxCost = 0;
+            for (var c = 0; c < chronological.length; c++) {
+                maxCost = Math.max(maxCost, chronological[c].session.costUsd);
+            }
+            var points = [];
+            for (var p = 0; p < chronological.length; p++) {
+                var entry = chronological[p];
+                var ratio = maxCost > 0 ? Math.sqrt(entry.session.costUsd / maxCost) : 0;
+                points.push({
+                    x: entry.ms,
+                    y: entry.session.tokens,
+                    r: Math.min(18, 3 + 15 * ratio)
+                });
+            }
+            var colors = claudeTextStyle();
+            claudeMakeChart('claudeSessionChart', {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        data: points,
+                        backgroundColor: claudePalette[4],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function (items) {
+                                    if (!items || items.length === 0) { return ''; }
+                                    var s = chronological[items[0].dataIndex].session;
+                                    return s.name + (s.isSubagent ? ' (subagent)' : '') +
+                                        (s.branch ? ' @ ' + s.branch : '');
+                                },
+                                label: function (item) {
+                                    var s = chronological[item.dataIndex].session;
+                                    return [
+                                        'Date: ' + claudeFmtDate(s.end),
+                                        'Turns: ' + s.messages,
+                                        'Active time: ' + claudeFmtDurationMs(s.activeMs),
+                                        'Tokens: ' + claudeFmtTokens(s.tokens),
+                                        'Est. cost: ' + claudeFmtCost(s.costUsd)
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        // Linear, not time: no date adapter is loaded with the
+                        // bundled Chart.js build.
+                        x: {
+                            type: 'linear',
+                            ticks: {
+                                color: colors.text,
+                                font: { size: 9 },
+                                maxRotation: 0,
+                                autoSkip: true,
+                                callback: function (value) {
+                                    return claudeFmtAxisDate(value);
+                                }
+                            },
+                            grid: { color: colors.grid }
+                        },
+                        y: {
+                            ticks: {
+                                color: colors.text,
+                                font: { size: 9 },
+                                callback: function (value) {
+                                    return claudeFmtTokens(value);
+                                }
+                            },
+                            grid: { color: colors.grid }
+                        }
+                    }
+                }
             });
         }
 
@@ -658,6 +860,8 @@ export const claudeTabScript = `
             claudeRenderModelChart(data);
             claudeRenderDailyChart(data);
             claudeRenderToolChart(data);
+            claudeRenderProjectCharts(data);
+            claudeRenderSessionChart(data);
             claudeRenderTables(data);
             claudeRenderNote(data);
         }
