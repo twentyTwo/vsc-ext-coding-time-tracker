@@ -123,6 +123,12 @@
           "description": "Show the Claude Code usage tab in the dashboard.",
           "scope": "application"
         },
+        "simpleCodingTimeTracker.claude.showNewFeatureBanner": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the \"New feature\" announcement banner for the Claude Code usage tab on the Coding Time dashboard.",
+          "scope": "application"
+        },
         "simpleCodingTimeTracker.claude.idleGapMinutes": {
           "type": "number",
           "default": 10,

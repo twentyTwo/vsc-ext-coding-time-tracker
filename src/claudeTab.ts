@@ -64,6 +64,23 @@ export const claudeTabStyles = `
     }
     .claude-scope-btn[disabled] { cursor: default; opacity: 0.5; }
 
+    .claude-section-header {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+    }
+    .claude-details-btn {
+        background-color: var(--input-background, var(--vscode-input-background));
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 4px;
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        font-family: var(--vscode-font-family);
+        font-size: 12px;
+        padding: 5px 12px;
+    }
+
     .claude-status,
     .claude-empty {
         color: var(--vscode-descriptionForeground, var(--vscode-foreground));
@@ -183,8 +200,8 @@ export const claudeTabBody = `
 
         <div class="claude-grid-2">
             <div class="claude-card">
-                <h3>Token Breakdown</h3>
-                <div class="claude-chart"><canvas id="claudeTokenChart"></canvas></div>
+                <h3>Tool Usage</h3>
+                <div class="claude-chart"><canvas id="claudeToolChart"></canvas></div>
             </div>
             <div class="claude-card">
                 <h3>Tokens by Model</h3>
@@ -197,12 +214,10 @@ export const claudeTabBody = `
             <div class="claude-chart claude-chart-tall"><canvas id="claudeDailyChart"></canvas></div>
         </div>
 
-        <div class="claude-card">
-            <h3>Tool Usage</h3>
-            <div class="claude-chart"><canvas id="claudeToolChart"></canvas></div>
+        <div class="claude-section-header">
+            <h2>Projects</h2>
+            <button class="claude-details-btn" id="claude-projects-details-btn" type="button">Show details</button>
         </div>
-
-        <h2>Projects</h2>
         <div class="claude-grid-3">
             <div class="claude-card">
                 <h3>Sessions by Project</h3>
@@ -217,7 +232,7 @@ export const claudeTabBody = `
                 <div class="claude-chart claude-chart-tall"><canvas id="claudeProjectCostChart"></canvas></div>
             </div>
         </div>
-        <div class="claude-table-wrap">
+        <div class="claude-table-wrap" id="claude-projects-table-wrap" hidden>
             <table class="claude-table" id="claude-projects-table">
                 <thead>
                     <tr>
@@ -451,35 +466,6 @@ export const claudeTabScript = `
             claudeEl('claude-total-tools').textContent = toolCalls + ' tool calls';
         }
 
-        function claudeRenderTokenChart(data) {
-            var totals = data.totals;
-            claudeMakeChart('claudeTokenChart', {
-                type: 'doughnut',
-                data: {
-                    labels: ['Input', 'Output', 'Cache write', 'Cache read'],
-                    datasets: [{
-                        data: [totals.input, totals.output, totals.cacheWrite, totals.cacheRead],
-                        backgroundColor: claudePalette.slice(0, 4),
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: claudeTextStyle().text,
-                                boxWidth: 12,
-                                font: { size: 10 }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
         function claudeRenderModelChart(data) {
             var labels = [];
             var values = [];
@@ -634,7 +620,7 @@ export const claudeTabScript = `
         // always the one that leads on tokens or cost.
         function claudeRenderProjectMetricChart(canvasId, projects, metricKey, colorIndex, formatter) {
             var sorted = projects.slice().sort(function (a, b) { return b[metricKey] - a[metricKey]; });
-            var top = sorted.slice(0, 8);
+            var top = sorted.slice(0, 5);
             var labels = [];
             var values = [];
             for (var i = 0; i < top.length; i++) {
@@ -856,7 +842,6 @@ export const claudeTabScript = `
 
             claudeShow('content');
             claudeRenderTotals(data);
-            claudeRenderTokenChart(data);
             claudeRenderModelChart(data);
             claudeRenderDailyChart(data);
             claudeRenderToolChart(data);
@@ -903,6 +888,16 @@ export const claudeTabScript = `
                 refresh.addEventListener('click', function () {
                     claudeState.requested = false;
                     claudeRequest();
+                });
+            }
+
+            var projectsDetailsBtn = claudeEl('claude-projects-details-btn');
+            var projectsTableWrap = claudeEl('claude-projects-table-wrap');
+            if (projectsDetailsBtn && projectsTableWrap) {
+                projectsDetailsBtn.addEventListener('click', function () {
+                    var nowHidden = !projectsTableWrap.hidden;
+                    projectsTableWrap.hidden = nowHidden;
+                    projectsDetailsBtn.textContent = nowHidden ? 'Show details' : 'Hide details';
                 });
             }
 

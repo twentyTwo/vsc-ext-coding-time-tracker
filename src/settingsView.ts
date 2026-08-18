@@ -70,6 +70,7 @@ export class SettingsViewProvider {
             healthStretchInterval: config.get('health.stretchInterval', 30),
             healthBreakThreshold: config.get('health.breakThreshold', 90),
             claudeShowTab: config.get('claude.showTab', true),
+            claudeShowNewFeatureBanner: config.get('claude.showNewFeatureBanner', true),
             enableDevCommands: config.get('enableDevCommands', false)
         };
 
@@ -108,6 +109,7 @@ export class SettingsViewProvider {
             // package.json, so they must be saved to Global
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
             await config.update('claude.showTab', settings.claudeShowTab, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showNewFeatureBanner', settings.claudeShowNewFeatureBanner, vscode.ConfigurationTarget.Global);
 
             console.log('Settings saved successfully:', settings);
             vscode.window.showInformationMessage('✅ Settings saved successfully!');
@@ -152,6 +154,7 @@ export class SettingsViewProvider {
             // Reset global-scoped settings
             await config.update('enableDevCommands', undefined, vscode.ConfigurationTarget.Global);
             await config.update('claude.showTab', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showNewFeatureBanner', undefined, vscode.ConfigurationTarget.Global);
 
             vscode.window.showInformationMessage('✅ Settings reset to defaults!');
             await this.sendCurrentSettings();
@@ -569,6 +572,14 @@ export class SettingsViewProvider {
             </div>
             <div class="description">Show the Claude Code tab in the dashboard, with token and cost usage parsed from your local Claude Code session logs.</div>
         </div>
+
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="claudeShowNewFeatureBanner" />
+                <label for="claudeShowNewFeatureBanner" style="margin: 0;">Show "New Feature" Announcement Banner</label>
+            </div>
+            <div class="description">Show a banner on the Coding Time dashboard announcing the Claude Code Usage tab. Turn this off once you've seen it.</div>
+        </div>
     </div>
 
     <div class="setting-group">
@@ -890,6 +901,7 @@ export class SettingsViewProvider {
             document.getElementById('healthStretchInterval').value = settings.healthStretchInterval;
             document.getElementById('healthBreakThreshold').value = settings.healthBreakThreshold;
             document.getElementById('claudeShowTab').checked = settings.claudeShowTab;
+            document.getElementById('claudeShowNewFeatureBanner').checked = settings.claudeShowNewFeatureBanner;
             document.getElementById('enableDevCommands').checked = settings.enableDevCommands;
         }
 
@@ -907,6 +919,7 @@ export class SettingsViewProvider {
                 healthStretchInterval: parseInt(document.getElementById('healthStretchInterval').value),
                 healthBreakThreshold: parseInt(document.getElementById('healthBreakThreshold').value),
                 claudeShowTab: document.getElementById('claudeShowTab').checked,
+                claudeShowNewFeatureBanner: document.getElementById('claudeShowNewFeatureBanner').checked,
                 enableDevCommands: document.getElementById('enableDevCommands').checked
             };
         }

@@ -50,6 +50,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                 } else if (message.command === 'openSettings') {
                     // Open settings view
                     vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                } else if (message.command === 'dismissClaudeFeatureBanner') {
+                    await this.dismissClaudeFeatureBanner();
                 }
             },
             undefined,
@@ -57,6 +59,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         );
 
         this.show(webviewView.webview);
+    }
+
+    /** Persists that the user dismissed the Claude Code feature banner, so it won't render again. */
+    private async dismissClaudeFeatureBanner(): Promise<void> {
+        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        await config.update('claude.showNewFeatureBanner', false, vscode.ConfigurationTarget.Global);
     }
 
     /** Re-renders the dashboard only if a panel is already open, without popping one open. */
@@ -126,6 +134,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     } else if (message.command === 'openSettings') {
                         // Open settings view
                         vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                    } else if (message.command === 'dismissClaudeFeatureBanner') {
+                        await this.dismissClaudeFeatureBanner();
                     } else if (message.command === 'claudeRefresh') {
                         // Scanning session transcripts can fail on unreadable files;
                         // report it in the tab rather than leaving it spinning.
@@ -182,12 +192,22 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
         const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
         const showClaudeTab = config.get<boolean>('claude.showTab', true);
+        const showClaudeFeatureBanner = config.get<boolean>('claude.showNewFeatureBanner', true);
 
         const claudeTabButton = showClaudeTab
             ? '<button class="tab-btn" data-tab="claude" data-title="Claude Code Usage" type="button">Claude Code</button>'
             : '';
         const claudeTabPanel = showClaudeTab
             ? `<div class="container tab-panel" id="panel-claude" hidden>${claudeTabBody}</div>`
+            : '';
+        const claudeFeatureBanner = (showClaudeTab && showClaudeFeatureBanner)
+            ? `<div class="feature-banner" id="claude-feature-banner">
+                    <div class="feature-banner-text">
+                        <strong>✨ New:</strong> Claude Code usage tracking has arrived — see token usage, cost, and session insights.
+                        You can disable the tab from settings.
+                    </div>
+                    <button class="feature-banner-dismiss" id="claude-feature-banner-dismiss" type="button" aria-label="Dismiss">✕</button>
+                </div>`
             : '';
 
         return `
@@ -876,6 +896,50 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         margin-right: 8px;
                         border: 1px solid var(--vscode-panel-border);
                     }
+                    .feature-banner {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        margin-bottom: 20px;
+                        padding: 12px 16px;
+                        background: linear-gradient(135deg, color-mix(in srgb, var(--vscode-textLink-foreground) 18%, var(--vscode-editor-background)) 0%, var(--vscode-editor-background) 100%);
+                        border: 1px solid var(--vscode-textLink-foreground);
+                        border-radius: 8px;
+                    }
+                    .feature-banner-text {
+                        font-size: 13px;
+                        color: var(--vscode-foreground);
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                    }
+                    .feature-banner-link {
+                        background-color: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        border-radius: 3px;
+                        padding: 4px 10px;
+                        font-size: 12px;
+                        cursor: pointer;
+                    }
+                    .feature-banner-link:hover {
+                        background-color: var(--vscode-button-hoverBackground);
+                    }
+                    .feature-banner-dismiss {
+                        background: none;
+                        border: none;
+                        color: var(--vscode-foreground);
+                        opacity: 0.7;
+                        cursor: pointer;
+                        font-size: 14px;
+                        padding: 2px 6px;
+                        flex-shrink: 0;
+                    }
+                    .feature-banner-dismiss:hover {
+                        opacity: 1;
+                    }
                     ${claudeTabStyles}
                 </style>
             </head>
@@ -889,6 +953,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     ${claudeTabButton}
                 </div>
                 <div class="container tab-panel" id="panel-time">
+                    ${claudeFeatureBanner}
                     <h2>Developer Insights</h2>
                     <div class="insights-grid">
                         <div class="insight-box">
@@ -1165,6 +1230,23 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     document.getElementById('open-settings-button').addEventListener('click', () => {
                         vscode.postMessage({ command: 'openSettings' });
                     });
+
+                    // New-feature banner: "Check it out" jumps to the Claude tab,
+                    // dismiss hides it and turns the setting off so it won't come back.
+                    const claudeFeatureBannerGoto = document.getElementById('claude-feature-banner-goto');
+                    if (claudeFeatureBannerGoto) {
+                        claudeFeatureBannerGoto.addEventListener('click', () => {
+                            if (typeof claudeSetTab === 'function') { claudeSetTab('claude'); }
+                        });
+                    }
+                    const claudeFeatureBannerDismiss = document.getElementById('claude-feature-banner-dismiss');
+                    if (claudeFeatureBannerDismiss) {
+                        claudeFeatureBannerDismiss.addEventListener('click', () => {
+                            const banner = document.getElementById('claude-feature-banner');
+                            if (banner) { banner.remove(); }
+                            vscode.postMessage({ command: 'dismissClaudeFeatureBanner' });
+                        });
+                    }
 
                     function updateProjectDropdown(projects) {
                         const dropdown = document.getElementById('project-search');
