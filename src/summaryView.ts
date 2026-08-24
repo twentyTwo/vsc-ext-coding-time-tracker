@@ -3,17 +3,22 @@ import { Database, SummaryData, TimeEntry } from './database';
 import { ThemeIcon } from 'vscode';
 import { formatTime } from './utils';
 import { TimeTracker } from './timeTracker';
+import { ClaudeUsageReader } from './claudeUsage';
+import { UsageScope } from './claudeTypes';
+import { claudeTabBody, claudeTabScript, claudeTabStyles } from './claudeTab';
 
 export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private panel: vscode.WebviewPanel | undefined;
     private context: vscode.ExtensionContext;
     private database: Database;
     private timeTracker: TimeTracker;
+    private claudeUsage: ClaudeUsageReader;
 
     constructor(context: vscode.ExtensionContext, database: Database, timeTracker: TimeTracker) {
         this.context = context;
         this.database = database;
         this.timeTracker = timeTracker;
+        this.claudeUsage = new ClaudeUsageReader(context);
     }
 
     resolveWebviewView(
@@ -44,7 +49,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     webviewView.webview.postMessage({ command: 'updateBranches', branches });
                 } else if (message.command === 'openSettings') {
                     // Open settings view
-                    vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                    vscode.commands.executeCommand('simpleCodingInsights.openSettings');
+                } else if (message.command === 'dismissClaudeFeatureBanner') {
+                    await this.dismissClaudeFeatureBanner();
                 }
             },
             undefined,
@@ -52,6 +59,19 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         );
 
         this.show(webviewView.webview);
+    }
+
+    /** Persists that the user dismissed the Claude Code feature banner, so it won't render again. */
+    private async dismissClaudeFeatureBanner(): Promise<void> {
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
+        await config.update('claude.showNewFeatureBanner', false, vscode.ConfigurationTarget.Global);
+    }
+
+    /** Re-renders the dashboard only if a panel is already open, without popping one open. */
+    async refreshIfOpen(): Promise<void> {
+        if (this.panel) {
+            await this.show(this.panel.webview);
+        }
     }
 
     // Add this method to get branches for a specific project
@@ -89,7 +109,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
-                'Coding Time Summary',
+                'Coding Insights Summary',
                 vscode.ViewColumn.One,
                 {
                     enableScripts: true,
@@ -113,7 +133,22 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         this.panel?.webview.postMessage({ command: 'updateBranches', branches });
                     } else if (message.command === 'openSettings') {
                         // Open settings view
-                        vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                        vscode.commands.executeCommand('simpleCodingInsights.openSettings');
+                    } else if (message.command === 'dismissClaudeFeatureBanner') {
+                        await this.dismissClaudeFeatureBanner();
+                    } else if (message.command === 'claudeRefresh') {
+                        // Scanning session transcripts can fail on unreadable files;
+                        // report it in the tab rather than leaving it spinning.
+                        try {
+                            const scope: UsageScope = message.scope === 'workspace' ? 'workspace' : 'all';
+                            const usage = await this.claudeUsage.getSummary(scope);
+                            this.panel?.webview.postMessage({ command: 'claudeUsage', data: usage });
+                        } catch (error) {
+                            this.panel?.webview.postMessage({
+                                command: 'claudeUsage',
+                                error: error instanceof Error ? error.message : String(error)
+                            });
+                        }
                     }
                 },
                 undefined,
@@ -154,14 +189,34 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
     private getHtmlForWebview(projects: string[]): string {
         const projectOptions = projects.map(project => `<option value="${project}">${project}</option>`).join('');
-        
+
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
+        const showClaudeTab = config.get<boolean>('claude.showTab', true);
+        const showClaudeFeatureBanner = config.get<boolean>('claude.showNewFeatureBanner', true);
+
+        const claudeTabButton = showClaudeTab
+            ? '<button class="tab-btn" data-tab="claude" data-title="Claude Code Usage" type="button">Claude Code</button>'
+            : '';
+        const claudeTabPanel = showClaudeTab
+            ? `<div class="container tab-panel" id="panel-claude" hidden>${claudeTabBody}</div>`
+            : '';
+        const claudeFeatureBanner = (showClaudeTab && showClaudeFeatureBanner)
+            ? `<div class="feature-banner" id="claude-feature-banner">
+                    <div class="feature-banner-text">
+                        <strong>✨ New:</strong> Claude Code usage tracking has arrived — see token usage, cost, and session insights.
+                        You can disable the tab from settings.
+                    </div>
+                    <button class="feature-banner-dismiss" id="claude-feature-banner-dismiss" type="button" aria-label="Dismiss">✕</button>
+                </div>`
+            : '';
+
         return `
             <!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Coding Time Summary</title>
+                <title>Coding Insights Summary</title>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <style>
                     :root {
@@ -841,14 +896,64 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         margin-right: 8px;
                         border: 1px solid var(--vscode-panel-border);
                     }
+                    .feature-banner {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        margin-bottom: 20px;
+                        padding: 12px 16px;
+                        background: linear-gradient(135deg, color-mix(in srgb, var(--vscode-textLink-foreground) 18%, var(--vscode-editor-background)) 0%, var(--vscode-editor-background) 100%);
+                        border: 1px solid var(--vscode-textLink-foreground);
+                        border-radius: 8px;
+                    }
+                    .feature-banner-text {
+                        font-size: 13px;
+                        color: var(--vscode-foreground);
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                    }
+                    .feature-banner-link {
+                        background-color: var(--vscode-button-background);
+                        color: var(--vscode-button-foreground);
+                        border: none;
+                        border-radius: 3px;
+                        padding: 4px 10px;
+                        font-size: 12px;
+                        cursor: pointer;
+                    }
+                    .feature-banner-link:hover {
+                        background-color: var(--vscode-button-hoverBackground);
+                    }
+                    .feature-banner-dismiss {
+                        background: none;
+                        border: none;
+                        color: var(--vscode-foreground);
+                        opacity: 0.7;
+                        cursor: pointer;
+                        font-size: 14px;
+                        padding: 2px 6px;
+                        flex-shrink: 0;
+                    }
+                    .feature-banner-dismiss:hover {
+                        opacity: 1;
+                    }
+                    ${claudeTabStyles}
                 </style>
             </head>
             <body>
                 <div class="header">
-                    <h1>Coding Time Summary</h1>
+                    <h1 id="dashboard-title">Coding Time Summary</h1>
                     <button class="settings-button" id="open-settings-button">Settings</button>
                 </div>
-                <div class="container">
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="time" data-title="Coding Time Summary" type="button">Coding Time</button>
+                    ${claudeTabButton}
+                </div>
+                <div class="container tab-panel" id="panel-time">
+                    ${claudeFeatureBanner}
                     <h2>Developer Insights</h2>
                     <div class="insights-grid">
                         <div class="insight-box">
@@ -924,8 +1029,6 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             </div>
                         </div>
                             </div>
-                        </div>
-                    </div>
 
                     <h2>Coding Activity</h2>
                     <div class="heatmap-container">
@@ -968,6 +1071,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
                 </div>
+                ${claudeTabPanel}
                 <script>
                     const vscode = acquireVsCodeApi();
                     
@@ -1126,6 +1230,23 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     document.getElementById('open-settings-button').addEventListener('click', () => {
                         vscode.postMessage({ command: 'openSettings' });
                     });
+
+                    // New-feature banner: "Check it out" jumps to the Claude tab,
+                    // dismiss hides it and turns the setting off so it won't come back.
+                    const claudeFeatureBannerGoto = document.getElementById('claude-feature-banner-goto');
+                    if (claudeFeatureBannerGoto) {
+                        claudeFeatureBannerGoto.addEventListener('click', () => {
+                            if (typeof claudeSetTab === 'function') { claudeSetTab('claude'); }
+                        });
+                    }
+                    const claudeFeatureBannerDismiss = document.getElementById('claude-feature-banner-dismiss');
+                    if (claudeFeatureBannerDismiss) {
+                        claudeFeatureBannerDismiss.addEventListener('click', () => {
+                            const banner = document.getElementById('claude-feature-banner');
+                            if (banner) { banner.remove(); }
+                            vscode.postMessage({ command: 'dismissClaudeFeatureBanner' });
+                        });
+                    }
 
                     function updateProjectDropdown(projects) {
                         const dropdown = document.getElementById('project-search');
@@ -2785,6 +2906,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
                     // Request a refresh when the webview becomes visible
                     vscode.postMessage({ command: 'refresh' });
+
+                    ${claudeTabScript}
                 </script>
             </body>
             </html>

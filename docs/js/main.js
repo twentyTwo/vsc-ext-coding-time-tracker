@@ -232,5 +232,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('scroll', highlightNavigation);
 
-    console.log('Simple Coding Time Tracker - Website loaded successfully! 🚀');
+    console.log('Simple Coding Insights - Website loaded successfully! 🚀');
 });
