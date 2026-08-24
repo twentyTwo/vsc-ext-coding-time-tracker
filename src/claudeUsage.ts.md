@@ -17,7 +17,7 @@ This file reads Claude Code's local session transcripts and aggregates token usa
 
 ### Locating the data directory
 Resolution order, first match wins:
-1. The `simpleCodingTimeTracker.claude.dataPath` setting (supports a leading `~`).
+1. The `simpleCodingInsights.claude.dataPath` setting (supports a leading `~`).
 2. The `CLAUDE_CONFIG_DIR` environment variable.
 3. `~/.claude`.
 

@@ -9,8 +9,8 @@ export class StatusBar implements vscode.Disposable {
     private summaryView: SummaryViewProvider;
     private updateInterval: NodeJS.Timeout;
     private configChangeListener: vscode.Disposable;
-    private readonly commandId = 'simpleCodingTimeTracker.manualSave';
-    private readonly notificationCommandId = 'simpleCodingTimeTracker.toggleNotifications';
+    private readonly commandId = 'simpleCodingInsights.manualSave';
+    private readonly notificationCommandId = 'simpleCodingInsights.toggleNotifications';
 
     constructor(timeTracker: TimeTracker, summaryView: SummaryViewProvider) {
         this.timeTracker = timeTracker;
@@ -38,7 +38,7 @@ export class StatusBar implements vscode.Disposable {
         });
         
         // Register refresh command for explicit status bar refresh after settings save
-        const refreshCommandDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.refreshStatusBar', () => {
+        const refreshCommandDisposable = vscode.commands.registerCommand('simpleCodingInsights.refreshStatusBar', () => {
             void this.updateStatusBar();
         });
         
@@ -50,8 +50,8 @@ export class StatusBar implements vscode.Disposable {
         
         // Listen for configuration changes to update immediately
         this.configChangeListener = vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('simpleCodingTimeTracker.statusBar') ||
-                e.affectsConfiguration('simpleCodingTimeTracker.health.enableNotifications')) {
+            if (e.affectsConfiguration('simpleCodingInsights.statusBar') ||
+                e.affectsConfiguration('simpleCodingInsights.health.enableNotifications')) {
                 void this.updateStatusBar();
             }
         });
@@ -64,7 +64,7 @@ export class StatusBar implements vscode.Disposable {
         const isActive = this.timeTracker.isActive();
         
         // Get configuration settings
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const showSeconds = config.get('statusBar.showSeconds', true);
         const customIcon = config.get('statusBar.icon', '$(code)');
         const customColor = config.get('statusBar.color', '');
@@ -137,7 +137,7 @@ Click timer to save session | Hover bell icon for notification status`;
 
     // Toggle notifications method
     private async toggleNotifications(): Promise<void> {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const currentEnabled = config.get('health.enableNotifications', false);
         
         // Toggle the setting

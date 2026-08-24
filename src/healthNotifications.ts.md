@@ -59,22 +59,22 @@ Added to `package.json` configuration:
 
 ```json
 {
-  "simpleCodingTimeTracker.health.enableNotifications": {
+  "simpleCodingInsights.health.enableNotifications": {
     "type": "boolean",
     "default": true,
     "description": "Enable health notifications during coding sessions"
   },
-  "simpleCodingTimeTracker.health.eyeRestInterval": {
+  "simpleCodingInsights.health.eyeRestInterval": {
     "type": "number",
     "default": 20,
     "description": "Interval for eye rest reminders (minutes)"
   },
-  "simpleCodingTimeTracker.health.stretchInterval": {
+  "simpleCodingInsights.health.stretchInterval": {
     "type": "number", 
     "default": 45,
     "description": "Interval for stretch reminders (minutes)"
   },
-  "simpleCodingTimeTracker.health.breakThreshold": {
+  "simpleCodingInsights.health.breakThreshold": {
     "type": "number",
     "default": 120,
     "description": "Coding duration before suggesting a break (minutes)"
@@ -217,7 +217,7 @@ The system responds to configuration changes in real-time:
 
 ```typescript
 public updateConfiguration() {
-    const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+    const config = vscode.workspace.getConfiguration('simpleCodingInsights');
     // ... existing configuration ...
     
     // Update health notification settings
@@ -233,8 +233,8 @@ public updateConfiguration() {
 Registered in `extension.ts`:
 
 ```typescript
-let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
-    const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingInsights.toggleHealthNotifications', async () => {
+    const config = vscode.workspace.getConfiguration('simpleCodingInsights');
     const currentEnabled = config.get('health.enableNotifications', true);
     await config.update('health.enableNotifications', !currentEnabled, vscode.ConfigurationTarget.Global);
     

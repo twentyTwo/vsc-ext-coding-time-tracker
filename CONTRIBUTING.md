@@ -71,7 +71,7 @@ For testing packaged extensions:
 
 2. **Generate test data**:
    - Press `Ctrl+Shift+P`
-   - Run `SCTT: Generate Test Data (Dev)`
+   - Run `SCI: Generate Test Data (Dev)`
    - This creates 90 days of realistic test data
 
 3. **Test all features**:
@@ -81,7 +81,7 @@ For testing packaged extensions:
    - Theme compatibility
 
 4. **Clean up**:
-   - Run `SCTT: Delete Test Data (Dev)` to remove test data
+   - Run `SCI: Delete Test Data (Dev)` to remove test data
    - Disable dev commands when done
 
 ### Testing Checklist

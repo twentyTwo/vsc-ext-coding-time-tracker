@@ -18,7 +18,7 @@ export class SettingsViewProvider {
         }
 
         this.panel = vscode.window.createWebviewPanel(
-            'scttSettings',
+            'sciSettings',
             'Simple Coding Insights - Settings',
             vscode.ViewColumn.One,
             {
@@ -56,7 +56,7 @@ export class SettingsViewProvider {
     private async sendCurrentSettings() {
         if (!this.panel) return;
 
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const settings = {
             inactivityTimeout: config.get('inactivityTimeout', 2.5),
             focusTimeout: config.get('focusTimeout', 3),
@@ -81,7 +81,7 @@ export class SettingsViewProvider {
     }
 
     private async saveSettings(settings: any) {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
 
         try {
             // Determine the target scope: Workspace if available, otherwise Global
@@ -121,7 +121,7 @@ export class SettingsViewProvider {
             // Force a status bar refresh after a small delay to ensure all config changes are applied
             // This is needed because multiple sequential config.update() calls can cause race conditions
             setTimeout(() => {
-                vscode.commands.executeCommand('simpleCodingTimeTracker.refreshStatusBar');
+                vscode.commands.executeCommand('simpleCodingInsights.refreshStatusBar');
             }, 100);
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -130,7 +130,7 @@ export class SettingsViewProvider {
     }
 
     private async resetToDefaults() {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
 
         try {
             // Determine the target scope: Workspace if available, otherwise Global

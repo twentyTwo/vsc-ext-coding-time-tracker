@@ -7,12 +7,12 @@
 
 # Simple Coding Insights: A Visual Studio Code Extension
 <div style="display: flex; align-items: center;">
-  <img src="icon-sctt.png" alt="Simple Coding Insights Icon" width="100" style="margin-right: 20px;">
+  <img src="icon-sci.png" alt="Simple Coding Insights Icon" width="100" style="margin-right: 20px;">
 </div>
 
 Simple Coding Insights is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time **and your AI assistant usage**. Track time per project, branch and language, visualize your activity, keep healthy coding habits, and see token/cost usage for Claude Code — all in one dashboard. If you are curious about your coding habits, this extension covers you.
 
-> ℹ️ **Renamed from "Simple Coding Time Tracker".** This is the same extension — your time data, settings and install continue to work unchanged. Only the display name has been updated to reflect the new Claude Code usage features.
+> ℹ️ **Renamed from "Simple Coding Time Tracker".** This is the same extension — your time data, settings and install continue to work unchanged. Only the display name has been updated to reflect the new Claude Code usage features. As of 0.8.0 the command IDs and settings keys were also renamed from `simpleCodingTimeTracker.*` to `simpleCodingInsights.*`; your existing settings are migrated automatically on first launch, and any keybindings you made on the old command IDs keep working.
 
 ## Features
 
@@ -77,7 +77,7 @@ The tab loads only when you open it, so it never slows down the coding-time dash
 By default the extension looks in `CLAUDE_CONFIG_DIR`, falling back to `~/.claude`. If your data lives elsewhere, set:
 
 ```json
-"simpleCodingTimeTracker.claude.dataPath": "/path/to/.claude"
+"simpleCodingInsights.claude.dataPath": "/path/to/.claude"
 ```
 
 If no Claude Code data is found, the tab says so and names the directory it searched.
@@ -85,7 +85,7 @@ If no Claude Code data is found, the tab says so and names the directory it sear
 The Claude Code tab can be hidden from the dashboard in Settings:
 
 ```json
-"simpleCodingTimeTracker.claude.showTab": false
+"simpleCodingInsights.claude.showTab": false
 ```
 
 > This extension is not affiliated with or endorsed by Anthropic.
@@ -137,7 +137,7 @@ The charts and visualizations will automatically update to reflect your selected
 You can customize the extension's behavior through VS Code settings or the dedicated Settings view:
 
 **Method 1: Using the Settings View (Recommended)**
-1. Open the Coding Time Summary view by clicking on the status bar or using the command `SCTT: Show Coding Time Summary`
+1. Open the Coding Time Summary view by clicking on the status bar or using the command `SCI: Show Coding Insights Summary`
 2. Click the "Settings" button in the top-right corner of the summary view
 3. Configure all settings through the user-friendly interface with descriptions and validation
 4. Click "Save Settings" to apply changes
@@ -252,8 +252,8 @@ For developers and testers, the extension includes built-in test data generation
 3. Enable "Simple Coding Insights › Enable Dev Commands"
 
 ### Available Test Commands
-- **`SCTT: Generate Test Data (Dev)`** - Creates realistic test data for 90 days
-- **`SCTT: Delete Test Data (Dev)`** - Safely removes all tracking data
+- **`SCI: Generate Test Data (Dev)`** - Creates realistic test data for 90 days
+- **`SCI: Delete Test Data (Dev)`** - Safely removes all tracking data
 
 **Note**: These commands are hidden from regular users and only appear when explicitly enabled in settings.
 
@@ -267,6 +267,7 @@ For technical details about development, release process, and internal architect
 
 ### [0.8.0] - 2026-08-08
 - **Renamed the extension to "Simple Coding Insights"** to better reflect that it now covers more than coding time. It is the same extension with the same data and settings — existing users keep everything as-is; only the display name changes.
+- **Renamed command IDs and settings keys** from `simpleCodingTimeTracker.*` to `simpleCodingInsights.*`. Existing settings are migrated automatically on first launch after updating, and keybindings bound to the old command IDs keep working (the old IDs remain registered as hidden aliases for now). Rolling back to an older version ignores the new settings keys.
 - Added **Claude Code Usage** dashboard tab: token usage, estimated cost, models, tools and sessions read from your local Claude Code logs.
 - Updated description, keywords and branding across the extension, README and website.
 
@@ -314,15 +315,15 @@ For technical details about development, release process, and internal architect
 
 ### [0.6.3] - 2025-10-10
 - Added dedicated Settings View accessible from the summary view header
-- Implemented `SCTT: Open Settings` command for direct access to settings interface
+- Implemented `SCI: Open Settings` command for direct access to settings interface
 - Enhanced user experience with intuitive settings management through webview interface
 - Added Settings button to summary view header for quick access to configuration options
 - All extension settings now available through both traditional VS Code settings and the new dedicated view
 
 ### [0.6.1] - 2025-08-30
 - Added comprehensive test data generation commands for developers and testers
-- Implemented `SCTT: Generate Test Data (Dev)` command that creates 90 days of realistic test data
-- Added `SCTT: Delete Test Data (Dev)` command for safe cleanup of test data
+- Implemented `SCI: Generate Test Data (Dev)` command that creates 90 days of realistic test data
+- Added `SCI: Delete Test Data (Dev)` command for safe cleanup of test data
 - Test commands are hidden from end users by default and only visible when `enableDevCommands` setting is enabled
 - Enhanced security with configuration-controlled command visibility
 - Improved testing workflow for packaged extension installations

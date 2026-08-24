@@ -830,7 +830,7 @@ export const claudeTabScript = `
 
             if (!data.available) {
                 claudeShow('empty', 'No Claude Code sessions found in ' + data.dataDir +
-                    '. If your data lives elsewhere, set simpleCodingTimeTracker.claude.dataPath in Settings.');
+                    '. If your data lives elsewhere, set simpleCodingInsights.claude.dataPath in Settings.');
                 return;
             }
             if (data.totals.messages === 0) {

@@ -49,7 +49,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     webviewView.webview.postMessage({ command: 'updateBranches', branches });
                 } else if (message.command === 'openSettings') {
                     // Open settings view
-                    vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                    vscode.commands.executeCommand('simpleCodingInsights.openSettings');
                 } else if (message.command === 'dismissClaudeFeatureBanner') {
                     await this.dismissClaudeFeatureBanner();
                 }
@@ -63,7 +63,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
     /** Persists that the user dismissed the Claude Code feature banner, so it won't render again. */
     private async dismissClaudeFeatureBanner(): Promise<void> {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         await config.update('claude.showNewFeatureBanner', false, vscode.ConfigurationTarget.Global);
     }
 
@@ -133,7 +133,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         this.panel?.webview.postMessage({ command: 'updateBranches', branches });
                     } else if (message.command === 'openSettings') {
                         // Open settings view
-                        vscode.commands.executeCommand('simpleCodingTimeTracker.openSettings');
+                        vscode.commands.executeCommand('simpleCodingInsights.openSettings');
                     } else if (message.command === 'dismissClaudeFeatureBanner') {
                         await this.dismissClaudeFeatureBanner();
                     } else if (message.command === 'claudeRefresh') {
@@ -190,7 +190,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private getHtmlForWebview(projects: string[]): string {
         const projectOptions = projects.map(project => `<option value="${project}">${project}</option>`).join('');
 
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const showClaudeTab = config.get<boolean>('claude.showTab', true);
         const showClaudeFeatureBanner = config.get<boolean>('claude.showNewFeatureBanner', true);
 

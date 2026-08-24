@@ -179,7 +179,7 @@ For detailed contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.
 ## Testing
 
 ### Dev Commands
-Enable `enableDevCommands` → `SCTT: Generate Test Data (Dev)` creates 90 days of realistic data
+Enable `enableDevCommands` → `SCI: Generate Test Data (Dev)` creates 90 days of realistic data
 
 ### Manual Testing
 F5 launches Extension Development Host for testing core features

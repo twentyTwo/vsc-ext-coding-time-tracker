@@ -125,7 +125,7 @@ export class ClaudeUsageReader {
      */
     getDataDir(): string {
         const configured = vscode.workspace
-            .getConfiguration('simpleCodingTimeTracker')
+            .getConfiguration('simpleCodingInsights')
             .get<string>('claude.dataPath', '');
         if (configured && configured.trim().length > 0) {
             return path.resolve(this.expandHome(configured.trim()));
@@ -144,7 +144,7 @@ export class ClaudeUsageReader {
      */
     private getIdleGapMs(): number {
         const minutes = vscode.workspace
-            .getConfiguration('simpleCodingTimeTracker')
+            .getConfiguration('simpleCodingInsights')
             .get<number>('claude.idleGapMinutes', 10);
         return Math.max(1, minutes) * 60000;
     }

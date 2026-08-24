@@ -44,7 +44,7 @@ npm run package          # Create .vsix file via webpack
 ### Testing (see CONTRIBUTING.md § Testing the Extension)
 1. **F5 in VS Code**: Launches Extension Development Host
 2. **Enable dev commands**: Search "enableDevCommands" in settings
-3. **Generate test data**: Command `SCTT: Generate Test Data (Dev)` creates 90-day dataset
+3. **Generate test data**: Command `SCI: Generate Test Data (Dev)` creates 90-day dataset
 
 ### Release Process (TECHNICAL.md)
 - **Beta**: `git tag v<version>-beta.<number> && git push origin v<version>-beta.<number>`
