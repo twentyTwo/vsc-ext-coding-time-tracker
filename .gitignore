@@ -2,3 +2,5 @@ node_modules
 out
 **/*.code-workspace
 dist
+*.vsix
+package.json.backup

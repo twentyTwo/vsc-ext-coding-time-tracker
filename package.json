@@ -1,8 +1,8 @@
 {
   "name": "simple-coding-time-tracker",
   "displayName": "Simple Coding Time Tracker",
-  "description": "Track and visualize your coding time across projects",
-  "version": "0.7.2",
+  "description": "Automatic time tracking for VS Code — Track coding time per project, branch & language with smart activity detection, health reminders, and beautiful visualizations",
+  "version": "0.7.7",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -10,8 +10,27 @@
     "vscode": "^1.63.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Productivity"
   ],
+  "keywords": [
+    "time tracker",
+    "time tracking",
+    "coding time",
+    "productivity",
+    "analytics",
+    "statistics",
+    "git branch tracking",
+    "developer tools",
+    "work hours",
+    "time management",
+    "activity tracker",
+    "programming statistics"
+  ],
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -158,5 +177,10 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/twentyTwo/vsc-ext-coding-time-tracker.git"
-  }
+  },
+  "homepage": "https://github.com/twentyTwo/vsc-ext-coding-time-tracker#readme",
+  "bugs": {
+    "url": "https://github.com/twentyTwo/vsc-ext-coding-time-tracker/issues"
+  },
+  "qna": "https://github.com/twentyTwo/vsc-ext-coding-time-tracker/discussions"
 }

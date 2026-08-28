@@ -1312,10 +1312,11 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                     y: { 
                                         display: true,
                                         ticks: {
+                                            autoSkip: false,
                                             font: {
                                                 size: 9
                                             },
-                                            color: 'var(--vscode-foreground)',
+                                            color: getComputedStyle(document.documentElement).getPropertyValue('--vscode-foreground') || '#000',
                                             padding: 5
                                         },
                                         grid: {
@@ -1738,7 +1739,9 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
 
                     function updateDailyAverageAnalytics(data, allEntries) {
                         const last30Days = getLast30DaysData(allEntries);
-                        const avgTime = last30Days.reduce((sum, day) => sum + day.time, 0) / 30;
+                        let firstActiveDay = last30Days.findIndex((value, index, obj) => value.time > 0);
+                        const numberOfDays = Math.min(30, 30 - firstActiveDay);
+                        const avgTime = last30Days.reduce((sum, day) => sum + day.time, 0) / numberOfDays;
                         
                         document.getElementById('daily-average').textContent = formatTime(avgTime);
                         
@@ -1872,6 +1875,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         });
                     }
 
+                    function toLocalDateStr(d) {
+                        return d.getFullYear() + '-' +
+                            String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                            String(d.getDate()).padStart(2, '0');
+                    }
+
                     function calculateStreaks(entries) {
                         if (entries.length === 0) return { longest: 0, current: 0 };
                         
@@ -1885,12 +1894,12 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         let currentStreak = 0;
                         let tempStreak = 0;
                         
-                        const today = new Date().toISOString().split('T')[0];
+                        const today = toLocalDateStr(new Date());
                         let yesterdayHasCoding = false;
                         
                         for (let i = 0; i < dates.length; i++) {
-                            const currentDate = new Date(dates[i]);
-                            const prevDate = i > 0 ? new Date(dates[i-1]) : null;
+                            const currentDate = new Date(dates[i] + 'T00:00:00');
+                            const prevDate = i > 0 ? new Date(dates[i-1] + 'T00:00:00') : null;
                             
                             const diffDays = prevDate ? 
                                 Math.round((currentDate - prevDate) / (1000 * 60 * 60 * 24)) : 1;
@@ -1906,7 +1915,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             // Check if this is yesterday or today for current streak
                             const yesterday = new Date();
                             yesterday.setDate(yesterday.getDate() - 1);
-                            const yesterdayStr = yesterday.toISOString().split('T')[0];
+                            const yesterdayStr = toLocalDateStr(yesterday);
                             
                             if (dates[i] === today || dates[i] === yesterdayStr) {
                                 if (dates[i] === yesterdayStr) yesterdayHasCoding = true;
@@ -1927,7 +1936,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const dayCounts = [0, 0, 0, 0, 0, 0, 0];
                         
                         entries.forEach(entry => {
-                            const date = new Date(entry.date);
+                            const date = new Date(entry.date + 'T00:00:00');
                             const dayOfWeek = date.getDay();
                             dayTotals[dayOfWeek] += entry.timeSpent;
                             dayCounts[dayOfWeek]++;
@@ -1951,7 +1960,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     }
 
                     function getTodayTime(entries) {
-                        const today = new Date().toISOString().split('T')[0];
+                        const today = toLocalDateStr(new Date());
                         return entries
                             .filter(entry => entry.date === today)
                             .reduce((sum, entry) => sum + entry.timeSpent, 0);
@@ -1960,8 +1969,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     function getThisWeekTime(entries) {
                         const now = new Date();
                         const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-                        const startOfWeekStr = startOfWeek.toISOString().split('T')[0];
-                        const today = now.toISOString().split('T')[0];
+                        const startOfWeekStr = toLocalDateStr(startOfWeek);
+                        const today = toLocalDateStr(now);
                         
                         return entries
                             .filter(entry => entry.date >= startOfWeekStr && entry.date <= today)
@@ -1971,8 +1980,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     function getThisMonthTime(entries) {
                         const now = new Date();
                         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                        const startOfMonthStr = startOfMonth.toISOString().split('T')[0];
-                        const today = now.toISOString().split('T')[0];
+                        const startOfMonthStr = toLocalDateStr(startOfMonth);
+                        const today = toLocalDateStr(now);
                         
                         return entries
                             .filter(entry => entry.date >= startOfMonthStr && entry.date <= today)
@@ -1985,8 +1994,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const startOfLastWeek = new Date(endOfLastWeek);
                         startOfLastWeek.setDate(startOfLastWeek.getDate() - 6);
                         
-                        const startStr = startOfLastWeek.toISOString().split('T')[0];
-                        const endStr = endOfLastWeek.toISOString().split('T')[0];
+                        const startStr = toLocalDateStr(startOfLastWeek);
+                        const endStr = toLocalDateStr(endOfLastWeek);
                         
                         return entries
                             .filter(entry => entry.date >= startStr && entry.date <= endStr)
@@ -1998,8 +2007,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
                         const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
                         
-                        const startStr = startOfLastMonth.toISOString().split('T')[0];
-                        const endStr = endOfLastMonth.toISOString().split('T')[0];
+                        const startStr = toLocalDateStr(startOfLastMonth);
+                        const endStr = toLocalDateStr(endOfLastMonth);
                         
                         return entries
                             .filter(entry => entry.date >= startStr && entry.date <= endStr)
@@ -2016,8 +2025,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             const weekEnd = new Date(weekStart);
                             weekEnd.setDate(weekEnd.getDate() + 6);
                             
-                            const startStr = weekStart.toISOString().split('T')[0];
-                            const endStr = weekEnd.toISOString().split('T')[0];
+                            const startStr = toLocalDateStr(weekStart);
+                            const endStr = toLocalDateStr(weekEnd);
                             
                             const weekTime = entries
                                 .filter(entry => entry.date >= startStr && entry.date <= endStr)
@@ -2043,8 +2052,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
                             const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
                             
-                            const startStr = monthStart.toISOString().split('T')[0];
-                            const endStr = monthEnd.toISOString().split('T')[0];
+                            const startStr = toLocalDateStr(monthStart);
+                            const endStr = toLocalDateStr(monthEnd);
                             
                             const monthTime = entries
                                 .filter(entry => entry.date >= startStr && entry.date <= endStr)
@@ -2069,7 +2078,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         for (let i = 29; i >= 0; i--) {
                             const day = new Date(now);
                             day.setDate(day.getDate() - i);
-                            const dayStr = day.toISOString().split('T')[0];
+                            const dayStr = toLocalDateStr(day);
                             
                             const dayTime = entries
                                 .filter(entry => entry.date === dayStr)
@@ -2138,8 +2147,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     function getThisYearTime(entries) {
                         const now = new Date();
                         const startOfYear = new Date(now.getFullYear(), 0, 1);
-                        const startOfYearStr = startOfYear.toISOString().split('T')[0];
-                        const today = now.toISOString().split('T')[0];
+                        const startOfYearStr = toLocalDateStr(startOfYear);
+                        const today = toLocalDateStr(now);
                         
                         return entries
                             .filter(entry => entry.date >= startOfYearStr && entry.date <= today)
@@ -2230,7 +2239,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             type: 'line',
                             data: {
                                 labels: dailyData.map(([date]) => {
-                                    const d = new Date(date);
+                                    const d = new Date(date + 'T00:00:00');
                                     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                                 }),
                                 datasets: [{
@@ -2464,7 +2473,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             type: 'line',
                             data: {
                                 labels: dailyChartData.map(([date]) => {
-                                    const d = new Date(date);
+                                    const d = new Date(date + 'T00:00:00');
                                     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                                 }),
                                 datasets: [{
@@ -2665,7 +2674,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             const cell = document.createElement('div');
                             cell.className = 'heatmap-cell';
                             
-                            const dateStr = currentDate.toISOString().split('T')[0];
+                            const dateStr = toLocalDateStr(currentDate);
                             const minutes = data.dailySummary[dateStr] || 0;
                             const level = getIntensityLevel(minutes);
                             
@@ -2699,7 +2708,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         // Don't forget to set the attribute for the last cell
                         if (previousCell) {
                             const lastDate = new Date(date.getFullYear(), date.getMonth(), lastDay.getDate());
-                            const lastDateStr = lastDate.toISOString().split('T')[0];
+                            const lastDateStr = toLocalDateStr(lastDate);
                             const lastMinutes = data.dailySummary[lastDateStr] || 0;
                             const lastLevel = getIntensityLevel(lastMinutes);
                             const lastDayName = ['Saturday','Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][lastDate.getDay()];

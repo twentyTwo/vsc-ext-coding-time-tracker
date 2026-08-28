@@ -30,7 +30,8 @@ jobs:
     outputs:
       version: ${{ steps.package.outputs.version }}
       should_publish: ${{ steps.verify.outputs.should_publish }}
-      vsix_name: ${{ steps.build.outputs.vsix_name }}
+      vsix_name_vscode: ${{ steps.build.outputs.vsix_name_vscode }}
+      vsix_name_openvsx: ${{ steps.build.outputs.vsix_name_openvsx }}
     
     steps:
       - name: Checkout code
@@ -121,43 +122,67 @@ jobs:
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
           echo "≡ƒôª Package version: $VERSION"
 
-      - name: Build VSIX package
+      - name: Build VSIX packages for marketplaces
         id: build
         if: steps.verify.outputs.should_publish == 'true'
         run: |
           npm install -g @vscode/vsce@latest
           rm -f *.vsix
+          
+          VERSION="${{ steps.package.outputs.version }}"
+          VSIX_NAME="simple-coding-time-tracker-${VERSION}.vsix"
+          
+          # Build for VS Code Marketplace (categories: Other only)
+          echo "🔧 Building VSIX for VS Code Marketplace..."
+          node scripts/prepare-package.js vscode
           vsce package
           
-          VSIX_NAME="simple-coding-time-tracker-${{ steps.package.outputs.version }}.vsix"
-          echo "vsix_name=$VSIX_NAME" >> $GITHUB_OUTPUT
-          
-          # Validate VSIX
           if [ ! -f "$VSIX_NAME" ]; then
-            echo "Γ¥î VSIX build failed"
+            echo "❌ VSIX build for VS Code failed"
             exit 1
           fi
           
-          # Verify the package can be listed
-          vsce ls "$VSIX_NAME"
+          mv "$VSIX_NAME" "vscode-$VSIX_NAME"
+          echo "vsix_name_vscode=vscode-$VSIX_NAME" >> $GITHUB_OUTPUT
+          echo "✅ VS Code Marketplace VSIX built: vscode-$VSIX_NAME"
           
-          SIZE=$(stat -c%s "$VSIX_NAME" 2>/dev/null || stat -f%z "$VSIX_NAME")
-          SIZE_MB=$((SIZE / 1024 / 1024))
+          # Restore original package.json
+          node scripts/restore-package.js
           
-          if [ $SIZE_MB -gt 10 ]; then
-            echo "ΓÜá∩╕Å Warning: Package size is ${SIZE_MB}MB (consider optimizing)"
-          else
-            echo "Γ£à Package size: ${SIZE_MB}MB"
+          # Build for Open VSX (categories: Other, Productivity)
+          echo "🔧 Building VSIX for Open VSX Registry..."
+          node scripts/prepare-package.js openvsx
+          vsce package
+          
+          if [ ! -f "$VSIX_NAME" ]; then
+            echo "❌ VSIX build for Open VSX failed"
+            exit 1
           fi
           
-          echo "Γ£à VSIX built successfully - $VSIX_NAME"
+          mv "$VSIX_NAME" "openvsx-$VSIX_NAME"
+          echo "vsix_name_openvsx=openvsx-$VSIX_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Open VSX VSIX built: openvsx-$VSIX_NAME"
+          
+          # Restore original package.json
+          node scripts/restore-package.js
+          
+          # Show sizes
+          for f in vscode-$VSIX_NAME openvsx-$VSIX_NAME; do
+            SIZE=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
+            SIZE_KB=$((SIZE / 1024))
+            echo "📦 $f: ${SIZE_KB}KB"
+          done
+          
+          echo "✅ Both marketplace VSIX files built successfully"
 
-      - name: Upload VSIX artifact
+      - name: Upload VSIX artifacts
         if: steps.verify.outputs.should_publish == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: extension-vsix-${{ steps.package.outputs.version }}
-          path: ${{ steps.build.outputs.vsix_name }}
+          path: |
+            ${{ steps.build.outputs.vsix_name_vscode }}
+            ${{ steps.build.outputs.vsix_name_openvsx }}
           retention-days: 90
 
   # 2∩╕ÅΓâú DEPLOY TO VS CODE MARKETPLACE
@@ -211,7 +236,7 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           retry_wait_seconds: 30
-          command: vsce publish -p $VSC_PAT --packagePath ${{ needs.build.outputs.vsix_name }}
+          command: vsce publish -p $VSC_PAT --packagePath ${{ needs.build.outputs.vsix_name_vscode }}
         env:
           VSC_PAT: ${{ secrets.VSC_PAT }}
 
@@ -268,7 +293,7 @@ jobs:
           tag_name: v${{ needs.build.outputs.version }}
           name: Release v${{ needs.build.outputs.version }}
           body_path: release_body.md
-          files: ${{ needs.build.outputs.vsix_name }}
+          files: ${{ needs.build.outputs.vsix_name_vscode }}
           draft: false
           prerelease: false
           generate_release_notes: false
@@ -313,7 +338,7 @@ jobs:
           timeout_minutes: 5
           max_attempts: 3
           retry_wait_seconds: 30
-          command: ovsx publish ${{ needs.build.outputs.vsix_name }} --pat $OPENVSX_PAT
+          command: ovsx publish ${{ needs.build.outputs.vsix_name_openvsx }} --pat $OPENVSX_PAT
         env:
           OPENVSX_PAT: ${{ secrets.OPENVSX_PAT }}
 
