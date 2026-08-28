@@ -89,7 +89,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
         } else {
             this.panel = vscode.window.createWebviewPanel(
                 'codingTimeSummary',
-                'Coding Time Summary',
+                'Dev Pulse Summary',
                 vscode.ViewColumn.One,
                 {
                     enableScripts: true,
@@ -161,7 +161,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Coding Time Summary</title>
+                <title>Dev Pulse Summary</title>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <style>
                     :root {
@@ -845,7 +845,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
             </head>
             <body>
                 <div class="header">
-                    <h1>Coding Time Summary</h1>
+                    <h1>Dev Pulse Summary</h1>
                     <button class="settings-button" id="open-settings-button">Settings</button>
                 </div>
                 <div class="container">
@@ -890,7 +890,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
 
-                    <h2>Coding Time Analytics</h2>                  
+                    <h2>Dev Pulse Analytics</h2>
                     <div class="analytics-grid">
                         <div class="analytics-box">
                             <h3>Time Summary</h3>
@@ -927,7 +927,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                         </div>
                     </div>
 
-                    <h2>Coding Activity</h2>
+                    <h2>Dev Pulse Activity</h2>
                     <div class="heatmap-container">
                         <div class="heatmap-wrapper">
                             <div class="months-container"></div>
@@ -2203,7 +2203,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                             data: {
                                 labels: projectData.map(([key]) => key),
                                 datasets: [{
-                                    label: 'Coding Time',
+                                    label: 'Dev Pulse',
                                     data: projectData.map(([_, time]) => time/60),
                                     backgroundColor: chartColors.chartBlues,
                                     borderColor: chartColors.grid,
@@ -2243,7 +2243,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                                 }),
                                 datasets: [{
-                                    label: 'Coding Time',
+                                    label: 'Dev Pulse',
                                     data: dailyData.map(([_, time]) => time / 60),
                                     fill: true,
                                     backgroundColor: \`\${chartColors.accent}33\`,
@@ -2477,7 +2477,7 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                                 }),
                                 datasets: [{
-                                    label: 'Coding Time',
+                                    label: 'Dev Pulse',
                                     data: dailyChartData.map(([_, time]) => time / 60),
                                     fill: true,
                                     backgroundColor: \`\${chartColors.accent}33\`,

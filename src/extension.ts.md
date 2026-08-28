@@ -1,6 +1,6 @@
 # `extension.ts` Documentation
 
-This file is the main entry point for the VS Code Coding Time Tracker extension. It registers commands, initializes the database, and sets up the extension's UI components and event listeners.
+This file is the main entry point for the VS Code Dev Pulse extension. It registers commands, initializes the database, and sets up the extension's UI components and event listeners.
 
 ## Overview
 - **Purpose:** Bootstrap the extension, handle activation/deactivation, and wire up commands and UI.

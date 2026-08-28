@@ -1,15 +1,15 @@
 # `database.ts` Documentation
 
-This file implements the persistent storage and retrieval logic for the VS Code Coding Time Tracker extension. It manages time tracking entries, provides summary data, and supports search and data management operations.
+This file implements the persistent storage and retrieval logic for the VS Code Dev Pulse extension. It manages time tracking entries, provides summary data, and supports search and data management operations.
 
 ## Overview
-- **Purpose:** Store and manage coding time entries, including date, project, time spent, and branch information.
+- **Purpose:** Store and manage Dev Pulse entries, including date, project, time spent, and branch information.
 - **Storage:** Uses VS Code's `globalState` API for persistent storage across extension reloads.
 - **Main Class:** `Database` – encapsulates all database operations.
 
 ## Key Concepts
 - **TimeEntry:**
-  - Represents a single tracked coding session.
+  - Represents a single tracked Dev Pulse session.
   - Fields: `date` (YYYY-MM-DD), `project` (string), `timeSpent` (number, minutes), `branch` (string), `language` (string).
 - **SummaryData:**
   - Aggregated statistics for reporting (daily, per project, per branch, per language, total time).

@@ -1,6 +1,6 @@
 # `summaryView.ts` Documentation
 
-This file implements the summary view for the Coding Time Tracker extension. It provides a UI for users to review their tracked coding time, broken down by date, project, and branch.
+This file implements the summary view for the Dev Pulse extension. It provides a UI for users to review their tracked Dev Pulse, broken down by date, project, and branch.
 
 ## Overview
 - **Purpose:** Display aggregated time tracking data in a user-friendly format.
@@ -17,7 +17,7 @@ This file implements the summary view for the Coding Time Tracker extension. It 
   - Users can filter or refresh the data
 
 ## Usage
-- Invoked from extension commands or status bar actions to show the user's coding time summary.
+- Invoked from extension commands or status bar actions to show the user's Dev Pulse summary.
 
 ---
 

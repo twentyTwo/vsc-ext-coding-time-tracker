@@ -19,7 +19,7 @@ export class SettingsViewProvider {
 
         this.panel = vscode.window.createWebviewPanel(
             'scttSettings',
-            'Simple Coding Time Tracker - Settings',
+            'Dev Pulse - Settings',
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -441,21 +441,21 @@ export class SettingsViewProvider {
     </style>
 </head>
 <body>
-    <h1>⚙️ Simple Coding Time Tracker Settings</h1>
+    <h1>⚙️ Dev Pulse Settings</h1>
 
     <div class="setting-group">
         <h2>⏱️ Time Tracking Settings</h2>
-        
+
         <div class="setting-item">
-            <label for="inactivityTimeout">Inactivity Timeout (minutes)</label>
-            <div class="description">Pause tracking if there is no keyboard or mouse activity in VS Code for this many minutes.</div>
-            <input type="number" id="inactivityTimeout" min="0.5" max="60" step="0.5" />
+            <label for="inactivityTimeout">Inactivity Timeout (minutes) — Deprecated</label>
+            <div class="description">No longer used. Dev Pulse now tracks based on VS Code window focus rather than editor keystroke/cursor activity, so time in AI chat panels or the terminal counts too. Use Focus Timeout below instead.</div>
+            <input type="number" id="inactivityTimeout" min="0.5" max="60" step="0.5" disabled />
             <div class="range-info">Range: 0.5 - 60 minutes</div>
         </div>
 
         <div class="setting-item">
             <label for="focusTimeout">Focus Timeout (minutes)</label>
-            <div class="description">If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing.</div>
+            <div class="description">If you switch away from VS Code, continue counting as Dev Pulse for up to this many minutes before pausing. This is the only pause condition — coding, AI chat, and terminal use all count as long as the VS Code window stays focused.</div>
             <input type="number" id="focusTimeout" min="0.5" max="60" step="0.5" />
             <div class="range-info">Range: 0.5 - 60 minutes</div>
         </div>

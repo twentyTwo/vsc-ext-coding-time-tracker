@@ -1,6 +1,6 @@
 # Health Notifications Implementation
 
-This document explains the implementation of the health notification system in the Simple Coding Time Tracker extension.
+This document explains the implementation of the health notification system in the Dev Pulse (Simple Coding Time Tracker) extension.
 
 ## Overview
 
@@ -62,7 +62,7 @@ Added to `package.json` configuration:
   "simpleCodingTimeTracker.health.enableNotifications": {
     "type": "boolean",
     "default": true,
-    "description": "Enable health notifications during coding sessions"
+    "description": "Enable health notifications during dev sessions"
   },
   "simpleCodingTimeTracker.health.eyeRestInterval": {
     "type": "number",
@@ -77,7 +77,7 @@ Added to `package.json` configuration:
   "simpleCodingTimeTracker.health.breakThreshold": {
     "type": "number",
     "default": 120,
-    "description": "Coding duration before suggesting a break (minutes)"
+    "description": "Dev Pulse duration before suggesting a break (minutes)"
   }
 }
 ```

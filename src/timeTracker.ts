@@ -22,8 +22,8 @@ export class TimeTracker implements vscode.Disposable {
     private updateInterval: NodeJS.Timeout | null = null;
     private saveInterval: NodeJS.Timeout | null = null;
     private saveIntervalSeconds: number = 5;
-    private lastCursorActivity: number = Date.now();
-    private cursorInactivityTimeout: NodeJS.Timeout | null = null;
+    // Deprecated: no longer used to auto-stop tracking (see updateConfiguration/package.json).
+    // Kept so existing user settings for this key don't error.
     private inactivityTimeoutSeconds: number = 150; // Default 2.5 minutes * 60 = 150 seconds
     private focusTimeoutHandle: NodeJS.Timeout | null = null;
     private focusTimeoutSeconds: number = 180; // Default 3 minutes * 60 = 180 seconds
@@ -90,7 +90,9 @@ export class TimeTracker implements vscode.Disposable {
             }
         }, '(', ',');
 
-        // Track when VS Code window gains focus
+        // Window focus is the sole authority for start/stop tracking (Dev Pulse
+        // model): any time the VS Code window has OS focus counts, whether the
+        // user is editing, chatting with AI, or running terminal commands.
         vscode.window.onDidChangeWindowState(async (e) => {
             const now = Date.now();
             if (e.focused) {
@@ -98,12 +100,17 @@ export class TimeTracker implements vscode.Disposable {
                     // Window regained focus within the timeout period
                     clearTimeout(this.focusTimeoutHandle);
                     this.focusTimeoutHandle = null;
-                    
+
                     // Save current session before starting new one
                     if (this.isTracking) {
                         await this.saveCurrentSession('window focus gained');
                     }
-                    this.startTracking('focus regained');
+                }
+                // Always (re)start on focus, not just when resuming from a pending
+                // grace timer — otherwise a window focused for the first time
+                // without ever having blurred first would never start tracking.
+                if (!this.isTracking) {
+                    await this.startTracking('focus regained');
                 }
                 this.lastFocusTime = now;
             } else {
@@ -174,35 +181,6 @@ export class TimeTracker implements vscode.Disposable {
         }
     }
 
-    private setupCursorTracking() {
-        if (this.cursorInactivityTimeout) {
-            clearTimeout(this.cursorInactivityTimeout);
-        }
-
-        const currentTime = Date.now();
-        const timeSinceLastActivity = currentTime - this.lastCursorActivity;
-
-        if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-            this.cursorInactivityTimeout = setTimeout(() => {
-                const now = Date.now();
-                const inactivityDuration = now - this.lastCursorActivity;
-                
-                if (this.isTracking && inactivityDuration >= this.inactivityTimeoutSeconds * 1000) {
-                    this.logger.logEvent('inactivity_detected', {
-                        project: this.currentProject,
-                        branch: this.currentBranch,
-                        language: this.currentLanguage,
-                        inactivityDuration: inactivityDuration / 1000,
-                        lastActivityTime: new Date(this.lastCursorActivity).toISOString()
-                    });
-                    this.stopTracking('inactivity');
-                }
-            }, this.inactivityTimeoutSeconds * 1000);
-        }
-
-        this.lastCursorActivity = currentTime;
-    }
-
     public async updateCursorActivity() {
         // Don't auto-resume if user manually paused
         if (this.isPaused) {
@@ -224,9 +202,6 @@ export class TimeTracker implements vscode.Disposable {
             this.currentProject = currentProject;
             this.startTime = Date.now();
         }
-
-        this.lastCursorActivity = Date.now();
-        this.setupCursorTracking();
     }
 
     async startTracking(reason: string = 'manual') {
@@ -253,8 +228,7 @@ export class TimeTracker implements vscode.Disposable {
                 clearInterval(this.updateInterval);
             }
             this.updateInterval = setInterval(() => this.updateCurrentSession(), 1000);
-            
-            this.setupCursorTracking();
+
             await this.setupGitWatcher();
             
             // Start health notifications
@@ -273,11 +247,6 @@ export class TimeTracker implements vscode.Disposable {
                 this.updateInterval = null;
             }
             
-            if (this.cursorInactivityTimeout) {
-                clearTimeout(this.cursorInactivityTimeout);
-                this.cursorInactivityTimeout = null;
-            }
-
             this.logger.logEvent('tracking_stopped', {
                 reason: reason || 'manual',
                 project: this.currentProject,
@@ -320,7 +289,7 @@ export class TimeTracker implements vscode.Disposable {
         
         // Set up a simple way for user to resume - through a command or status bar click
         vscode.window.showInformationMessage(
-            'Coding timer paused. Click "Resume" to continue tracking.', 
+            'Dev Pulse paused. Click "Resume" to continue tracking.', 
             'Resume'
         ).then(selection => {
             if (selection === 'Resume') {
@@ -371,17 +340,38 @@ export class TimeTracker implements vscode.Disposable {
         }
     }
 
-    private validateTimeGap(): boolean {
+    // Ticks run every 1s; a gap far larger than that means the OS was
+    // suspended/locked (VS Code can stay "focused" through a sleep), so
+    // exclude the gap rather than silently banking it as Dev Pulse.
+    private static readonly SLEEP_GAP_THRESHOLD_MS = 30000;
+    private pendingSleepGapMinutes: number = 0;
+
+    private async validateTimeGap(): Promise<boolean> {
         const now = Date.now();
+        const gap = now - this.lastUpdateTime;
         this.lastUpdateTime = now;
+
+        if (this.isTracking && gap > TimeTracker.SLEEP_GAP_THRESHOLD_MS) {
+            this.logger.logEvent('sleep_gap_detected', {
+                project: this.currentProject,
+                branch: this.currentBranch,
+                language: this.currentLanguage,
+                gapSeconds: gap / 1000
+            });
+            this.pendingSleepGapMinutes = gap / 60000;
+            await this.saveCurrentSession('system sleep detected');
+            this.startTime = now;
+            return false;
+        }
+
         return true;
     }
 
     private updateCurrentSession() {
         // Validate time gap before updating session
-        if (!this.validateTimeGap()) {
-            return;
-        }
+        void this.validateTimeGap().catch((error) => {
+            console.error('Error validating time gap:', error);
+        });
         // This method will be called every second when tracking is active
         // You can emit an event here if you want to update the UI more frequently
     }
@@ -393,12 +383,13 @@ export class TimeTracker implements vscode.Disposable {
         let duration = (now - this.startTime) / 60000; // Convert to minutes
         
         // Adjust duration based on the reason for session end
-        if (reason === 'inactivity' && this.inactivityTimeoutSeconds) {
-            // Subtract the inactivity timeout period
-            duration = Math.max(0, duration - this.inactivityTimeoutSeconds / 60);
-        } else if (reason === 'focus timeout' && this.focusTimeoutSeconds) {
+        if (reason === 'focus timeout' && this.focusTimeoutSeconds) {
             // Subtract the focus timeout period
             duration = Math.max(0, duration - this.focusTimeoutSeconds / 60);
+        } else if (reason === 'system sleep detected' && this.pendingSleepGapMinutes) {
+            // Exclude the suspend/lock gap itself from the tracked duration
+            duration = Math.max(0, duration - this.pendingSleepGapMinutes);
+            this.pendingSleepGapMinutes = 0;
         }
 
         if (duration > 0) {
@@ -481,13 +472,10 @@ export class TimeTracker implements vscode.Disposable {
             .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
         
         if (this.isTracking) {
-            const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
-            if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-                const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return todayTotal + currentSessionTime;
-            }
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return todayTotal + currentSessionTime;
         }
-        
+
         return todayTotal;
     }
 
@@ -505,13 +493,10 @@ export class TimeTracker implements vscode.Disposable {
             .reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
         
         if (this.isTracking && this.currentProject === currentProject) {
-            const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
-            if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-                const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return currentProjectTime + currentSessionTime;
-            }
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return currentProjectTime + currentSessionTime;
         }
-        
+
         return currentProjectTime;
     }
 
@@ -532,11 +517,8 @@ export class TimeTracker implements vscode.Disposable {
         const total = entries.reduce((sum: number, entry: TimeEntry) => sum + entry.timeSpent, 0);
 
         if (this.isTracking) {
-            const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
-            if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-                const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return total + currentSessionTime;
-            }
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return total + currentSessionTime;
         }
 
         return total;
@@ -554,11 +536,8 @@ export class TimeTracker implements vscode.Disposable {
         const total = filteredEntries.reduce((sum, entry) => sum + entry.timeSpent, 0);
 
         if (this.isTracking) {
-            const timeSinceLastActivity = Date.now() - this.lastCursorActivity;
-            if (timeSinceLastActivity < this.inactivityTimeoutSeconds * 1000) {
-                const currentSessionTime = (Date.now() - this.startTime) / 60000;
-                return total + currentSessionTime;
-            }
+            const currentSessionTime = (Date.now() - this.startTime) / 60000;
+            return total + currentSessionTime;
         }
 
         return total;

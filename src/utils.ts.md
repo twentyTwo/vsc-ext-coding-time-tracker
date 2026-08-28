@@ -1,6 +1,6 @@
 # `utils.ts` Documentation
 
-This file provides utility functions for the Coding Time Tracker extension. These helpers support common operations used throughout the extension.
+This file provides utility functions for the Dev Pulse extension. These helpers support common operations used throughout the extension.
 
 ## Overview
 - **Purpose:** Encapsulate reusable logic and helper functions.
