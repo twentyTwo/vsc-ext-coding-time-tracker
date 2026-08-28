@@ -298,24 +298,12 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(statusBar);
     context.subscriptions.push(settingsView);
 
-    // Start tracking immediately if VS Code is already focused
+    // Start tracking immediately if VS Code is already focused.
+    // All other start/stop handling (including focus regained) lives in
+    // TimeTracker's own onDidChangeWindowState listener.
     if (vscode.window.state.focused) {
         timeTracker.startTracking('initial startup');
     }
-
-    // Window state is now handled in TimeTracker class
-    vscode.window.onDidChangeWindowState((e: vscode.WindowState) => {
-        if (e.focused && !timeTracker.isActive()) {
-            timeTracker.startTracking('window focus');
-        }
-    });
-
-    vscode.workspace.onDidOpenTextDocument(() => {
-        if (vscode.window.state.focused) {
-            timeTracker.startTracking('document opened');
-        }
-    });
-
 }
 
 export function deactivate() {}

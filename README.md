@@ -1,24 +1,24 @@
 🌐 **Website**: [https://twentytwo.github.io/vsc-ext-coding-time-tracker/](https://twentytwo.github.io/vsc-ext-coding-time-tracker/)
 
-**📖 For detailed configuration, advanced features, and complete documentation, see the [Simple Coding Time Tracker Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki) in our wiki.**
+**📖 For detailed configuration, advanced features, and complete documentation, see the [Dev Pulse Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki) in our wiki.**
 
 📦 **Installation:** [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker) (VS Code) | [Open VSX Registry](https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker) (Cursor, Windsurf, Trae, VS Codium etc) 
 
 
-# Simple Coding Time Tracker: A Visual Studio Code Extension
+# Dev Pulse: A Visual Studio Code Extension
 <div style="display: flex; align-items: center;">
-  <img src="icon-sctt.png" alt="Simple Coding Time Tracker Icon" width="100" style="margin-right: 20px;">
+  <img src="icon-sctt.png" alt="Dev Pulse Icon" width="100" style="margin-right: 20px;">
 </div>
 
-Simple Coding Time Tracker is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time. If you are curious about your coding habits, this extension covers you.
+Dev Pulse (formerly Simple Coding Time Tracker) is a powerful extension for Visual Studio Code that helps you monitor and analyze your dev time. Your Dev Pulse counts any time VS Code is the focused window — coding, chatting with an AI assistant, running terminal commands, reading docs — not just literal keystrokes in the editor. If you are curious about your coding habits, this extension covers you.
 
 ## Features
 
-- **Automatic Time Tracking**: Seamlessly tracks your coding time in the background.
+- **Automatic Time Tracking**: Seamlessly tracks your Dev Pulse in the background, based on VS Code window focus.
 - **Project and Branch Tracking**: Organizes time data by project and Git branches for comprehensive analysis.
 - **Language Tracking**: Automatically detects and tracks time spent in different programming languages.
-- **Smart Activity Detection**: Automatically pauses tracking during periods of inactivity.
-- **Focused Work Detection**: Intelligently tracks time even when VS Code isn't focused.
+- **Whole-Window Activity**: Counts time in the editor, AI chat panels, and the integrated terminal alike — anything within the focused VS Code window.
+- **Focused Work Detection**: Briefly switching to another app (e.g. checking a message) doesn't lose your progress — tracking pauses only after you've been away longer than the configurable Focus Timeout.
 - **Health Notification System**: Proactive reminders to promote healthy coding habits with scientifically backed intervals.
 - **Dedicated Settings View**: Comprehensive settings interface accessible via the summary view with easy-to-use controls for all configuration options.
 - **Customizable Status Bar**:
@@ -33,7 +33,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Languages Used: Count of languages with most-used language highlight
   - Projects Worked: Number of projects with most active project highlight
   - Longest Streak: Track your coding streak with animated flame indicator
-- **Coding Time Analytics**:
+- **Dev Pulse Analytics**:
   - Time Summary: Horizontal bar chart comparing today, week, month, year, and all-time totals
   - Daily Average: Visual breakdown of daily coding patterns
   - Weekly Progress: Line chart showing weekly trends
@@ -53,7 +53,7 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
 - **Data Persistence**: Safely stores your time data for long-term analysis.
 
 ## Time Tracking Details
-The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance. The extension automatically detects the programming language you're working with based on file extensions and VS Code's language detection.
+Dev Pulse tracks time based on whether the VS Code window is focused — not just editor keystrokes. That means coding, chatting with an AI assistant in a sidebar panel, and running commands in the integrated terminal all count, as long as VS Code is the window you're actually using. Tracking pauses only once you switch away from VS Code for longer than the **Focus Timeout** (default 3 minutes); switching back within that window resumes seamlessly with no time lost. The extension automatically detects the programming language you're working with based on file extensions and VS Code's language detection.
 
 **📖 For detailed configuration, advanced features, and complete documentation, see the [Time Tracking Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki/Time-Tracking) in our wiki.**
 
@@ -73,12 +73,12 @@ These are default values and designed to help you maintain focus and prevent fat
 
 1. Open Visual Studio Code
 2. Go to the Extensions view (Ctrl+Shift+X or Cmd+Shift+X on macOS)
-3. Search for "Simple Coding Time Tracker"
+3. Search for "Dev Pulse" or "Simple Coding Time Tracker"
 4. Click "Install"
 
 ## Usage
 
-Once installed, the extension will automatically start tracking your coding time. You can view your current session time in the status bar at the bottom of the VSCode window.
+Once installed, the extension will automatically start tracking your Dev Pulse. You can view your current session time in the status bar at the bottom of the VSCode window.
 
 ### Using Search & Filters
 
@@ -99,25 +99,23 @@ The charts and visualizations will automatically update to reflect your selected
 You can customize the extension's behavior through VS Code settings or the dedicated Settings view:
 
 **Method 1: Using the Settings View (Recommended)**
-1. Open the Coding Time Summary view by clicking on the status bar or using the command `SCTT: Show Coding Time Summary`
+1. Open the Dev Pulse Summary view by clicking on the status bar or using the command `SCTT: Show Dev Pulse Summary`
 2. Click the "Settings" button in the top-right corner of the summary view
 3. Configure all settings through the user-friendly interface with descriptions and validation
 4. Click "Save Settings" to apply changes
 
 **Method 2: Using VS Code Settings**
 1. Open VS Code Settings (Ctrl+, or Cmd+, on macOS)
-2. Search for "Simple Coding Time Tracker"
+2. Search for "Dev Pulse" or "Simple Coding Time Tracker"
 
 **Available settings:**  
    - **Time Tracking Settings**:
-     - **Inactivity Timeout**: How long to wait before stopping the timer when no activity is detected but you are focused on VS Code (in minutes)
-       - Default: 2.5 minutes
-       - Lower values will stop tracking sooner when you're not actively coding
-       - Higher values will continue tracking for longer during breaks
      - **Focus Timeout**: How long to continue tracking after VS Code loses focus (in minutes)
        - Default: 3 minutes
+       - This is the only condition that pauses tracking — coding, AI chat, and terminal use all count as long as the window stays focused
        - Determines how long to keep tracking when you switch to other applications
        - Useful for when you're referencing documentation or testing your application
+     - **Inactivity Timeout** *(deprecated)*: previously stopped the timer after a period with no editor keystrokes; no longer used now that Dev Pulse tracks by window focus. Kept only so existing settings don't error.
    
    - **Status Bar Display Settings**:
      - **Show Seconds**: Display seconds in the status bar time (HH:MM:SS)
@@ -148,14 +146,14 @@ You can customize the extension's behavior through VS Code settings or the dedic
 
 ## Screenshots
 
-### Coding time summary
-The summary page provides a detailed report of your coding activity with interactive charts and visualizations:
+### Dev Pulse summary
+The summary page provides a detailed report of your dev activity with interactive charts and visualizations:
 - **Developer Insights Dashboard**:
   - Most Productive Day with average time breakdown
   - Languages Used count with most-used language highlight
   - Projects Worked count with most active project highlight
   - Longest Streak tracking with animated flame indicator
-- **Coding Time Analytics**:
+- **Dev Pulse Analytics**:
   - Time Summary comparing today, week, month, year, and all-time totals
   - Daily Average showing coding patterns over last 30 days
   - Weekly Progress line chart with trend visualization
@@ -175,18 +173,18 @@ The summary page provides a detailed report of your coding activity with interac
   - Click status bar timer to save session and open summary
   - Bell icon shows health notification status at a glance
 
-![Coding Summary](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-light.png)
+![Dev Pulse Summary](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-light.png)
 
 #### Dark theme
-![Coding Summary Dark Theme](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-dark.png)
+![Dev Pulse Summary Dark Theme](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/sctt-dark.png)
 
 
 #### Status Bar
-Status bar resets to zero at midnight each day and hence shows the coding time for the current day.
+Status bar resets to zero at midnight each day and hence shows the Dev Pulse for the current day.
 ![Status Bar](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/statusbar.png)
 
 #### Tooltip
-Tooltip shows the total coding time weekly, monthly and all time basis.
+Tooltip shows the total Dev Pulse weekly, monthly and all time basis.
 ![Tooltip](https://raw.githubusercontent.com/twentyTwo/static-file-hosting/main/vsc-ext-coding-time-tracker-files/tooltip.png)
 
 
@@ -211,7 +209,7 @@ For developers and testers, the extension includes built-in test data generation
 ### Enabling Test Commands
 1. Open Settings (`Ctrl+,`)
 2. Search: `"enableDevCommands"`  
-3. Enable "Simple Coding Time Tracker › Enable Dev Commands"
+3. Enable "Dev Pulse › Enable Dev Commands"
 
 ### Available Test Commands
 - **`SCTT: Generate Test Data (Dev)`** - Creates realistic test data for 90 days
@@ -226,6 +224,14 @@ For complete testing documentation, see [TECHNICAL.md](TECHNICAL.md).
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.8.0] - 2026-08-28
+- Renamed "Coding Time" to **Dev Pulse** throughout the UI to reflect what's actually measured
+- Redefined tracking to be based on VS Code window focus rather than editor-only keystroke/cursor activity — time spent in AI chat panels or the integrated terminal now counts as long as the VS Code window stays focused
+- Removed the editor-activity-based inactivity auto-stop; **Focus Timeout** (switching away from VS Code) is now the only condition that pauses tracking
+- Deprecated the **Inactivity Timeout** setting (no longer used; kept so existing configurations don't error)
+- Added detection for OS sleep/lock gaps so a suspended laptop doesn't get counted as tracked time while the window remains reported as focused
+- Fixed a bug where tracking could fail to start if VS Code was focused for the first time without first losing and regaining focus
 
 ### [0.7.0] - 2026-1-18
 - Added comprehensive status bar customization options

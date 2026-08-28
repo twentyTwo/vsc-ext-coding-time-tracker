@@ -1,8 +1,8 @@
 {
   "name": "simple-coding-time-tracker",
-  "displayName": "Simple Coding Time Tracker",
-  "description": "Automatic time tracking for VS Code — Track coding time per project, branch & language with smart activity detection, health reminders, and beautiful visualizations",
-  "version": "0.7.7",
+  "displayName": "Dev Pulse - Simple Coding Time Tracker",
+  "description": "Automatic time tracking for VS Code — Your Dev Pulse counts any time VS Code is focused (coding, AI chat, terminal) per project, branch & language, with health reminders and beautiful visualizations",
+  "version": "0.8.0",
   "publisher": "noorashuvo",
   "license": "MIT",
   "icon": "icon-sctt.png",
@@ -17,6 +17,7 @@
     "time tracker",
     "time tracking",
     "coding time",
+    "dev pulse",
     "productivity",
     "analytics",
     "statistics",
@@ -37,21 +38,22 @@
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Simple Coding Time Tracker",
+      "title": "Dev Pulse",
       "properties": {
         "simpleCodingTimeTracker.inactivityTimeout": {
           "type": "number",
           "default": 2.5,
           "minimum": 0.5,
           "maximum": 60,
-          "description": "Pause tracking if there is no keyboard or mouse activity in VS Code for this many minutes."
+          "deprecationMessage": "No longer used — Dev Pulse now tracks based on VS Code window focus rather than editor keystroke/cursor activity, so time in AI chat panels or the terminal counts too. Use 'Focus Timeout' instead.",
+          "description": "Deprecated. Previously paused tracking after this many minutes of no keyboard/mouse activity in the editor; no longer used."
         },
         "simpleCodingTimeTracker.focusTimeout": {
           "type": "number",
           "default": 3,
           "minimum": 0.5,
           "maximum": 60,
-          "description": "If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing."
+          "description": "If you switch away from VS Code, continue counting as Dev Pulse for up to this many minutes before pausing. This is now the only pause condition — coding, AI chat, and terminal use all count as long as the VS Code window stays focused."
         },
         "simpleCodingTimeTracker.statusBar.showSeconds": {
           "type": "boolean",
@@ -77,7 +79,7 @@
         "simpleCodingTimeTracker.health.enableNotifications": {
           "type": "boolean",
           "default": false,
-          "description": "Enable health notifications during coding sessions"
+          "description": "Enable health notifications during dev sessions"
         },
         "simpleCodingTimeTracker.health.modalNotifications": {
           "type": "boolean",
@@ -103,7 +105,7 @@
           "default": 90,
           "minimum": 30,
           "maximum": 480,
-          "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
+          "description": "Dev Pulse duration before suggesting a break (minutes) - Based on ultradian rhythms"
         },
         "simpleCodingTimeTracker.enableDevCommands": {
           "type": "boolean",
@@ -116,7 +118,7 @@
     "commands": [
       {
         "command": "simpleCodingTimeTracker.showSummary",
-        "title": "SCTT: Show Coding Time Summary"
+        "title": "SCTT: Show Dev Pulse Summary"
       },
       {
         "command": "simpleCodingTimeTracker.viewStorageData",

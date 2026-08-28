@@ -1,6 +1,6 @@
 # `statusBar.ts` Documentation
 
-This file manages the VS Code status bar item for the Coding Time Tracker extension. It displays the current tracking status and provides quick access to extension commands.
+This file manages the VS Code status bar item for the Dev Pulse extension. It displays the current tracking status and provides quick access to extension commands.
 
 ## Overview
 - **Purpose:** Show time tracking status and provide user interaction via the status bar.

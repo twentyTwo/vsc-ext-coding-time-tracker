@@ -67,7 +67,7 @@ For testing packaged extensions:
 1. **Enable test commands**:
    - Open Settings (`Ctrl+,`)
    - Search `"enableDevCommands"`
-   - Enable "Simple Coding Time Tracker › Enable Dev Commands"
+   - Enable "Dev Pulse › Enable Dev Commands"
 
 2. **Generate test data**:
    - Press `Ctrl+Shift+P`
