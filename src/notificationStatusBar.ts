@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export class NotificationStatusBar implements vscode.Disposable {
     private statusBarItem: vscode.StatusBarItem;
-    private readonly commandId = 'simpleCodingTimeTracker.toggleNotifications';
+    private readonly commandId = 'simpleCodingInsights.toggleNotifications';
     private statusBarReference?: any; // Reference to main status bar for updates
 
     constructor() {
@@ -19,7 +19,7 @@ export class NotificationStatusBar implements vscode.Disposable {
     }
 
     private updateStatusBar(): void {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const isEnabled = config.get('health.enableNotifications', false);
         
         // Use minimal text with no extra spaces
@@ -32,7 +32,7 @@ export class NotificationStatusBar implements vscode.Disposable {
     }
 
     public async toggle(): Promise<void> {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const currentEnabled = config.get('health.enableNotifications', false);
         
         // Toggle the setting

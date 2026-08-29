@@ -4,8 +4,11 @@ import { StatusBar } from './statusBar';
 import { Database } from './database';
 import { SummaryViewProvider } from './summaryView';
 import { SettingsViewProvider } from './settingsView';
+import { migrateSettings } from './settingsMigration';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+    await migrateSettings(context);
+
     const database = new Database(context);
     const timeTracker = new TimeTracker(database);
     const summaryView = new SummaryViewProvider(context, database, timeTracker);
@@ -22,28 +25,33 @@ export function activate(context: vscode.ExtensionContext) {
     // Register configuration change listener
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('simpleCodingTimeTracker')) {
+            if (e.affectsConfiguration('simpleCodingInsights')) {
                 timeTracker.updateConfiguration();
                 // Update status bar when health notifications setting changes
-                if (e.affectsConfiguration('simpleCodingTimeTracker.health.enableNotifications')) {
+                if (e.affectsConfiguration('simpleCodingInsights.health.enableNotifications')) {
                     statusBar.updateNow();
+                }
+                // Re-render an already-open dashboard when a tab's visibility changes,
+                // so the toggle takes effect without a manual reload.
+                if (e.affectsConfiguration('simpleCodingInsights.claude.showTab')) {
+                    void summaryView.refreshIfOpen();
                 }
             }
         })
     );
 
     // Register the show summary command
-    let disposable = vscode.commands.registerCommand('simpleCodingTimeTracker.showSummary', () => {
+    let disposable = vscode.commands.registerCommand('simpleCodingInsights.showSummary', () => {
         summaryView.show();
     });
 
     // Register open settings command
-    let openSettingsCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.openSettings', () => {
+    let openSettingsCommand = vscode.commands.registerCommand('simpleCodingInsights.openSettings', () => {
         settingsView.show();
     });
 
     // Register view storage command
-    let viewStorageDisposable = vscode.commands.registerCommand('simpleCodingTimeTracker.viewStorageData', async () => {
+    let viewStorageDisposable = vscode.commands.registerCommand('simpleCodingInsights.viewStorageData', async () => {
         try {
             const entries = await database.getEntries();
             const processedData = {
@@ -72,7 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Register data management command
-    let clearDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.clearAllData', async () => {
+    let clearDataCommand = vscode.commands.registerCommand('simpleCodingInsights.clearAllData', async () => {
         // Stop tracking before clearing data
         if (timeTracker.isActive()) {
             timeTracker.stopTracking('clear all data');
@@ -89,8 +97,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     // Register health notifications toggle command (legacy command with confirmation)
-    let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.toggleHealthNotifications', async () => {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+    let toggleHealthCommand = vscode.commands.registerCommand('simpleCodingInsights.toggleHealthNotifications', async () => {
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const currentEnabled = config.get('health.enableNotifications', false);
         
         // Show current state and ask for confirmation
@@ -123,7 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Register test pause command for debugging
-    let testPauseCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.testPause', () => {
+    let testPauseCommand = vscode.commands.registerCommand('simpleCodingInsights.testPause', () => {
         console.log('Test pause command executed');
         if (timeTracker.isActive()) {
             timeTracker.pauseTimer();
@@ -134,20 +142,20 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Register test notification command for debugging
-    let testNotificationCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.testNotification', () => {
+    let testNotificationCommand = vscode.commands.registerCommand('simpleCodingInsights.testNotification', () => {
         console.log('Test notification command executed');
         (timeTracker as any).healthManager.triggerTestNotification();
     });
 
     // Test data generation command
-    let generateTestDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.generateTestData', async () => {
+    let generateTestDataCommand = vscode.commands.registerCommand('simpleCodingInsights.generateTestData', async () => {
         // Check if dev commands are enabled
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const enableDevCommands = config.get<boolean>('enableDevCommands', false) || 
                                   context.extensionMode === vscode.ExtensionMode.Development;
         
         if (!enableDevCommands) {
-            vscode.window.showWarningMessage('Development commands are disabled. Enable "simpleCodingTimeTracker.enableDevCommands" in settings to use this feature.');
+            vscode.window.showWarningMessage('Development commands are disabled. Enable "simpleCodingInsights.enableDevCommands" in settings to use this feature.');
             return;
         }
 
@@ -244,14 +252,14 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // Delete test data command
-    let deleteTestDataCommand = vscode.commands.registerCommand('simpleCodingTimeTracker.deleteTestData', async () => {
+    let deleteTestDataCommand = vscode.commands.registerCommand('simpleCodingInsights.deleteTestData', async () => {
         // Check if dev commands are enabled
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const enableDevCommands = config.get<boolean>('enableDevCommands', false) || 
                                   context.extensionMode === vscode.ExtensionMode.Development;
         
         if (!enableDevCommands) {
-            vscode.window.showWarningMessage('Development commands are disabled. Enable "simpleCodingTimeTracker.enableDevCommands" in settings to use this feature.');
+            vscode.window.showWarningMessage('Development commands are disabled. Enable "simpleCodingInsights.enableDevCommands" in settings to use this feature.');
             return;
         }
 
@@ -297,6 +305,23 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(timeTracker);
     context.subscriptions.push(statusBar);
     context.subscriptions.push(settingsView);
+
+    // Legacy command ID aliases: kept so existing user keybindings on the old
+    // simpleCodingTimeTracker.* IDs keep working. Hidden from the palette via
+    // "when": "false" in package.json; safe to remove in a future release.
+    const legacyCommandAliases = [
+        'showSummary',
+        'viewStorageData',
+        'clearAllData',
+        'toggleNotifications',
+        'toggleHealthNotifications',
+        'openSettings',
+        'generateTestData',
+        'deleteTestData'
+    ].map(name => vscode.commands.registerCommand(`simpleCodingTimeTracker.${name}`, () => {
+        void vscode.commands.executeCommand(`simpleCodingInsights.${name}`);
+    }));
+    context.subscriptions.push(...legacyCommandAliases);
 
     // Start tracking immediately if VS Code is already focused
     if (vscode.window.state.focused) {

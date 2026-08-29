@@ -125,7 +125,7 @@ export class TimeTracker implements vscode.Disposable {
     }
 
     public updateConfiguration() {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         // this.saveIntervalSeconds = config.get('saveInterval', 5);
         // Convert from minutes to seconds for internal use
         this.inactivityTimeoutSeconds = config.get('inactivityTimeout', 2.5) * 60;

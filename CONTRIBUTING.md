@@ -1,6 +1,6 @@
-# Contributing to Simple Coding Time Tracker
+# Contributing to Simple Coding Insights
 
-Thank you for your interest in contributing to Simple Coding Time Tracker! We welcome contributions from developers of all skill levels. This guide will walk you through our development workflow and help you make your first contribution.
+Thank you for your interest in contributing to Simple Coding Insights! We welcome contributions from developers of all skill levels. This guide will walk you through our development workflow and help you make your first contribution.
 
 ## 🚀 Quick Start for Contributors
 
@@ -103,11 +103,11 @@ For testing packaged extensions:
 1. **Enable test commands**:
    - Open Settings (`Ctrl+,`)
    - Search `"enableDevCommands"`
-   - Enable "Simple Coding Time Tracker › Enable Dev Commands"
+   - Enable "Simple Coding Insights › Enable Dev Commands"
 
 2. **Generate test data**:
    - Press `Ctrl+Shift+P`
-   - Run `SCTT: Generate Test Data (Dev)`
+   - Run `SCI: Generate Test Data (Dev)`
    - This creates 90 days of realistic test data
 
 3. **Test all features**:
@@ -117,7 +117,7 @@ For testing packaged extensions:
    - Theme compatibility
 
 4. **Clean up**:
-   - Run `SCTT: Delete Test Data (Dev)` to remove test data
+   - Run `SCI: Delete Test Data (Dev)` to remove test data
    - Disable dev commands when done
 
 ### Testing Checklist
@@ -408,4 +408,4 @@ git push --force-with-lease origin feature/your-feature-name
 
 If you have any questions or need assistance, please open an issue on the GitHub repository, and we'll be happy to help!
 
-Thank you for contributing to Simple Coding Time Tracker!
+Thank you for contributing to Simple Coding Insights!

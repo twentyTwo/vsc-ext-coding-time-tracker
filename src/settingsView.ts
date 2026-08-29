@@ -18,8 +18,8 @@ export class SettingsViewProvider {
         }
 
         this.panel = vscode.window.createWebviewPanel(
-            'scttSettings',
-            'Simple Coding Time Tracker - Settings',
+            'sciSettings',
+            'Simple Coding Insights - Settings',
             vscode.ViewColumn.One,
             {
                 enableScripts: true,
@@ -56,7 +56,7 @@ export class SettingsViewProvider {
     private async sendCurrentSettings() {
         if (!this.panel) return;
 
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         const settings = {
             inactivityTimeout: config.get('inactivityTimeout', 2.5),
             focusTimeout: config.get('focusTimeout', 3),
@@ -69,6 +69,8 @@ export class SettingsViewProvider {
             healthEyeRestInterval: config.get('health.eyeRestInterval', 20),
             healthStretchInterval: config.get('health.stretchInterval', 30),
             healthBreakThreshold: config.get('health.breakThreshold', 90),
+            claudeShowTab: config.get('claude.showTab', true),
+            claudeShowNewFeatureBanner: config.get('claude.showNewFeatureBanner', true),
             enableDevCommands: config.get('enableDevCommands', false)
         };
 
@@ -79,7 +81,7 @@ export class SettingsViewProvider {
     }
 
     private async saveSettings(settings: any) {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
 
         try {
             // Determine the target scope: Workspace if available, otherwise Global
@@ -103,8 +105,11 @@ export class SettingsViewProvider {
             await config.update('health.stretchInterval', settings.healthStretchInterval, configTarget);
             await config.update('health.breakThreshold', settings.healthBreakThreshold, configTarget);
             
-            // Only enableDevCommands has "scope": "application" in package.json, so it must be saved to Global
+            // enableDevCommands and claude.showTab have "scope": "application" in
+            // package.json, so they must be saved to Global
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showTab', settings.claudeShowTab, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showNewFeatureBanner', settings.claudeShowNewFeatureBanner, vscode.ConfigurationTarget.Global);
 
             console.log('Settings saved successfully:', settings);
             vscode.window.showInformationMessage('✅ Settings saved successfully!');
@@ -116,7 +121,7 @@ export class SettingsViewProvider {
             // Force a status bar refresh after a small delay to ensure all config changes are applied
             // This is needed because multiple sequential config.update() calls can cause race conditions
             setTimeout(() => {
-                vscode.commands.executeCommand('simpleCodingTimeTracker.refreshStatusBar');
+                vscode.commands.executeCommand('simpleCodingInsights.refreshStatusBar');
             }, 100);
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -125,7 +130,7 @@ export class SettingsViewProvider {
     }
 
     private async resetToDefaults() {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
 
         try {
             // Determine the target scope: Workspace if available, otherwise Global
@@ -148,6 +153,8 @@ export class SettingsViewProvider {
             
             // Reset global-scoped settings
             await config.update('enableDevCommands', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showTab', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showNewFeatureBanner', undefined, vscode.ConfigurationTarget.Global);
 
             vscode.window.showInformationMessage('✅ Settings reset to defaults!');
             await this.sendCurrentSettings();
@@ -441,7 +448,7 @@ export class SettingsViewProvider {
     </style>
 </head>
 <body>
-    <h1>⚙️ Simple Coding Time Tracker Settings</h1>
+    <h1>⚙️ Simple Coding Insights Settings</h1>
 
     <div class="setting-group">
         <h2>⏱️ Time Tracking Settings</h2>
@@ -552,6 +559,26 @@ export class SettingsViewProvider {
             <div class="description">Coding duration before suggesting a break - Based on ultradian rhythms.</div>
             <input type="number" id="healthBreakThreshold" min="30" max="480" step="1" />
             <div class="range-info">Range: 30 - 480 minutes</div>
+        </div>
+    </div>
+
+    <div class="setting-group">
+        <h2>📊 Dashboard Tabs</h2>
+
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="claudeShowTab" />
+                <label for="claudeShowTab" style="margin: 0;">Show Claude Code Usage Tab</label>
+            </div>
+            <div class="description">Show the Claude Code tab in the dashboard, with token and cost usage parsed from your local Claude Code session logs.</div>
+        </div>
+
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="claudeShowNewFeatureBanner" />
+                <label for="claudeShowNewFeatureBanner" style="margin: 0;">Show "New Feature" Announcement Banner</label>
+            </div>
+            <div class="description">Show a banner on the Coding Time dashboard announcing the Claude Code Usage tab. Turn this off once you've seen it.</div>
         </div>
     </div>
 
@@ -873,6 +900,8 @@ export class SettingsViewProvider {
             document.getElementById('healthEyeRestInterval').value = settings.healthEyeRestInterval;
             document.getElementById('healthStretchInterval').value = settings.healthStretchInterval;
             document.getElementById('healthBreakThreshold').value = settings.healthBreakThreshold;
+            document.getElementById('claudeShowTab').checked = settings.claudeShowTab;
+            document.getElementById('claudeShowNewFeatureBanner').checked = settings.claudeShowNewFeatureBanner;
             document.getElementById('enableDevCommands').checked = settings.enableDevCommands;
         }
 
@@ -889,6 +918,8 @@ export class SettingsViewProvider {
                 healthEyeRestInterval: parseInt(document.getElementById('healthEyeRestInterval').value),
                 healthStretchInterval: parseInt(document.getElementById('healthStretchInterval').value),
                 healthBreakThreshold: parseInt(document.getElementById('healthBreakThreshold').value),
+                claudeShowTab: document.getElementById('claudeShowTab').checked,
+                claudeShowNewFeatureBanner: document.getElementById('claudeShowNewFeatureBanner').checked,
                 enableDevCommands: document.getElementById('enableDevCommands').checked
             };
         }
