@@ -1,16 +1,18 @@
 🌐 **Website**: [https://twentytwo.github.io/vsc-ext-coding-time-tracker/](https://twentytwo.github.io/vsc-ext-coding-time-tracker/)
 
-**📖 For detailed configuration, advanced features, and complete documentation, see the [Simple Coding Time Tracker Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki) in our wiki.**
+**📖 For detailed configuration, advanced features, and complete documentation, see the [Simple Coding Insights Guide](https://github.com/twentyTwo/vsc-ext-coding-time-tracker/wiki) in our wiki.**
 
 📦 **Installation:** [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=noorashuvo.simple-coding-time-tracker) (VS Code) | [Open VSX Registry](https://open-vsx.org/extension/noorashuvo/simple-coding-time-tracker) (Cursor, Windsurf, Trae, VS Codium etc) 
 
 
-# Simple Coding Time Tracker: A Visual Studio Code Extension
+# Simple Coding Insights: A Visual Studio Code Extension
 <div style="display: flex; align-items: center;">
-  <img src="icon-sctt.png" alt="Simple Coding Time Tracker Icon" width="100" style="margin-right: 20px;">
+  <img src="icon-sci.png" alt="Simple Coding Insights Icon" width="100" style="margin-right: 20px;">
 </div>
 
-Simple Coding Time Tracker is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time. If you are curious about your coding habits, this extension covers you.
+Simple Coding Insights is a powerful extension for Visual Studio Code that helps you monitor and analyze your coding time **and your AI assistant usage**. Track time per project, branch and language, visualize your activity, keep healthy coding habits, and see token/cost usage for Claude Code — all in one dashboard. If you are curious about your coding habits, this extension covers you.
+
+> ℹ️ **Renamed from "Simple Coding Time Tracker".** This is the same extension — your time data, settings and install continue to work unchanged. Only the display name has been updated to reflect the new Claude Code usage features. As of 0.8.0 the command IDs and settings keys were also renamed from `simpleCodingTimeTracker.*` to `simpleCodingInsights.*`; your existing settings are migrated automatically on first launch, and any keybindings you made on the old command IDs keep working.
 
 ## Features
 
@@ -51,6 +53,42 @@ Simple Coding Time Tracker is a powerful extension for Visual Studio Code that h
   - Language Filtering: Focus on specific programming languages
   - Quick Reset: One-click reset for search filters
 - **Data Persistence**: Safely stores your time data for long-term analysis.
+- **Claude Code Usage**: A dedicated dashboard tab showing token usage, estimated cost, models, tools and sessions read from your local Claude Code logs. See [Claude Code Usage](#claude-code-usage) below.
+
+## Claude Code Usage
+
+If you use [Claude Code](https://claude.com/claude-code), the dashboard has a **Claude Code** tab alongside the coding-time view. It reads the session logs Claude Code already writes on your machine and shows:
+
+- Total input, output, cache-write and cache-read tokens, with an estimated cost
+- Tokens and cost per model, per project and per day
+- Tool usage counts and a recent-sessions table
+- A scope toggle for all projects vs. just the current workspace
+
+The tab loads only when you open it, so it never slows down the coding-time dashboard.
+
+### Three things worth knowing
+
+- **Cost is an estimate.** Claude Code does not record what a session cost. The figure shown is calculated from a bundled table of published API rates, so treat it as an *API-equivalent* estimate rather than a bill. If you are on a subscription plan, you are not charged per token at all and the real cost of the tokens shown is zero. Models missing from the price table are priced at a fallback rate and called out in the tab.
+- **No message content is ever read.** Only usage metadata is parsed: token counts, model names, timestamps, tool *names*, the working directory and the git branch. Prompts and responses are never parsed, stored or displayed, and nothing is sent anywhere — all processing is local.
+- **Parsing is best-effort.** Claude Code's on-disk log format is internal and can change at any time without notice. Unreadable files and malformed entries are skipped and reported in the tab rather than breaking the dashboard.
+
+### Configuration
+
+By default the extension looks in `CLAUDE_CONFIG_DIR`, falling back to `~/.claude`. If your data lives elsewhere, set:
+
+```json
+"simpleCodingInsights.claude.dataPath": "/path/to/.claude"
+```
+
+If no Claude Code data is found, the tab says so and names the directory it searched.
+
+The Claude Code tab can be hidden from the dashboard in Settings:
+
+```json
+"simpleCodingInsights.claude.showTab": false
+```
+
+> This extension is not affiliated with or endorsed by Anthropic.
 
 ## Time Tracking Details
 The extension tracks your coding time by monitoring file changes and user activity within Visual Studio Code. It uses a combination of timers and event listeners to ensure accurate tracking without impacting performance. The extension automatically detects the programming language you're working with based on file extensions and VS Code's language detection.
@@ -73,7 +111,7 @@ These are default values and designed to help you maintain focus and prevent fat
 
 1. Open Visual Studio Code
 2. Go to the Extensions view (Ctrl+Shift+X or Cmd+Shift+X on macOS)
-3. Search for "Simple Coding Time Tracker"
+3. Search for "Simple Coding Insights"
 4. Click "Install"
 
 ## Usage
@@ -99,14 +137,14 @@ The charts and visualizations will automatically update to reflect your selected
 You can customize the extension's behavior through VS Code settings or the dedicated Settings view:
 
 **Method 1: Using the Settings View (Recommended)**
-1. Open the Coding Time Summary view by clicking on the status bar or using the command `SCTT: Show Coding Time Summary`
+1. Open the Coding Time Summary view by clicking on the status bar or using the command `SCI: Show Coding Insights Summary`
 2. Click the "Settings" button in the top-right corner of the summary view
 3. Configure all settings through the user-friendly interface with descriptions and validation
 4. Click "Save Settings" to apply changes
 
 **Method 2: Using VS Code Settings**
 1. Open VS Code Settings (Ctrl+, or Cmd+, on macOS)
-2. Search for "Simple Coding Time Tracker"
+2. Search for "Simple Coding Insights"
 
 **Available settings:**  
    - **Time Tracking Settings**:
@@ -211,11 +249,11 @@ For developers and testers, the extension includes built-in test data generation
 ### Enabling Test Commands
 1. Open Settings (`Ctrl+,`)
 2. Search: `"enableDevCommands"`  
-3. Enable "Simple Coding Time Tracker › Enable Dev Commands"
+3. Enable "Simple Coding Insights › Enable Dev Commands"
 
 ### Available Test Commands
-- **`SCTT: Generate Test Data (Dev)`** - Creates realistic test data for 90 days
-- **`SCTT: Delete Test Data (Dev)`** - Safely removes all tracking data
+- **`SCI: Generate Test Data (Dev)`** - Creates realistic test data for 90 days
+- **`SCI: Delete Test Data (Dev)`** - Safely removes all tracking data
 
 **Note**: These commands are hidden from regular users and only appear when explicitly enabled in settings.
 
@@ -226,6 +264,12 @@ For complete testing documentation, see [TECHNICAL.md](TECHNICAL.md).
 For technical details about development, release process, and internal architecture, please see [TECHNICAL.md](TECHNICAL.md).
 
 ## Changelog
+
+### [0.8.0] - 2026-08-08
+- **Renamed the extension to "Simple Coding Insights"** to better reflect that it now covers more than coding time. It is the same extension with the same data and settings — existing users keep everything as-is; only the display name changes.
+- **Renamed command IDs and settings keys** from `simpleCodingTimeTracker.*` to `simpleCodingInsights.*`. Existing settings are migrated automatically on first launch after updating, and keybindings bound to the old command IDs keep working (the old IDs remain registered as hidden aliases for now). Rolling back to an older version ignores the new settings keys.
+- Added **Claude Code Usage** dashboard tab: token usage, estimated cost, models, tools and sessions read from your local Claude Code logs.
+- Updated description, keywords and branding across the extension, README and website.
 
 ### [0.7.0] - 2026-1-18
 - Added comprehensive status bar customization options
@@ -271,15 +315,15 @@ For technical details about development, release process, and internal architect
 
 ### [0.6.3] - 2025-10-10
 - Added dedicated Settings View accessible from the summary view header
-- Implemented `SCTT: Open Settings` command for direct access to settings interface
+- Implemented `SCI: Open Settings` command for direct access to settings interface
 - Enhanced user experience with intuitive settings management through webview interface
 - Added Settings button to summary view header for quick access to configuration options
 - All extension settings now available through both traditional VS Code settings and the new dedicated view
 
 ### [0.6.1] - 2025-08-30
 - Added comprehensive test data generation commands for developers and testers
-- Implemented `SCTT: Generate Test Data (Dev)` command that creates 90 days of realistic test data
-- Added `SCTT: Delete Test Data (Dev)` command for safe cleanup of test data
+- Implemented `SCI: Generate Test Data (Dev)` command that creates 90 days of realistic test data
+- Added `SCI: Delete Test Data (Dev)` command for safe cleanup of test data
 - Test commands are hidden from end users by default and only visible when `enableDevCommands` setting is enabled
 - Enhanced security with configuration-controlled command visibility
 - Improved testing workflow for packaged extension installations

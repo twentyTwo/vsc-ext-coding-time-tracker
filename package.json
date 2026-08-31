@@ -1,11 +1,11 @@
 {
   "name": "simple-coding-time-tracker",
-  "displayName": "Simple Coding Time Tracker",
-  "description": "Automatic time tracking for VS Code — Track coding time per project, branch & language with smart activity detection, health reminders, and beautiful visualizations",
-  "version": "0.7.7",
+  "displayName": "Simple Coding Insights",
+  "description": "Coding time tracking + AI usage insights for VS Code — Track coding time per project, branch & language, see Claude Code token/cost usage, with smart activity detection, health reminders, and beautiful visualizations",
+  "version": "0.8.0",
   "publisher": "noorashuvo",
   "license": "MIT",
-  "icon": "icon-sctt.png",
+  "icon": "icon-sci.png",
   "engines": {
     "vscode": "^1.63.0"
   },
@@ -17,6 +17,12 @@
     "time tracker",
     "time tracking",
     "coding time",
+    "coding insights",
+    "developer insights",
+    "ai usage",
+    "ai cost",
+    "token usage",
+    "claude code",
     "productivity",
     "analytics",
     "statistics",
@@ -37,75 +43,101 @@
   "main": "./dist/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Simple Coding Time Tracker",
+      "title": "Simple Coding Insights",
       "properties": {
-        "simpleCodingTimeTracker.inactivityTimeout": {
+        "simpleCodingInsights.inactivityTimeout": {
           "type": "number",
           "default": 2.5,
           "minimum": 0.5,
           "maximum": 60,
           "description": "Pause tracking if there is no keyboard or mouse activity in VS Code for this many minutes."
         },
-        "simpleCodingTimeTracker.focusTimeout": {
+        "simpleCodingInsights.focusTimeout": {
           "type": "number",
           "default": 3,
           "minimum": 0.5,
           "maximum": 60,
           "description": "If you switch away from VS Code, continue counting as coding time for up to this many minutes before pausing."
         },
-        "simpleCodingTimeTracker.statusBar.showSeconds": {
+        "simpleCodingInsights.statusBar.showSeconds": {
           "type": "boolean",
           "default": true,
           "description": "Show seconds in the status bar time display (disable to reduce distractions)"
         },
-        "simpleCodingTimeTracker.statusBar.icon": {
+        "simpleCodingInsights.statusBar.icon": {
           "type": "string",
           "default": "$(code)",
           "description": "Icon or Codicon name to display before the timer (e.g., '$(code)', '$(clock)', '$(rocket)', or any emoji)"
         },
-        "simpleCodingTimeTracker.statusBar.backgroundStyle": {
+        "simpleCodingInsights.statusBar.backgroundStyle": {
           "type": "string",
           "enum": ["default", "warning", "error"],
           "default": "warning",
           "description": "Background style for the timer in the status bar: default (theme), warning (yellow), or error (red)."
         },
-        "simpleCodingTimeTracker.statusBar.color": {
+        "simpleCodingInsights.statusBar.color": {
           "type": "string",
           "default": "",
           "description": "Custom color for the timer text in hex format (e.g., '#FFAA00') or a VS Code theme color reference"
         },
-        "simpleCodingTimeTracker.health.enableNotifications": {
+        "simpleCodingInsights.health.enableNotifications": {
           "type": "boolean",
           "default": false,
           "description": "Enable health notifications during coding sessions"
         },
-        "simpleCodingTimeTracker.health.modalNotifications": {
+        "simpleCodingInsights.health.modalNotifications": {
           "type": "boolean",
           "default": true,
           "description": "Make health notifications modal (blocks UI until dismissed) for better visibility"
         },
-        "simpleCodingTimeTracker.health.eyeRestInterval": {
+        "simpleCodingInsights.health.eyeRestInterval": {
           "type": "number",
           "default": 20,
           "minimum": 5,
           "maximum": 120,
           "description": "Interval for eye rest reminders (minutes) - Based on 20-20-20 rule"
         },
-        "simpleCodingTimeTracker.health.stretchInterval": {
+        "simpleCodingInsights.health.stretchInterval": {
           "type": "number",
           "default": 30,
           "minimum": 10,
           "maximum": 180,
           "description": "Interval for stretch reminders (minutes) - Recommended for posture health"
         },
-        "simpleCodingTimeTracker.health.breakThreshold": {
+        "simpleCodingInsights.health.breakThreshold": {
           "type": "number",
           "default": 90,
           "minimum": 30,
           "maximum": 480,
           "description": "Coding duration before suggesting a break (minutes) - Based on ultradian rhythms"
         },
-        "simpleCodingTimeTracker.enableDevCommands": {
+        "simpleCodingInsights.claude.dataPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to your Claude Code data directory for the Claude Code usage tab. Leave empty to use CLAUDE_CONFIG_DIR, or the default ~/.claude.",
+          "scope": "application"
+        },
+        "simpleCodingInsights.claude.showTab": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the Claude Code usage tab in the dashboard.",
+          "scope": "application"
+        },
+        "simpleCodingInsights.claude.showNewFeatureBanner": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the \"New feature\" announcement banner for the Claude Code usage tab on the Coding Time dashboard.",
+          "scope": "application"
+        },
+        "simpleCodingInsights.claude.idleGapMinutes": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 120,
+          "description": "Gaps between Claude Code messages longer than this (minutes) are treated as time away, not active session time.",
+          "scope": "application"
+        },
+        "simpleCodingInsights.enableDevCommands": {
           "type": "boolean",
           "default": false,
           "description": "Enable development commands (Generate/Delete Test Data). Only enable this for testing purposes.",
@@ -115,38 +147,78 @@
     },
     "commands": [
       {
+        "command": "simpleCodingInsights.showSummary",
+        "title": "SCI: Show Coding Insights Summary"
+      },
+      {
+        "command": "simpleCodingInsights.viewStorageData",
+        "title": "SCI: View Time Tracking Data"
+      },
+      {
+        "command": "simpleCodingInsights.clearAllData",
+        "title": "SCI: Clear All Time Tracking Data"
+      },
+      {
+        "command": "simpleCodingInsights.toggleNotifications",
+        "title": "SCI: Toggle Notifications"
+      },
+      {
+        "command": "simpleCodingInsights.toggleHealthNotifications",
+        "title": "SCI: Toggle Health Notifications"
+      },
+      {
+        "command": "simpleCodingInsights.openSettings",
+        "title": "SCI: Open Settings"
+      },
+      {
+        "command": "simpleCodingInsights.generateTestData",
+        "title": "SCI: Generate Test Data (Dev)",
+        "when": "config.simpleCodingInsights.enableDevCommands"
+      },
+      {
+        "command": "simpleCodingInsights.deleteTestData",
+        "title": "SCI: Delete Test Data (Dev)",
+        "when": "config.simpleCodingInsights.enableDevCommands"
+      },
+      {
         "command": "simpleCodingTimeTracker.showSummary",
-        "title": "SCTT: Show Coding Time Summary"
+        "title": "SCI: Show Coding Insights Summary",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.viewStorageData",
-        "title": "SCTT: View Time Tracking Data"
+        "title": "SCI: View Time Tracking Data",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.clearAllData",
-        "title": "SCTT: Clear All Time Tracking Data"
+        "title": "SCI: Clear All Time Tracking Data",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.toggleNotifications",
-        "title": "SCTT: Toggle Notifications"
+        "title": "SCI: Toggle Notifications",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.toggleHealthNotifications",
-        "title": "SCTT: Toggle Health Notifications"
+        "title": "SCI: Toggle Health Notifications",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.openSettings",
-        "title": "SCTT: Open Settings"
+        "title": "SCI: Open Settings",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.generateTestData",
-        "title": "SCTT: Generate Test Data (Dev)",
-        "when": "config.simpleCodingTimeTracker.enableDevCommands"
+        "title": "SCI: Generate Test Data (Dev)",
+        "when": "false"
       },
       {
         "command": "simpleCodingTimeTracker.deleteTestData",
-        "title": "SCTT: Delete Test Data (Dev)",
-        "when": "config.simpleCodingTimeTracker.enableDevCommands"
+        "title": "SCI: Delete Test Data (Dev)",
+        "when": "false"
       }
     ]
   },

@@ -24,7 +24,7 @@ export class HealthNotificationManager {
     }
 
     private loadSettings(): void {
-        const config = vscode.workspace.getConfiguration('simpleCodingTimeTracker');
+        const config = vscode.workspace.getConfiguration('simpleCodingInsights');
         this.settings = {
             eyeRestInterval: config.get('health.eyeRestInterval', 20),
             stretchInterval: config.get('health.stretchInterval', 30),

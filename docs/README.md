@@ -1,6 +1,6 @@
-# Simple Coding Time Tracker - GitHub Pages Site
+# Simple Coding Insights - GitHub Pages Site
 
-This directory contains the GitHub Pages website for the Simple Coding Time Tracker VS Code extension.
+This directory contains the GitHub Pages website for the Simple Coding Insights VS Code extension.
 
 ## 🌐 Live Site
 
