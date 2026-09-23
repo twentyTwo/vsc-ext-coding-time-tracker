@@ -71,6 +71,7 @@ export class SettingsViewProvider {
             healthBreakThreshold: config.get('health.breakThreshold', 90),
             claudeShowTab: config.get('claude.showTab', true),
             claudeShowNewFeatureBanner: config.get('claude.showNewFeatureBanner', true),
+            claudeShowUsageLimits: config.get('claude.showUsageLimits', false),
             enableDevCommands: config.get('enableDevCommands', false)
         };
 
@@ -110,6 +111,7 @@ export class SettingsViewProvider {
             await config.update('enableDevCommands', settings.enableDevCommands, vscode.ConfigurationTarget.Global);
             await config.update('claude.showTab', settings.claudeShowTab, vscode.ConfigurationTarget.Global);
             await config.update('claude.showNewFeatureBanner', settings.claudeShowNewFeatureBanner, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showUsageLimits', settings.claudeShowUsageLimits, vscode.ConfigurationTarget.Global);
 
             console.log('Settings saved successfully:', settings);
             vscode.window.showInformationMessage('✅ Settings saved successfully!');
@@ -155,6 +157,7 @@ export class SettingsViewProvider {
             await config.update('enableDevCommands', undefined, vscode.ConfigurationTarget.Global);
             await config.update('claude.showTab', undefined, vscode.ConfigurationTarget.Global);
             await config.update('claude.showNewFeatureBanner', undefined, vscode.ConfigurationTarget.Global);
+            await config.update('claude.showUsageLimits', undefined, vscode.ConfigurationTarget.Global);
 
             vscode.window.showInformationMessage('✅ Settings reset to defaults!');
             await this.sendCurrentSettings();
@@ -580,6 +583,14 @@ export class SettingsViewProvider {
             </div>
             <div class="description">Show a banner on the Coding Time dashboard announcing the Claude Code Usage tab. Turn this off once you've seen it.</div>
         </div>
+
+        <div class="setting-item">
+            <div class="checkbox-container">
+                <input type="checkbox" id="claudeShowUsageLimits" />
+                <label for="claudeShowUsageLimits" style="margin: 0;">Show Remaining 5-Hour / Weekly Usage Limits</label>
+            </div>
+            <div class="description">Show how much of your 5-hour and weekly Claude Code usage limit is left, and when each resets. Unlike the rest of that tab, this sends one request to Anthropic using the sign-in Claude Code already stored on this machine (no prompts or file content are sent) &mdash; the same data the <code>claude</code> CLI's <code>/usage</code> command shows.</div>
+        </div>
     </div>
 
     <div class="setting-group">
@@ -902,6 +913,7 @@ export class SettingsViewProvider {
             document.getElementById('healthBreakThreshold').value = settings.healthBreakThreshold;
             document.getElementById('claudeShowTab').checked = settings.claudeShowTab;
             document.getElementById('claudeShowNewFeatureBanner').checked = settings.claudeShowNewFeatureBanner;
+            document.getElementById('claudeShowUsageLimits').checked = settings.claudeShowUsageLimits;
             document.getElementById('enableDevCommands').checked = settings.enableDevCommands;
         }
 
@@ -920,6 +932,7 @@ export class SettingsViewProvider {
                 healthBreakThreshold: parseInt(document.getElementById('healthBreakThreshold').value),
                 claudeShowTab: document.getElementById('claudeShowTab').checked,
                 claudeShowNewFeatureBanner: document.getElementById('claudeShowNewFeatureBanner').checked,
+                claudeShowUsageLimits: document.getElementById('claudeShowUsageLimits').checked,
                 enableDevCommands: document.getElementById('enableDevCommands').checked
             };
         }

@@ -137,6 +137,12 @@
           "description": "Gaps between Claude Code messages longer than this (minutes) are treated as time away, not active session time.",
           "scope": "application"
         },
+        "simpleCodingInsights.claude.showUsageLimits": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show remaining 5-hour and weekly Claude Code usage limits on the Claude Code tab. Unlike the rest of that tab, this sends one request to Anthropic's own usage API using the sign-in Claude Code already stored on this machine (no prompts or file content are sent) to fetch the same figures the `claude` CLI's /usage command shows. Off by default.",
+          "scope": "application"
+        },
         "simpleCodingInsights.enableDevCommands": {
           "type": "boolean",
           "default": false,

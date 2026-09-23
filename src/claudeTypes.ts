@@ -154,3 +154,43 @@ export interface ClaudeUsageSummary {
     /** Most recent sessions, newest first. */
     sessions: SessionUsage[];
 }
+
+/**
+ * Rate-limit windows Anthropic's account usage endpoint reports. Unlike the rest
+ * of this file, these figures are not derived from local transcripts — they come
+ * straight from Anthropic, using the OAuth token Claude Code itself already
+ * stores on disk. `session` is the rolling 5-hour window, `weekly_all` the
+ * 7-day window across every model, and `weekly_scoped` a per-model weekly cap
+ * (only present on some plans).
+ */
+export type ClaudeQuotaWindowKind = 'session' | 'weekly_all' | 'weekly_scoped';
+
+export interface ClaudeQuotaWindow {
+    kind: ClaudeQuotaWindowKind;
+    /** Model or surface name for a `weekly_scoped` window (e.g. "Opus"), else undefined. */
+    scopeLabel?: string;
+    /** 0-100, as reported by Anthropic. */
+    utilization: number;
+    /** ISO timestamp, or '' for a usage-anchored window that has not started yet. */
+    resetsAt: string;
+    /** Anthropic's own flag for the window currently doing the limiting. */
+    isActive: boolean;
+}
+
+/**
+ * `ok` — `windows` reflects a fresh response from Anthropic.
+ * `disabled` — the user has not turned this feature on (it calls Anthropic, unlike the rest of the tab).
+ * `signed-out` — no usable Claude Code OAuth credentials were found on disk.
+ * `rate-limited` — Anthropic asked us to back off; try again shortly.
+ * `error` — the request failed for another reason; see `message`.
+ */
+export type ClaudeQuotaStatus = 'ok' | 'disabled' | 'signed-out' | 'rate-limited' | 'error';
+
+export interface ClaudeQuotaSummary {
+    status: ClaudeQuotaStatus;
+    /** Human-readable detail, set for 'error'. */
+    message?: string;
+    /** ISO timestamp this snapshot was fetched at. */
+    fetchedAt: string;
+    windows: ClaudeQuotaWindow[];
+}

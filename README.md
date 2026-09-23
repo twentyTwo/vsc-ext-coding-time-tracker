@@ -63,14 +63,25 @@ If you use [Claude Code](https://claude.com/claude-code), the dashboard has a **
 - Tokens and cost per model, per project and per day
 - Tool usage counts and a recent-sessions table
 - A scope toggle for all projects vs. just the current workspace
+- Remaining 5-hour and weekly usage limits, straight from Anthropic (opt-in — see [Usage limits](#usage-limits-5-hour--weekly) below)
 
 The tab loads only when you open it, so it never slows down the coding-time dashboard.
 
 ### Three things worth knowing
 
 - **Cost is an estimate.** Claude Code does not record what a session cost. The figure shown is calculated from a bundled table of published API rates, so treat it as an *API-equivalent* estimate rather than a bill. If you are on a subscription plan, you are not charged per token at all and the real cost of the tokens shown is zero. Models missing from the price table are priced at a fallback rate and called out in the tab.
-- **No message content is ever read.** Only usage metadata is parsed: token counts, model names, timestamps, tool *names*, the working directory and the git branch. Prompts and responses are never parsed, stored or displayed, and nothing is sent anywhere — all processing is local.
+- **No message content is ever read, and nothing leaves your machine by default.** Only usage metadata is parsed: token counts, model names, timestamps, tool *names*, the working directory and the git branch. Prompts and responses are never parsed, stored or displayed. All of the above is local-only. The one opt-in exception is the usage-limits feature described below, which does make a network request.
 - **Parsing is best-effort.** Claude Code's on-disk log format is internal and can change at any time without notice. Unreadable files and malformed entries are skipped and reported in the tab rather than breaking the dashboard.
+
+### Usage limits (5-hour / weekly)
+
+Claude Code subscriptions enforce a rolling 5-hour session limit and a weekly limit. Turn this on to see how much of each is left, and when they reset:
+
+```json
+"simpleCodingInsights.claude.showUsageLimits": true
+```
+
+(or use the checkbox in the extension's Settings panel, under Dashboard Tabs). This is **off by default** and is the one part of the Claude Code tab that talks to the network: when enabled, it sends a single request to `api.anthropic.com` using the OAuth sign-in Claude Code already stores on this machine (the same one the `claude` CLI's own `/usage` command uses) — no prompts, file content, or anything else is sent. If you are not signed in to Claude Code, or the request fails, the tab says so instead of showing numbers.
 
 ### Configuration
 

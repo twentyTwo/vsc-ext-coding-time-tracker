@@ -4,7 +4,8 @@ import { ThemeIcon } from 'vscode';
 import { formatTime } from './utils';
 import { TimeTracker } from './timeTracker';
 import { ClaudeUsageReader } from './claudeUsage';
-import { UsageScope } from './claudeTypes';
+import { ClaudeQuotaClient } from './claudeQuota';
+import { ClaudeQuotaSummary, UsageScope } from './claudeTypes';
 import { claudeTabBody, claudeTabScript, claudeTabStyles } from './claudeTab';
 
 export class SummaryViewProvider implements vscode.WebviewViewProvider {
@@ -13,12 +14,44 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
     private database: Database;
     private timeTracker: TimeTracker;
     private claudeUsage: ClaudeUsageReader;
+    private claudeQuota: ClaudeQuotaClient;
 
     constructor(context: vscode.ExtensionContext, database: Database, timeTracker: TimeTracker) {
         this.context = context;
         this.database = database;
         this.timeTracker = timeTracker;
         this.claudeUsage = new ClaudeUsageReader(context);
+        this.claudeQuota = new ClaudeQuotaClient();
+    }
+
+    /**
+     * Handles the 'claudeQuotaRefresh' message shared by both webview hosts
+     * (the sidebar view and the full panel). Only fetches from Anthropic when
+     * the user has opted in — otherwise responds with 'disabled' immediately,
+     * without touching credentials or the network.
+     */
+    private async handleClaudeQuotaRefresh(webview: vscode.Webview): Promise<void> {
+        const showUsageLimits = vscode.workspace
+            .getConfiguration('simpleCodingInsights')
+            .get<boolean>('claude.showUsageLimits', false);
+        if (!showUsageLimits) {
+            const disabled: ClaudeQuotaSummary = {
+                status: 'disabled',
+                fetchedAt: new Date().toISOString(),
+                windows: []
+            };
+            webview.postMessage({ command: 'claudeQuota', data: disabled });
+            return;
+        }
+        try {
+            const summary = await this.claudeQuota.fetchSummary(this.claudeUsage.getDataDir());
+            webview.postMessage({ command: 'claudeQuota', data: summary });
+        } catch (error) {
+            webview.postMessage({
+                command: 'claudeQuota',
+                error: error instanceof Error ? error.message : String(error)
+            });
+        }
     }
 
     resolveWebviewView(
@@ -52,6 +85,8 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                     vscode.commands.executeCommand('simpleCodingInsights.openSettings');
                 } else if (message.command === 'dismissClaudeFeatureBanner') {
                     await this.dismissClaudeFeatureBanner();
+                } else if (message.command === 'claudeQuotaRefresh') {
+                    await this.handleClaudeQuotaRefresh(webviewView.webview);
                 }
             },
             undefined,
@@ -148,6 +183,10 @@ export class SummaryViewProvider implements vscode.WebviewViewProvider {
                                 command: 'claudeUsage',
                                 error: error instanceof Error ? error.message : String(error)
                             });
+                        }
+                    } else if (message.command === 'claudeQuotaRefresh') {
+                        if (this.panel) {
+                            await this.handleClaudeQuotaRefresh(this.panel.webview);
                         }
                     }
                 },

@@ -153,12 +153,79 @@ export const claudeTabStyles = `
         opacity: 0.75;
     }
 
+    .claude-quota-grid {
+        display: grid;
+        gap: 15px;
+        grid-template-columns: repeat(2, 1fr);
+        margin-bottom: 12px;
+    }
+    .claude-quota-card {
+        background-color: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 5px;
+        padding: 12px;
+    }
+    .claude-quota-card-head {
+        align-items: baseline;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    .claude-quota-card-head h3 {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        margin: 0;
+        text-transform: uppercase;
+    }
+    .claude-quota-pct { font-size: 15px; font-weight: 600; }
+    .claude-quota-bar {
+        background-color: var(--vscode-input-background, rgba(127, 127, 127, 0.15));
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+    }
+    .claude-quota-fill {
+        background-color: var(--vscode-charts-green, #4caf50);
+        height: 100%;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+    .claude-quota-fill.claude-quota-warning { background-color: var(--vscode-charts-yellow, #e2b93d); }
+    .claude-quota-fill.claude-quota-error { background-color: var(--vscode-charts-red, #f14c4c); }
+    .claude-quota-meta {
+        color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+        font-size: 11px;
+        margin-top: 6px;
+    }
+    .claude-quota-note {
+        align-items: center;
+        color: var(--vscode-descriptionForeground, var(--vscode-foreground));
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 12px;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .claude-quota-note button {
+        background-color: var(--input-background, var(--vscode-input-background));
+        border: 1px solid var(--vscode-panel-border);
+        border-radius: 4px;
+        color: var(--vscode-foreground);
+        cursor: pointer;
+        font-family: var(--vscode-font-family);
+        font-size: 12px;
+        padding: 4px 10px;
+        white-space: nowrap;
+    }
+
     @media (max-width: 900px) {
         .claude-grid-3 { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
         .claude-grid-2,
-        .claude-grid-3 { grid-template-columns: 1fr; }
+        .claude-grid-3,
+        .claude-quota-grid { grid-template-columns: 1fr; }
     }
 `;
 
@@ -169,6 +236,29 @@ export const claudeTabBody = `
             <button class="claude-scope-btn" data-scope="workspace" type="button">This workspace</button>
         </div>
         <button class="claude-refresh-btn" id="claude-refresh" type="button">Refresh</button>
+    </div>
+
+    <div class="claude-quota-note" id="claude-quota-note" hidden>
+        <span id="claude-quota-note-text"></span>
+        <button id="claude-quota-settings-btn" type="button" hidden>Open Settings</button>
+    </div>
+    <div class="claude-quota-grid" id="claude-quota-grid" hidden>
+        <div class="claude-quota-card">
+            <div class="claude-quota-card-head">
+                <h3>5-Hour Session</h3>
+                <span class="claude-quota-pct" id="claude-quota-session-pct">&ndash;</span>
+            </div>
+            <div class="claude-quota-bar"><div class="claude-quota-fill" id="claude-quota-session-fill"></div></div>
+            <div class="claude-quota-meta" id="claude-quota-session-meta">&nbsp;</div>
+        </div>
+        <div class="claude-quota-card">
+            <div class="claude-quota-card-head">
+                <h3>This Week</h3>
+                <span class="claude-quota-pct" id="claude-quota-week-pct">&ndash;</span>
+            </div>
+            <div class="claude-quota-bar"><div class="claude-quota-fill" id="claude-quota-week-fill"></div></div>
+            <div class="claude-quota-meta" id="claude-quota-week-meta">&nbsp;</div>
+        </div>
     </div>
 
     <div class="claude-status" id="claude-status">Loading Claude Code usage&hellip;</div>
@@ -277,6 +367,7 @@ export const claudeTabScript = `
     (function () {
         var claudeCharts = {};
         var claudeState = { scope: 'all', requested: false, pending: false };
+        var claudeQuotaState = { requested: false, pending: false };
         var claudePalette = [
             'rgba(64, 159, 255, 0.85)',
             'rgba(126, 211, 159, 0.85)',
@@ -428,6 +519,117 @@ export const claudeTabScript = `
             claudeRequest();
         }
 
+        function claudeQuotaShow(text, showSettingsBtn, showGrid) {
+            var note = claudeEl('claude-quota-note');
+            var noteText = claudeEl('claude-quota-note-text');
+            var settingsBtn = claudeEl('claude-quota-settings-btn');
+            var grid = claudeEl('claude-quota-grid');
+            if (!note || !noteText || !settingsBtn || !grid) { return; }
+            noteText.textContent = text || '';
+            note.hidden = !text;
+            settingsBtn.hidden = !showSettingsBtn;
+            grid.hidden = !showGrid;
+        }
+
+        function claudeQuotaRequest() {
+            if (claudeQuotaState.pending) { return; }
+            claudeQuotaState.requested = true;
+            claudeQuotaState.pending = true;
+            claudeQuotaShow('Checking usage limits\\u2026', false, false);
+            vscode.postMessage({ command: 'claudeQuotaRefresh' });
+        }
+
+        function claudeQuotaFmtReset(resetsAt) {
+            if (!resetsAt) { return ''; }
+            var target = Date.parse(resetsAt);
+            if (isNaN(target)) { return ''; }
+            var ms = target - Date.now();
+            if (ms <= 0) { return 'resets shortly'; }
+            var hours = ms / 3600000;
+            var compact = hours < 24 ? (hours.toFixed(1) + 'h') : ((hours / 24).toFixed(1) + 'd');
+            return 'resets in ' + compact;
+        }
+
+        function claudeQuotaSetBar(fillId, pctId, metaId, win) {
+            var fill = claudeEl(fillId);
+            var pctEl = claudeEl(pctId);
+            var metaEl = claudeEl(metaId);
+            if (!fill || !pctEl || !metaEl) { return; }
+            if (!win) {
+                fill.style.width = '0%';
+                fill.className = 'claude-quota-fill';
+                pctEl.textContent = '\\u2013';
+                metaEl.textContent = 'Not reported for this account';
+                return;
+            }
+            var pct = Math.max(0, Math.min(100, win.utilization));
+            fill.style.width = pct + '%';
+            fill.className = 'claude-quota-fill' +
+                (pct >= 90 ? ' claude-quota-error' : (pct >= 75 ? ' claude-quota-warning' : ''));
+            pctEl.textContent = Math.round(pct) + '% used';
+            var resetText = claudeQuotaFmtReset(win.resetsAt);
+            metaEl.textContent = (100 - Math.round(pct)) + '% remaining' + (resetText ? ' \\u00b7 ' + resetText : '');
+        }
+
+        function claudeRenderQuota(data) {
+            if (!data) { return; }
+
+            if (data.status === 'disabled') {
+                claudeQuotaShow(
+                    'Usage limits are off. Turn them on to see how much of your 5-hour and ' +
+                    'weekly Claude Code limit is left (sends one request to Anthropic using ' +
+                    'your existing Claude Code sign-in).',
+                    true,
+                    false
+                );
+                return;
+            }
+            if (data.status === 'signed-out') {
+                claudeQuotaShow('No Claude Code sign-in found on this machine. Sign in with the claude CLI, then refresh.', false, false);
+                return;
+            }
+            if (data.status === 'rate-limited') {
+                claudeQuotaShow('Anthropic asked us to slow down fetching usage limits; try refreshing again shortly.', false, false);
+                return;
+            }
+            if (data.status === 'error') {
+                claudeQuotaShow('Could not fetch usage limits' + (data.message ? ': ' + data.message : '.'), false, false);
+                return;
+            }
+
+            var session = null;
+            var weekly = null;
+            var scoped = [];
+            var windows = data.windows || [];
+            for (var i = 0; i < windows.length; i++) {
+                var w = windows[i];
+                if (w.kind === 'session' && !session) {
+                    session = w;
+                } else if (w.kind === 'weekly_all' && !weekly) {
+                    weekly = w;
+                } else if (w.kind === 'weekly_scoped' && w.utilization > 0) {
+                    scoped.push(w);
+                }
+            }
+
+            if (!session && !weekly) {
+                claudeQuotaShow('Anthropic did not report any usage windows for this account.', false, false);
+                return;
+            }
+
+            if (scoped.length > 0) {
+                var bits = [];
+                for (var s = 0; s < scoped.length; s++) {
+                    bits.push((scoped[s].scopeLabel || 'model') + ' ' + Math.round(scoped[s].utilization) + '%');
+                }
+                claudeQuotaShow('Per-model weekly cap \\u2014 ' + bits.join(', ') + '.', false, true);
+            } else {
+                claudeQuotaShow('', false, true);
+            }
+            claudeQuotaSetBar('claude-quota-session-fill', 'claude-quota-session-pct', 'claude-quota-session-meta', session);
+            claudeQuotaSetBar('claude-quota-week-fill', 'claude-quota-week-pct', 'claude-quota-week-meta', weekly);
+        }
+
         function claudeSetTab(name) {
             var panels = document.querySelectorAll('.tab-panel');
             if (panels.length === 0) { return; }
@@ -448,6 +650,7 @@ export const claudeTabScript = `
             // so the time-tracking dashboard never waits on it.
             try { window.dispatchEvent(new CustomEvent('tabActivated', { detail: name })); } catch (error) { /* older webviews without CustomEvent */ }
             if (name === 'claude' && !claudeState.requested) { claudeRequest(); }
+            if (name === 'claude' && !claudeQuotaState.requested) { claudeQuotaRequest(); }
         }
 
         function claudeRenderTotals(data) {
@@ -853,13 +1056,22 @@ export const claudeTabScript = `
 
         window.addEventListener('message', function (event) {
             var message = event.data;
-            if (!message || message.command !== 'claudeUsage') { return; }
-            claudeState.pending = false;
-            if (message.error) {
-                claudeShow('empty', 'Could not read Claude Code usage: ' + message.error);
-                return;
+            if (!message) { return; }
+            if (message.command === 'claudeUsage') {
+                claudeState.pending = false;
+                if (message.error) {
+                    claudeShow('empty', 'Could not read Claude Code usage: ' + message.error);
+                    return;
+                }
+                claudeRender(message.data);
+            } else if (message.command === 'claudeQuota') {
+                claudeQuotaState.pending = false;
+                if (message.error) {
+                    claudeRenderQuota({ status: 'error', message: message.error, windows: [] });
+                    return;
+                }
+                claudeRenderQuota(message.data);
             }
-            claudeRender(message.data);
         });
 
         var claudeWired = false;
@@ -888,6 +1100,15 @@ export const claudeTabScript = `
                 refresh.addEventListener('click', function () {
                     claudeState.requested = false;
                     claudeRequest();
+                    claudeQuotaState.requested = false;
+                    claudeQuotaRequest();
+                });
+            }
+
+            var quotaSettingsBtn = claudeEl('claude-quota-settings-btn');
+            if (quotaSettingsBtn) {
+                quotaSettingsBtn.addEventListener('click', function () {
+                    vscode.postMessage({ command: 'openSettings' });
                 });
             }
 
